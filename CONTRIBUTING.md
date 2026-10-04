@@ -3,14 +3,16 @@
 New to coding? Start with [docs/getting-started.md](docs/getting-started.md). Examples of how we
 write components, tests and styles are in [docs/code-patterns.md](docs/code-patterns.md).
 
-## Branches and merge requests
+## Branches and pull requests
 
-- `main` is always deployable. Do not push to it directly; open a merge request.
+- `main` is always deployable. Do not push to it directly; open a pull request on GitHub.
 - One branch per Jira subtask, named after its key: `SCRUM-38-backend-and-login`.
-- Start commit messages and merge request titles with the key: `SCRUM-38: backend and login`.
-- Keep merge requests small. One teammate reviews before merge.
-- The pipeline (lint, format, type-check, tests, build) must pass before merge. Run `npm run check`
-  locally first.
+- Start commit messages and pull request titles with the key: `SCRUM-38: backend and login`.
+- Keep pull requests small. One teammate reviews before merge.
+- The checks (lint, format, type-check, tests, build) must pass before merge. GitHub shows
+  them at the bottom of the pull request. Run `npm run check` locally first.
+- The Fontys GitLab repository is an automatic copy. Never push or edit there; see
+  [docs/deployment.md](docs/deployment.md).
 
 ## Folder structure
 
@@ -43,6 +45,6 @@ The app handles live location and home addresses.
 
 - No secrets in the repository. Real keys go in `.env.local` (ignored by git); document new
   variables in `.env.example`.
-- Store the minimum location data for the shortest time, and write the decision down in the merge
+- Store the minimum location data for the shortest time, and write the decision down in the pull
   request or docs.
 - The municipal lamp data is a register, not a live status. Never present it as "light is on".

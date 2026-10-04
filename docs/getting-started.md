@@ -12,12 +12,12 @@ after that you only need the "Every time you work" part.
 4. Get the project onto your laptop. Open a terminal and run:
 
    ```
-   git clone https://git.fhict.nl/I533293/waybacksafety.git
-   cd waybacksafety
+   git clone https://github.com/Funtazer07/wayback-safety.git
+   cd wayback-safety
    npm install
    ```
 
-5. Open the `waybacksafety` folder in VS Code. It will ask "Do you want to install the recommended
+5. Open the `wayback-safety` folder in VS Code. It will ask "Do you want to install the recommended
    extensions?" Click **Install**. After this, your code is tidied up automatically every time you
    save a file.
 
@@ -61,7 +61,7 @@ file that does something similar and change it; that is faster and safer than st
 npm run check
 ```
 
-This runs the same checks GitLab runs. If it ends without red errors, you are good. If it complains
+This runs the same checks that run automatically after you push. If it ends without red errors, you are good. If it complains
 about formatting, run `npm run format` and try again.
 
 ### 6. Save and upload your change
@@ -74,22 +74,23 @@ git push -u origin SCRUM-39-onboarding-screens
 
 The commit message starts with the Jira key and says what you did, in a few words.
 
-### 7. Open a merge request
+### 7. Open a pull request
 
 Git prints a link after `git push`. Open it, fill in the template, and ask a teammate to review.
-When the checks are green and a teammate approved, click **Merge**.
+The checks appear at the bottom of the pull request after a minute or two. When they are green and
+a teammate approved, click **Merge**.
 
 ## When something goes wrong
 
-| What you see                      | What to do                                                  |
-| --------------------------------- | ----------------------------------------------------------- |
-| `npm: command not found`          | Node.js is not installed, or restart the terminal           |
-| Errors right after `git pull`     | Run `npm install` again; someone added a package            |
-| `npm run check` fails on "format" | Run `npm run format`                                        |
-| Red underline in VS Code          | Hover over it and read the message; it usually says the fix |
-| "Merge conflict"                  | Stop and ask a teammate. Do not guess                       |
-| The pipeline on GitLab is red     | Click it, open the red job, read the last lines             |
-| Anything else                     | Copy the full error message into the group chat             |
+| What you see                           | What to do                                                      |
+| -------------------------------------- | --------------------------------------------------------------- |
+| `npm: command not found`               | Node.js is not installed, or restart the terminal               |
+| Errors right after `git pull`          | Run `npm install` again; someone added a package                |
+| `npm run check` fails on "format"      | Run `npm run format`                                            |
+| Red underline in VS Code               | Hover over it and read the message; it usually says the fix     |
+| "Merge conflict"                       | Stop and ask a teammate. Do not guess                           |
+| The checks on the pull request are red | Click **Details** next to the red one and read the failing step |
+| Anything else                          | Copy the full error message into the group chat                 |
 
 Never paste passwords or keys into the code or the group chat. See "Privacy and security" in
 [CONTRIBUTING.md](../CONTRIBUTING.md).

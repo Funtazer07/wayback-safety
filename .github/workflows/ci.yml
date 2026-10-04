@@ -1,0 +1,72 @@
+# Checks run for every pull request and for main. On main, the app is then deployed to GitHub Pages
+# and the code is copied to the Fontys GitLab (see docs/deployment.md).
+name: Checks and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - id: pages
+        uses: actions/configure-pages@v5
+      # The site lives in a subfolder (/<repository>/), so the build needs to know that path.
+      - run: npm run build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+      # GitHub Pages shows 404.html for unknown paths; serving the app there keeps deep links working.
+      - run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Keeps the Fontys GitLab repository up to date, so teachers can follow the work there. Needs the
+  # repository secret FONTYS_GITLAB_TOKEN (Settings > Secrets and variables > Actions).
+  copy-to-fontys-gitlab:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git push "https://oauth2:${FONTYS_GITLAB_TOKEN}@git.fhict.nl/I533293/waybacksafety.git" HEAD:main
+        env:
+          FONTYS_GITLAB_TOKEN: ${{ secrets.FONTYS_GITLAB_TOKEN }}

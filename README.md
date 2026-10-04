@@ -14,7 +14,8 @@ Jira wins.
 - Vite + React + TypeScript
 - Vitest + Testing Library for tests
 - oxlint for linting, Prettier for formatting
-- GitLab CI for checks on every merge request
+- GitHub Actions for checks and GitHub Pages for hosting. A copy of `main` is pushed to the Fontys
+  GitLab automatically
 
 Planned in later subtasks: PWA setup with vite-plugin-pwa (SCRUM-37), Supabase for login and
 database (SCRUM-38), MapLibre with OpenStreetMap tiles (SCRUM-54).
