@@ -20,6 +20,17 @@ after that you only need the "Every time you work" part.
 5. Open the `wayback-safety` folder in VS Code. It will ask "Do you want to install the recommended
    extensions?" Click **Install**. After this, your code is tidied up automatically every time you
    save a file.
+6. Connect the app to the backend (login and database). Without this step the app only shows "The
+   backend is not set up yet".
+   1. In VS Code, find the file `.env.example` in the list on the left.
+   2. Right-click it and choose **Copy**, then right-click an empty spot in the list and choose
+      **Paste**. You now have a file called `.env copy.example`.
+   3. Right-click the copy, choose **Rename**, and name it exactly `.env.local`.
+   4. Open `.env.local`. If the line `VITE_SUPABASE_PUBLISHABLE_KEY=` has nothing after the `=`,
+      ask the teammate who set up Supabase for the publishable key and paste it there, with no
+      spaces. Save the file.
+   5. You only do this once. The file stays on your laptop and is never uploaded.
+   6. To check it worked: run `npm run dev` and open the link. You should see the "Sign up" screen.
 
 ## Every time you work
 

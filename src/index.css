@@ -18,3 +18,42 @@ body {
 main {
   padding: 1rem;
 }
+
+/* Form controls. Sizes are large on purpose: the app is used outside, at night, with one hand. */
+input:not([type='checkbox']),
+button {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+button {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button-primary {
+  color: Canvas;
+  background: CanvasText;
+}
+
+.button-link {
+  margin-top: 0.75rem;
+  border: none;
+  text-decoration: underline;
+}
+
+[role='alert'] {
+  margin: 0;
+  font-weight: 600;
+}

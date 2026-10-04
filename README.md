@@ -14,11 +14,12 @@ Jira wins.
 - Vite + React + TypeScript
 - Vitest + Testing Library for tests
 - oxlint for linting, Prettier for formatting
+- vite-plugin-pwa, so the app can be installed on a phone
+- Supabase for login and database
 - GitHub Actions for checks and GitHub Pages for hosting. A copy of `main` is pushed to the Fontys
   GitLab automatically
 
-Planned in later subtasks: PWA setup with vite-plugin-pwa (SCRUM-37), Supabase for login and
-database (SCRUM-38), MapLibre with OpenStreetMap tiles (SCRUM-54).
+Planned in a later subtask: MapLibre with OpenStreetMap tiles (SCRUM-54).
 
 ## Getting started
 
@@ -48,3 +49,4 @@ npm run dev
   examples
 - [CONTRIBUTING.md](CONTRIBUTING.md): folder structure, branch rules and code rules
 - [docs/deployment.md](docs/deployment.md): how the app gets online
+- [docs/backend.md](docs/backend.md): login, database and how to set up Supabase
