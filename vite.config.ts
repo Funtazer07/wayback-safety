@@ -2,8 +2,13 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
+// GitHub Pages serves the app from a subfolder (/<repository>/). The deploy workflow passes that
+// path in BASE_PATH; locally the app runs at the root.
+const base = `${process.env.BASE_PATH ?? ''}/`
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -15,8 +20,8 @@ export default defineConfig({
         short_name: 'WayBack',
         description: 'Get home safely at night in Eindhoven.',
         lang: 'en',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         orientation: 'portrait',
         // Placeholder colours until the design is final. Keep in sync with theme-color in index.html.
