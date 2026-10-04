@@ -1,5 +1,5 @@
 # Runs on every merge request and on main. All jobs must pass before merge.
-# Deployment is added in SCRUM-37.
+# On main, the build is then deployed to Netlify (see docs/deployment.md).
 image: node:24
 
 workflow:
@@ -20,6 +20,7 @@ before_script:
 stages:
   - check
   - build
+  - deploy
 
 lint:
   stage: check
@@ -45,3 +46,18 @@ build:
     paths:
       - dist/
     expire_in: 1 week
+
+# Uploads the dist/ folder from the build job. Needs the CI/CD variables NETLIFY_AUTH_TOKEN and
+# NETLIFY_SITE_ID (Settings > CI/CD > Variables). They are secrets: never put them in the repo.
+deploy:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  needs:
+    - job: build
+      artifacts: true
+  before_script: []
+  script:
+    - npx --yes netlify-cli deploy --prod --no-build --dir=dist
+  environment:
+    name: production

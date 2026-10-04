@@ -46,3 +46,4 @@ npm run dev
 - [docs/code-patterns.md](docs/code-patterns.md): how we write components, tests and styles, with
   examples
 - [CONTRIBUTING.md](CONTRIBUTING.md): folder structure, branch rules and code rules
+- [docs/deployment.md](docs/deployment.md): how the app gets online

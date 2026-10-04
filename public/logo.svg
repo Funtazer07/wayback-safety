@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Placeholder icon until the group has a final logo. Regenerate the PNGs with `npm run icons`. -->
+  <rect width="512" height="512" fill="#0f172a" />
+  <circle cx="256" cy="212" r="120" fill="#fbbf24" opacity="0.18" />
+  <circle cx="256" cy="212" r="72" fill="#fbbf24" opacity="0.35" />
+  <circle cx="256" cy="212" r="36" fill="#fbbf24" />
+  <path d="M176 392 256 320 336 392" fill="none" stroke="#f8fafc" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
