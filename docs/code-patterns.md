@@ -194,5 +194,5 @@ keep sentences whole instead of gluing pieces together. That makes it easy to tr
 - Do not put keys, passwords or real addresses in the code. Example data uses real Eindhoven street
   names but made-up people.
 - Do not show the municipal lamp data as "this light is on". It only says where lamps are.
-- Do not leave `console.log` lines or commented-out code in a merge request.
+- Do not leave `console.log` lines or commented-out code in a pull request.
 - Do not copy code you do not understand. Ask, or add a comment saying what you are unsure about.
