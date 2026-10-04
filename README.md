@@ -42,4 +42,7 @@ npm run dev
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the folder structure, branch rules and code rules.
+- [docs/getting-started.md](docs/getting-started.md): step-by-step guide if you are new to coding
+- [docs/code-patterns.md](docs/code-patterns.md): how we write components, tests and styles, with
+  examples
+- [CONTRIBUTING.md](CONTRIBUTING.md): folder structure, branch rules and code rules

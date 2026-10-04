@@ -1,5 +1,8 @@
 # Contributing
 
+New to coding? Start with [docs/getting-started.md](docs/getting-started.md). Examples of how we
+write components, tests and styles are in [docs/code-patterns.md](docs/code-patterns.md).
+
 ## Branches and merge requests
 
 - `main` is always deployable. Do not push to it directly; open a merge request.
