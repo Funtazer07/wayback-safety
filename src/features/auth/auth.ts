@@ -5,23 +5,17 @@ function client() {
   return supabase
 }
 
-// Where the link in the email sends the user back to. Includes the subfolder on GitHub Pages.
+// Where Google (or the link in a confirmation email) sends the user back to. Includes the
+// subfolder on GitHub Pages.
 function appUrl() {
   return new URL(import.meta.env.BASE_URL, window.location.origin).href
 }
 
-// Stored with the new account so the database can record when the user confirmed being 16 or older.
-const signUpData = { age_confirmed: true }
-
-/** Emails a login link. With isNewUser false, unknown email addresses are rejected. */
-export async function sendLoginEmail(email: string, isNewUser: boolean) {
-  const { error } = await client().auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: appUrl(),
-      shouldCreateUser: isNewUser,
-      data: isNewUser ? signUpData : undefined,
-    },
+/** Leaves the app for the Google sign-in page. The user comes back logged in. */
+export async function signInWithGoogle() {
+  const { error } = await client().auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: appUrl() },
   })
   if (error) throw error
 }
@@ -31,7 +25,7 @@ export async function signUpWithPassword(email: string, password: string) {
   const { data, error } = await client().auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: appUrl(), data: signUpData },
+    options: { emailRedirectTo: appUrl() },
   })
   if (error) throw error
   return data.session === null

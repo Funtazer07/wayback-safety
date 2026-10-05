@@ -1,19 +1,13 @@
-import { useState } from 'react'
-import { logOut } from './features/auth/auth.ts'
 import { useSession } from './features/auth/SessionContext.ts'
-import FirstRun from './features/onboarding/FirstRun.tsx'
-import Onboarding from './features/onboarding/Onboarding.tsx'
-import { isOnboardingDone, markOnboardingDone } from './features/onboarding/onboardingStorage.ts'
+import Home from './features/home/Home.tsx'
+import NameScreen from './features/onboarding/NameScreen.tsx'
+import Welcome from './features/onboarding/Welcome.tsx'
+import { useProfile } from './features/profile/useProfile.ts'
 import { supabase } from './lib/supabase.ts'
 
 function App() {
   const { session, isLoading } = useSession()
-  const [isOnboarded, setIsOnboarded] = useState(isOnboardingDone)
-
-  function finishOnboarding() {
-    markOnboardingDone()
-    setIsOnboarded(true)
-  }
+  const { profile, error, saveName } = useProfile(session?.user.id)
 
   if (!supabase) {
     return (
@@ -32,22 +26,28 @@ function App() {
     )
   }
 
-  if (!session) return <Onboarding onExistingUserLogin={finishOnboarding} />
+  if (!session) return <Welcome />
 
-  if (!isOnboarded) return <FirstRun onDone={finishOnboarding} />
+  if (error) {
+    return (
+      <main className="screen">
+        <p role="alert">{error} Check your connection and reload the page.</p>
+      </main>
+    )
+  }
 
-  // Placeholder home screen until the walk screens are built (SCRUM-44).
-  return (
-    <main className="screen">
-      <h1>WayBack Safety</h1>
-      <p>Logged in as {session.user.email}</p>
-      <div className="screen-actions">
-        <button type="button" onClick={() => logOut()}>
-          Log out
-        </button>
-      </div>
-    </main>
-  )
+  if (!profile) {
+    return (
+      <main className="screen">
+        <p>Loading…</p>
+      </main>
+    )
+  }
+
+  // A profile without a name means the user has not finished the onboarding yet.
+  if (!profile.displayName) return <NameScreen onSave={saveName} />
+
+  return <Home displayName={profile.displayName} />
 }
 
 export default App
