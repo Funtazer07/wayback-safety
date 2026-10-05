@@ -4,10 +4,14 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import App from './App.tsx'
 import { SessionContext } from './features/auth/SessionContext.ts'
 
-// A stand-in for the real backend, so the tests never talk to Supabase.
-vi.mock('./lib/supabase.ts', () => ({ supabase: { auth: {} } }))
+const auth = vi.hoisted(() => ({ signInWithOAuth: vi.fn(), signOut: vi.fn() }))
+const profile = vi.hoisted(() => ({ fetchProfile: vi.fn(), completeProfile: vi.fn() }))
 
-const loggedIn = { user: { email: 'sanne@example.com' } } as Session
+// Stand-ins for the real backend, so the tests never talk to Supabase.
+vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
+vi.mock('./features/profile/profile.ts', () => profile)
+
+const loggedIn = { user: { id: 'user-1' } } as Session
 
 function renderApp(session: Session | null, isLoading = false) {
   render(
@@ -22,52 +26,77 @@ function click(name: string) {
 }
 
 beforeEach(() => {
-  localStorage.clear()
+  vi.clearAllMocks()
+  auth.signInWithOAuth.mockResolvedValue({ error: null })
+  profile.fetchProfile.mockResolvedValue({ displayName: null })
+  profile.completeProfile.mockResolvedValue(undefined)
 })
 
-test('a new visitor walks through welcome, how it works and sign-up', () => {
+test('a new visitor can sign in with Google from the welcome screen', async () => {
   renderApp(null)
   expect(screen.getByRole('heading', { name: 'Get home safe, your way' })).toBeInTheDocument()
 
-  click('Get started')
-  expect(screen.getByRole('heading', { name: 'How it works' })).toBeInTheDocument()
+  click('Continue with Google')
 
-  click('Next')
-  expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
+  await vi.waitFor(() =>
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'google' }),
+    ),
+  )
 })
 
-test('someone with an account can go straight to logging in', () => {
+test('people without a Google account can use email instead', () => {
   renderApp(null)
 
-  click('I already have an account')
+  click('Use email instead')
 
-  expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Sign up with email' })).toBeInTheDocument()
 })
 
-test('after signing up, permissions and installing are explained once', () => {
+test('shows the error when signing in fails', async () => {
+  auth.signInWithOAuth.mockResolvedValue({ error: new Error('Provider is not enabled') })
+  renderApp(null)
+
+  click('Continue with Google')
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Provider is not enabled')
+})
+
+test('after the first sign-in the user gives a name and lands on Home', async () => {
   renderApp(loggedIn)
-  expect(screen.getByRole('heading', { name: 'Before your first walk' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'What should we call you?' })).toBeVisible()
 
-  click('Not now')
-  expect(
-    screen.getByRole('heading', { name: 'Add WayBack to your home screen' }),
-  ).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('First name or nickname'), { target: { value: ' Sam ' } })
+  fireEvent.click(screen.getByLabelText('I am 16 or older'))
+  click('Continue')
 
-  click('Done, start my first walk')
-  expect(screen.getByText('Logged in as sanne@example.com')).toBeInTheDocument()
-  expect(localStorage.getItem('wayback.onboardingDone')).toBe('true')
+  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
+  expect(profile.completeProfile).toHaveBeenCalledWith('user-1', 'Sam')
 })
 
-test('the onboarding is not shown again on a phone that finished it', () => {
-  localStorage.setItem('wayback.onboardingDone', 'true')
+test('the name is not saved until the age is confirmed', async () => {
+  renderApp(loggedIn)
+  await screen.findByRole('heading', { name: 'What should we call you?' })
+
+  fireEvent.change(screen.getByLabelText('First name or nickname'), { target: { value: 'Sam' } })
+  click('Continue')
+
+  expect(profile.completeProfile).not.toHaveBeenCalled()
+})
+
+test('a returning user goes straight to Home', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
 
   renderApp(loggedIn)
 
-  expect(screen.getByText('Logged in as sanne@example.com')).toBeInTheDocument()
+  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
 })
 
-test('shows a loading message while the session is being restored', () => {
-  renderApp(null, true)
+test('shows a message when the profile cannot be loaded', async () => {
+  profile.fetchProfile.mockRejectedValue(new Error('network'))
 
-  expect(screen.getByText('Loading…')).toBeInTheDocument()
+  renderApp(loggedIn)
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load your profile.')
 })
