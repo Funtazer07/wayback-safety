@@ -12,21 +12,93 @@
 
 body {
   margin: 0;
-  min-height: 100dvh;
 }
 
-main {
+h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+p {
+  margin: 0;
+}
+
+/* One full-height phone screen: content at the top, buttons at the bottom within thumb reach. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 100dvh;
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+/* A form inside a screen that should push its buttons to the bottom too. */
+.screen-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.screen-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: 0.75rem;
+}
+
+.card p {
+  opacity: 0.8;
+}
+
+.progress-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.progress-dots span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.progress-dots .is-current {
+  width: 1.5rem;
+  background: currentColor;
 }
 
 /* Form controls. Sizes are large on purpose: the app is used outside, at night, with one hand. */
+label {
+  font-weight: 600;
+}
+
 input:not([type='checkbox']),
 button {
   width: 100%;
-  min-height: 3rem;
-  padding: 0.5rem 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 1rem;
   border: 1px solid currentColor;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   font: inherit;
   color: inherit;
   background: transparent;
@@ -48,12 +120,10 @@ button:disabled {
 }
 
 .button-link {
-  margin-top: 0.75rem;
+  min-height: 2.75rem;
   border: none;
-  text-decoration: underline;
 }
 
 [role='alert'] {
-  margin: 0;
   font-weight: 600;
 }

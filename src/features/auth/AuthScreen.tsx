@@ -1,10 +1,18 @@
 import { type FormEvent, useState } from 'react'
+import ProgressDots from '../../components/ProgressDots.tsx'
 import { logInWithPassword, sendLoginEmail, signUpWithPassword } from './auth.ts'
 import CheckEmail from './CheckEmail.tsx'
 import './auth.css'
 
-function AuthScreen() {
-  const [isNewUser, setIsNewUser] = useState(true)
+type AuthScreenProps = {
+  /** true shows "Create your account" (screen 3 of the onboarding), false shows "Log in". */
+  isNewUser: boolean
+  onBack: () => void
+  /** Called when the login email was sent or the password was accepted. */
+  onSuccess?: () => void
+}
+
+function AuthScreen({ isNewUser, onBack, onSuccess }: AuthScreenProps) {
   const [usesPassword, setUsesPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,6 +35,7 @@ function AuthScreen() {
       } else {
         await logInWithPassword(email, password)
       }
+      onSuccess?.()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Something went wrong. Try again.')
     }
@@ -40,15 +49,18 @@ function AuthScreen() {
   const passwordButtonText = isNewUser ? 'Create account' : 'Log in'
 
   return (
-    <main className="auth">
-      <h1>{isNewUser ? 'Sign up' : 'Log in'}</h1>
+    <main className="screen">
+      {isNewUser && <ProgressDots step={3} />}
+      <h1>{isNewUser ? 'Create your account' : 'Log in'}</h1>
+      {isNewUser && <p>We only ask for your email. No phone number needed.</p>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="screen-fill" onSubmit={handleSubmit}>
         <label htmlFor="email">Email</label>
         <input
           id="email"
           type="email"
           autoComplete="email"
+          placeholder="name@example.com"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -80,23 +92,27 @@ function AuthScreen() {
               />
               I am 16 or older
             </label>
-            <p className="auth-note">We only ask for your email address. No phone number.</p>
+            {/* The Terms and the Privacy statement are not written yet, so these are not links. */}
+            <p className="auth-note">
+              By continuing you agree to the Terms and the Privacy statement.
+            </p>
           </>
         )}
 
         {error && <p role="alert">{error}</p>}
 
-        <button type="submit" className="button-primary" disabled={isBusy}>
-          {usesPassword ? passwordButtonText : 'Send me a link'}
-        </button>
-        <button type="button" onClick={() => setUsesPassword(!usesPassword)}>
-          {usesPassword ? 'Use a link instead' : 'Use a password'}
-        </button>
+        <div className="screen-actions">
+          <button type="submit" className="button-primary" disabled={isBusy}>
+            {usesPassword ? passwordButtonText : 'Send me a sign-in link'}
+          </button>
+          <button type="button" onClick={() => setUsesPassword(!usesPassword)}>
+            {usesPassword ? 'Use a sign-in link instead' : 'Use a password instead'}
+          </button>
+          <button type="button" className="button-link" onClick={onBack}>
+            Back
+          </button>
+        </div>
       </form>
-
-      <button type="button" className="button-link" onClick={() => setIsNewUser(!isNewUser)}>
-        {isNewUser ? 'I have an account' : 'I am new here'}
-      </button>
     </main>
   )
 }

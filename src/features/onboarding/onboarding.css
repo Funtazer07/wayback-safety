@@ -1,0 +1,65 @@
+.onboarding-hero,
+.onboarding-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.onboarding-hero {
+  height: 15rem;
+}
+
+.onboarding-hero img {
+  width: 7rem;
+  height: 7rem;
+  border-radius: 1.5rem;
+}
+
+.onboarding-preview {
+  height: 10rem;
+  font-size: 0.875rem;
+}
+
+.onboarding-preview img {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+}
+
+.onboarding-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.onboarding-steps li {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  column-gap: 1rem;
+  counter-increment: step;
+}
+
+.onboarding-steps li::before {
+  content: counter(step);
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  font-weight: 600;
+  color: Canvas;
+  background: CanvasText;
+}
+
+.onboarding-steps span {
+  opacity: 0.8;
+}
