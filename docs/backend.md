@@ -132,6 +132,47 @@ Each teammate needs their own `.env.local` with the same two values.
 **Never** put the `secret` / `service_role` key, the Google client secret, or the database
 password in the code, in `.env.local`, in GitHub variables or in the group chat.
 
+## Giving teammates access to the database
+
+The two keys from step 6 only let the app run. To look at tables or change the database, a
+teammate needs their own access to the Supabase dashboard.
+
+1. The teammate creates a free account on supabase.com (signing up with GitHub works).
+2. The owner opens the organization in the dashboard, goes to **Team > Invite member**, enters the
+   teammate's email address and picks the **Developer** role. Developer can see and change the
+   data and run SQL, but cannot delete the project, invite people or touch billing.
+3. The teammate accepts the invitation from the email. The project now shows up in their own
+   dashboard.
+
+Never share the owner's login or the database password instead. With separate accounts, access
+can be taken away from one person without changing anything for the others.
+
+What a teammate uses in the dashboard:
+
+- **Table Editor:** look at the rows in a table, like a spreadsheet.
+- **SQL Editor:** run a migration file, or a query to check something.
+- **Authentication > Users:** see who signed up, and delete test accounts.
+
+### Changing the database
+
+There is one database. Your laptop and the live site both use it, so a change you make is live
+for everyone straight away.
+
+1. Write the change as a new numbered file in `supabase/migrations/` (the next number after the
+   last one), with RLS and a policy if it is a new table.
+2. Open a pull request and have a teammate review it, like any other change.
+3. After it is merged, paste the file into **SQL Editor** and click **Run**. Tell the group chat
+   that you ran it, so nobody runs it twice.
+
+Editing a table by hand in the Table Editor is fine for test rows. It is not fine for columns,
+tables or policies: those go through a migration file.
+
+### This is real personal data
+
+The dashboard shows what the app itself cannot see: the email addresses, and for Google sign-ins
+the full names, of everyone who signed up. Look only at what you need, do not export or screenshot
+it, and do not paste rows into the group chat.
+
 ## Limits to know about
 
 - **Sign-in inside the installed app:** on iPhone, the Google page opens from the
