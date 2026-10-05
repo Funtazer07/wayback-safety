@@ -18,6 +18,10 @@ beforeEach(() => {
   auth.signInWithPassword.mockResolvedValue({ error: null })
 })
 
+function renderSignUp() {
+  render(<AuthScreen isNewUser onBack={() => {}} />)
+}
+
 function fillIn(label: string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
 }
@@ -31,11 +35,11 @@ function click(name: string) {
 }
 
 test('sign-up sends a login email and records the age confirmation', async () => {
-  render(<AuthScreen />)
+  renderSignUp()
 
   fillIn('Email', 'sanne@example.com')
   confirmAge()
-  click('Send me a link')
+  click('Send me a sign-in link')
 
   expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument()
   expect(auth.signInWithOtp).toHaveBeenCalledWith({
@@ -45,9 +49,9 @@ test('sign-up sends a login email and records the age confirmation', async () =>
 })
 
 test('sign-up with a password creates an account', async () => {
-  render(<AuthScreen />)
+  renderSignUp()
 
-  click('Use a password')
+  click('Use a password instead')
   fillIn('Email', 'sanne@example.com')
   fillIn('Password', 'long-enough-password')
   confirmAge()
@@ -61,40 +65,40 @@ test('sign-up with a password creates an account', async () => {
 })
 
 test('sign-up is blocked until the age is confirmed', () => {
-  render(<AuthScreen />)
+  renderSignUp()
 
   fillIn('Email', 'sanne@example.com')
-  click('Send me a link')
+  click('Send me a sign-in link')
 
   expect(auth.signInWithOtp).not.toHaveBeenCalled()
 })
 
 test('logging in does not ask for the age again and does not create accounts', async () => {
-  render(<AuthScreen />)
+  const onSuccess = vi.fn()
+  render(<AuthScreen isNewUser={false} onBack={() => {}} onSuccess={onSuccess} />)
 
-  click('I have an account')
   expect(screen.queryByLabelText('I am 16 or older')).not.toBeInTheDocument()
 
   fillIn('Email', 'sanne@example.com')
-  click('Send me a link')
+  click('Send me a sign-in link')
 
-  await vi.waitFor(() =>
-    expect(auth.signInWithOtp).toHaveBeenCalledWith({
-      email: 'sanne@example.com',
-      options: expect.objectContaining({ shouldCreateUser: false, data: undefined }),
-    }),
-  )
+  await vi.waitFor(() => expect(onSuccess).toHaveBeenCalled())
+  expect(auth.signInWithOtp).toHaveBeenCalledWith({
+    email: 'sanne@example.com',
+    options: expect.objectContaining({ shouldCreateUser: false, data: undefined }),
+  })
 })
 
 test('shows the error from the backend', async () => {
   auth.signInWithPassword.mockResolvedValue({ error: new Error('Invalid login credentials') })
-  render(<AuthScreen />)
+  const onSuccess = vi.fn()
+  render(<AuthScreen isNewUser={false} onBack={() => {}} onSuccess={onSuccess} />)
 
-  click('I have an account')
-  click('Use a password')
+  click('Use a password instead')
   fillIn('Email', 'sanne@example.com')
   fillIn('Password', 'wrong-password')
   click('Log in')
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Invalid login credentials')
+  expect(onSuccess).not.toHaveBeenCalled()
 })
