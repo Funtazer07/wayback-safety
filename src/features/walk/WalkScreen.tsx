@@ -12,16 +12,24 @@ type WalkScreenProps = {
 function WalkScreen({ walk }: WalkScreenProps) {
   const now = useNow()
   const isLocationOff = useLocationUpdates(walk.id)
+  const isTimeUp = now.getTime() >= walk.deadline.getTime()
 
   return (
     <main className="screen">
       <p>Walking to {walk.destinationLabel}</p>
-      <div>
-        <p className="walk-time">
-          <span className="walk-time-number">{minutesUntil(walk.deadline, now)}</span> min left
-        </p>
-        <p>Home by {formatClock(walk.deadline)}</p>
-      </div>
+      {isTimeUp ? (
+        <div>
+          <p className="walk-time walk-time-up">Time is up</p>
+          <p>You planned to be home by {formatClock(walk.deadline)}.</p>
+        </div>
+      ) : (
+        <div>
+          <p className="walk-time">
+            <span className="walk-time-number">{minutesUntil(walk.deadline, now)}</span> min left
+          </p>
+          <p>Home by {formatClock(walk.deadline)}</p>
+        </div>
+      )}
 
       <p className="walk-card">
         {isLocationOff

@@ -63,6 +63,11 @@ Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation` and `fet
 The screens are in the same folder: `StartWalkScreen` (destination and timer) and `WalkScreen`
 (time left). While the walk screen is open, the app sends the location once a minute.
 
+A locked phone pauses the page, so no location is sent and the countdown on screen stops moving.
+The deadline itself is not affected. When the phone is unlocked the app reads the clock again and
+sends a fresh location straight away (SCRUM-45). After the deadline the walk screen says "Time is
+up" instead of "0 min left".
+
 The destination is only a name for now ("Home" or a typed address). The app cannot look up where
 an address is yet, so the destination's place on the map stays empty and the app cannot estimate
 the walking time. The user sets the timer.

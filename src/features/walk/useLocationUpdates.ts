@@ -4,8 +4,8 @@ import { updateWalkLocation } from './walk.ts'
 const ONE_MINUTE = 60_000
 
 /**
- * Sends the phone's location to the server now and then every minute, for as long as the screen
- * using it is open. Returns true when the location cannot be read, for example because the user
+ * Sends the phone's location to the server now, then every minute, and again when the phone is
+ * unlocked, for as long as the screen using it is open. Returns true when the location cannot be read, for example because the user
  * said no to the permission question.
  */
 export function useLocationUpdates(walkId: string): boolean {
@@ -27,9 +27,19 @@ export function useLocationUpdates(walkId: string): boolean {
       )
     }
 
+    // A locked phone pauses the timer below, so the saved location gets old. Send a fresh one as
+    // soon as the app is back on screen instead of waiting for the next minute (SCRUM-45).
+    function sendWhenBackOnScreen() {
+      if (document.visibilityState === 'visible') sendLocation()
+    }
+
     sendLocation()
     const timer = setInterval(sendLocation, ONE_MINUTE)
-    return () => clearInterval(timer)
+    document.addEventListener('visibilitychange', sendWhenBackOnScreen)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', sendWhenBackOnScreen)
+    }
   }, [walkId])
 
   return isLocationOff

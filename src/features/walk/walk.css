@@ -60,6 +60,13 @@
   font-weight: 600;
 }
 
+/* Smaller than the number, so the three words fit on one line on a narrow phone. */
+.walk-time-up {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
 .walk-time-number {
   display: block;
   font-size: 5rem;
