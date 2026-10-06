@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { logOut } from '../auth/auth.ts'
+import CityMap from '../map/CityMap.tsx'
 import { isInstalled } from './install.ts'
 import InstallSheet from './InstallSheet.tsx'
 import './home.css'
@@ -28,6 +29,8 @@ function Home({ displayName, onStartWalk }: HomeProps) {
           </button>
         </div>
       )}
+
+      <CityMap />
 
       <div className="screen-actions">
         <button type="button" className="button-primary" onClick={onStartWalk}>

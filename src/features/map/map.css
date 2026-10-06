@@ -1,0 +1,68 @@
+.map-view {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 22rem;
+  /* Leaflet gives its layers high z-index values. Keep them inside the map, under the sheets. */
+  isolation: isolate;
+}
+
+.map-canvas {
+  flex: 1;
+  border-radius: 0.75rem;
+  /* Stops the phone's own long-press menu (copy, save image) from opening over the map. */
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.map-locate {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 2.25rem;
+  z-index: 1000;
+  width: auto;
+  color: Canvas;
+  background: CanvasText;
+  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 30%);
+}
+
+/* Floats over the map. Showing or hiding it must not change the map's size: a resize makes Leaflet
+   load the lamps again, which changes the status again, over and over. */
+.map-status {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  left: 3.75rem;
+  z-index: 1000;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: Canvas;
+  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 30%);
+}
+
+.map-status:empty {
+  display: none;
+}
+
+.map-legend {
+  display: flex;
+  font-size: 0.8125rem;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.75;
+}
+
+.map-legend-lamp {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1px solid #0f172a;
+  border-radius: 50%;
+  background: #2b8cbe;
+}
+
+.leaflet-popup-content p {
+  margin: 0.25rem 0 0;
+}
