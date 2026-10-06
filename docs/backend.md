@@ -33,12 +33,42 @@ Database changes live in `supabase/migrations/`, one numbered file per change. N
 database by hand in the dashboard without adding a file here, or the team loses track of what the
 database looks like.
 
-| Table      | What it holds                                                            |
-| ---------- | ------------------------------------------------------------------------ |
-| `profiles` | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name` |
+| Table      | What it holds                                                                         |
+| ---------- | ------------------------------------------------------------------------------------- |
+| `profiles` | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
+| `walks`    | One row per walk home: destination, start time, deadline, status, last known location |
 
-Supabase keeps the login details in its own `auth.users` table. New tables (walks, contacts,
-reports) reference `profiles.id`.
+Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
+reference `profiles.id`.
+
+### Walks and the timer
+
+The timer lives in the database, not on the phone (SCRUM-43). When a walk starts, the app sends
+how many minutes it may take and the database stores the deadline using its own clock. The phone
+only shows a countdown to that deadline. Locking the phone or closing the app changes nothing: the
+deadline is still there when the app comes back.
+
+The app cannot write to `walks` directly. It calls two database functions:
+
+| Function               | What it does                                                             |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `start_walk`           | Creates the walk with deadline = now + minutes (1 to 180). One at a time |
+| `update_walk_location` | Replaces the last known location of a walk that is active or overdue     |
+
+A walk has a status: `active` (on the way), `safe` (checked in) or `overdue` (deadline passed, alert
+sent). A walk is late when it is still `active` after its deadline. Nothing sets `safe` or `overdue`
+yet; that belongs to the check-in and alert stories.
+
+Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation` and `fetchActiveWalk`.
+The screens are in the same folder: `StartWalkScreen` (destination and timer) and `WalkScreen`
+(time left). While the walk screen is open, the app sends the location once a minute.
+
+The destination is only a name for now ("Home" or a typed address). The app cannot look up where
+an address is yet, so the destination's place on the map stays empty and the app cannot estimate
+the walking time. The user sets the timer.
+
+Assumption: the 180-minute maximum is our own guess at the longest walk home. Change it in a new
+migration if the timer screen needs more.
 
 ### Row level security
 
@@ -59,6 +89,12 @@ Written down here because the app handles location and personal data.
   does not copy it into our own tables. The privacy statement must mention this.
 - **Age:** the user confirms being 16 or older, and the time of that confirmation is stored. This
   is the user's own statement; the age is not verified.
+- **Location:** a walk stores the destination and one last known location. Each update
+  overwrites the previous one, so there is no trail of where someone walked. Only the user can
+  read their own walks.
+- **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
+  destination and last location stay until the account is deleted. Decide this before real users
+  sign up.
 - **Region:** the Supabase project must be in an EU region, so the data stays in the EU.
 - **Not built yet:** deleting an account from inside the app, and a privacy statement. Both are
   needed before real users sign up. Until then an account can be deleted in the Supabase dashboard

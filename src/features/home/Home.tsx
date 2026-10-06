@@ -6,10 +6,11 @@ import './home.css'
 
 type HomeProps = {
   displayName: string
+  onStartWalk: () => void
 }
 
 /** Screen 3 of the onboarding v2 wireframe: where the onboarding ends. */
-function Home({ displayName }: HomeProps) {
+function Home({ displayName, onStartWalk }: HomeProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   return (
@@ -29,11 +30,9 @@ function Home({ displayName }: HomeProps) {
       )}
 
       <div className="screen-actions">
-        {/* Starting a walk is SCRUM-11. Until it is built the button cannot be used. */}
-        <button type="button" className="button-primary" disabled>
+        <button type="button" className="button-primary" onClick={onStartWalk}>
           Start walk
         </button>
-        <p className="home-small">Starting a walk is not built yet.</p>
         {/* Not in the wireframe: without it there is no way to switch accounts while testing. */}
         <button type="button" className="button-link" onClick={() => logOut()}>
           Log out

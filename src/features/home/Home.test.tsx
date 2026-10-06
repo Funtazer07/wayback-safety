@@ -16,7 +16,7 @@ test('the banner opens the install steps for an iPhone', () => {
   vi.stubGlobal('navigator', {
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
   })
-  render(<Home displayName="Sam" />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} />)
 
   click('Show me how')
 
@@ -29,7 +29,7 @@ test('the banner opens the install steps for an iPhone', () => {
 
 test('other phones get the browser menu steps', () => {
   vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)' })
-  render(<Home displayName="Sam" />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} />)
 
   click('Show me how')
 
@@ -37,7 +37,7 @@ test('other phones get the browser menu steps', () => {
 })
 
 test('"Got it" closes the install steps', () => {
-  render(<Home displayName="Sam" />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} />)
 
   click('Show me how')
   click('Got it')
@@ -48,7 +48,7 @@ test('"Got it" closes the install steps', () => {
 test('the banner is hidden when the app is opened from the home screen', () => {
   vi.stubGlobal('navigator', { userAgent: 'iPhone', standalone: true })
 
-  render(<Home displayName="Sam" />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} />)
 
   expect(screen.queryByRole('button', { name: 'Show me how' })).not.toBeInTheDocument()
 })
