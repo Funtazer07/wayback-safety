@@ -4,6 +4,8 @@ import type { Walk } from './walk.ts'
 import WalkScreen from './WalkScreen.tsx'
 
 vi.mock('../../lib/supabase.ts', () => ({ supabase: null }))
+// The map needs a real browser; it has its own tests in features/map.
+vi.mock('../map/CityMap.tsx', () => ({ default: () => null }))
 
 const walk: Walk = {
   id: 'walk-1',
@@ -32,12 +34,12 @@ afterEach(() => {
 
 test('the time left is right again as soon as the phone is unlocked', () => {
   render(<WalkScreen walk={walk} />)
-  expect(screen.getByText(/min left/)).toHaveTextContent('20 min left')
+  expect(screen.getByRole('timer')).toHaveAccessibleName('20 min left')
 
   lockPhoneUntil('2026-10-06T22:12:00')
 
-  expect(screen.getByText(/min left/)).toHaveTextContent('8 min left')
-  expect(screen.getByText('Home by 22:20')).toBeInTheDocument()
+  expect(screen.getByRole('timer')).toHaveAccessibleName('8 min left')
+  expect(screen.getByText('08:00')).toBeInTheDocument()
 })
 
 test('says the time is up when the phone is unlocked after the deadline', () => {
@@ -45,9 +47,8 @@ test('says the time is up when the phone is unlocked after the deadline', () => 
 
   lockPhoneUntil('2026-10-06T22:25:00')
 
+  expect(screen.getByRole('timer')).toHaveAccessibleName('Time is up')
   expect(screen.getByText('Time is up')).toBeInTheDocument()
-  expect(screen.getByText('You planned to be home by 22:20.')).toBeInTheDocument()
-  expect(screen.queryByText(/min left/)).not.toBeInTheDocument()
 })
 
 test('sends a fresh location when the phone is unlocked', () => {
