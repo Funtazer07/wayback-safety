@@ -3,6 +3,8 @@ import { afterEach, expect, test, vi } from 'vitest'
 import Home from './Home.tsx'
 
 vi.mock('../../lib/supabase.ts', () => ({ supabase: { auth: {} } }))
+// The map needs a real browser; it has its own tests in features/map.
+vi.mock('../map/CityMap.tsx', () => ({ default: () => null }))
 
 function click(name: string) {
   fireEvent.click(screen.getByRole('button', { name }))

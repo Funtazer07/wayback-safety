@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import App from './App.tsx'
 import { SessionContext } from './features/auth/SessionContext.ts'
@@ -26,6 +26,8 @@ function walkEndingIn(minutes: number) {
 vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
+// The map needs a real browser; it has its own tests in features/map.
+vi.mock('./features/map/CityMap.tsx', () => ({ default: () => null }))
 
 const loggedIn = { user: { id: 'user-1' } } as Session
 
@@ -129,8 +131,10 @@ test('a user starts a walk home with the timer they picked', async () => {
   click('5 minutes more')
   click('Start walk')
 
-  expect(await screen.findByText('Walking to Home')).toBeInTheDocument()
-  expect(screen.getByText(/min left/)).toHaveTextContent('25 min left')
+  const walkPanel = await screen.findByRole('region', { name: 'Your walk' })
+  expect(within(walkPanel).getByText('Walking to')).toBeInTheDocument()
+  expect(within(walkPanel).getByText('Home')).toBeInTheDocument()
+  expect(screen.getByRole('timer')).toHaveAccessibleName('25 min left')
   expect(walks.startWalk).toHaveBeenCalledWith({ destinationLabel: 'Home', minutes: 25 })
 })
 
@@ -174,6 +178,6 @@ test('a walk that is still running is shown again when the app is reopened', asy
 
   renderApp(loggedIn)
 
-  expect(await screen.findByText(/min left/)).toHaveTextContent('14 min left')
+  expect(await screen.findByRole('timer')).toHaveAccessibleName('14 min left')
   expect(screen.queryByText('Hi Sam')).not.toBeInTheDocument()
 })
