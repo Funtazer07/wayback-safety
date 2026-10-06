@@ -6,10 +6,26 @@ import { SessionContext } from './features/auth/SessionContext.ts'
 
 const auth = vi.hoisted(() => ({ signInWithOAuth: vi.fn(), signOut: vi.fn() }))
 const profile = vi.hoisted(() => ({ fetchProfile: vi.fn(), completeProfile: vi.fn() }))
+const walks = vi.hoisted(() => ({
+  fetchActiveWalk: vi.fn(),
+  startWalk: vi.fn(),
+  updateWalkLocation: vi.fn(),
+}))
+
+function walkEndingIn(minutes: number) {
+  return {
+    id: 'walk-1',
+    destinationLabel: 'Home',
+    startedAt: new Date(),
+    deadline: new Date(Date.now() + minutes * 60_000),
+    status: 'active',
+  }
+}
 
 // Stand-ins for the real backend, so the tests never talk to Supabase.
 vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
+vi.mock('./features/walk/walk.ts', () => walks)
 
 const loggedIn = { user: { id: 'user-1' } } as Session
 
@@ -30,6 +46,7 @@ beforeEach(() => {
   auth.signInWithOAuth.mockResolvedValue({ error: null })
   profile.fetchProfile.mockResolvedValue({ displayName: null })
   profile.completeProfile.mockResolvedValue(undefined)
+  walks.fetchActiveWalk.mockResolvedValue(null)
 })
 
 test('a new visitor can sign in with Google from the welcome screen', async () => {
@@ -99,4 +116,64 @@ test('shows a message when the profile cannot be loaded', async () => {
   renderApp(loggedIn)
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not load your profile.')
+})
+
+test('a user starts a walk home with the timer they picked', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockResolvedValue(walkEndingIn(25))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Start walk')
+  expect(screen.getByRole('heading', { name: 'Start a walk' })).toBeInTheDocument()
+  click('5 minutes more')
+  click('Start walk')
+
+  expect(await screen.findByText('Walking to Home')).toBeInTheDocument()
+  expect(screen.getByText(/min left/)).toHaveTextContent('25 min left')
+  expect(walks.startWalk).toHaveBeenCalledWith({ destinationLabel: 'Home', minutes: 25 })
+})
+
+test('a user can walk to a typed address instead of Home', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockResolvedValue(walkEndingIn(20))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Start walk')
+  click('Change')
+  fireEvent.change(screen.getByLabelText('Or type an address'), {
+    target: { value: 'Kruisstraat 12, Eindhoven' },
+  })
+  click('Use this place')
+  click('Start walk')
+
+  await vi.waitFor(() =>
+    expect(walks.startWalk).toHaveBeenCalledWith({
+      destinationLabel: 'Kruisstraat 12, Eindhoven',
+      minutes: 20,
+    }),
+  )
+})
+
+test('shows a message when the walk cannot be started', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockRejectedValue(new Error('network'))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Start walk')
+  click('Start walk')
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not start the walk.')
+})
+
+test('a walk that is still running is shown again when the app is reopened', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.fetchActiveWalk.mockResolvedValue(walkEndingIn(14))
+
+  renderApp(loggedIn)
+
+  expect(await screen.findByText(/min left/)).toHaveTextContent('14 min left')
+  expect(screen.queryByText('Hi Sam')).not.toBeInTheDocument()
 })

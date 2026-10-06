@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { logInWithPassword, signUpWithPassword } from './auth.ts'
+import { logInWithPassword, signInWithGoogle, signUpWithPassword } from './auth.ts'
 
 type EmailScreenProps = {
   onBack: () => void
@@ -32,6 +32,18 @@ function EmailScreen({ onBack }: EmailScreenProps) {
       setError(caught instanceof Error ? caught.message : 'Something went wrong. Try again.')
     }
     setIsBusy(false)
+  }
+
+  // For people who signed up with Google and ended up on this screen by mistake.
+  async function handleGoogle() {
+    setError(null)
+    setIsBusy(true)
+    try {
+      await signInWithGoogle()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Something went wrong. Try again.')
+      setIsBusy(false)
+    }
   }
 
   if (mustConfirmEmail) {
@@ -91,7 +103,10 @@ function EmailScreen({ onBack }: EmailScreenProps) {
           <button type="submit" className="button-primary" disabled={isBusy}>
             {isNewUser ? 'Create account' : 'Log in'}
           </button>
-          <button type="button" onClick={() => setIsNewUser(!isNewUser)}>
+          <button type="button" disabled={isBusy} onClick={handleGoogle}>
+            Continue with Google instead
+          </button>
+          <button type="button" className="button-link" onClick={() => setIsNewUser(!isNewUser)}>
             {isNewUser ? 'I already have an account' : 'Create a new account'}
           </button>
           <button type="button" className="button-link" onClick={onBack}>

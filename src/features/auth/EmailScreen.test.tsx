@@ -2,7 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import EmailScreen from './EmailScreen.tsx'
 
-const auth = vi.hoisted(() => ({ signUp: vi.fn(), signInWithPassword: vi.fn() }))
+const auth = vi.hoisted(() => ({
+  signUp: vi.fn(),
+  signInWithPassword: vi.fn(),
+  signInWithOAuth: vi.fn(),
+}))
 
 // A stand-in for the real backend, so the tests never talk to Supabase.
 vi.mock('../../lib/supabase.ts', () => ({ supabase: { auth } }))
@@ -11,6 +15,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   auth.signUp.mockResolvedValue({ data: { session: {} }, error: null })
   auth.signInWithPassword.mockResolvedValue({ error: null })
+  auth.signInWithOAuth.mockResolvedValue({ error: null })
 })
 
 function fillIn(label: string, value: string) {
@@ -61,6 +66,19 @@ test('someone with an account can log in', async () => {
     }),
   )
   expect(auth.signUp).not.toHaveBeenCalled()
+})
+
+test('someone who signed up with Google can still continue with Google from here', async () => {
+  render(<EmailScreen onBack={() => {}} />)
+
+  click('I already have an account')
+  click('Continue with Google instead')
+
+  await vi.waitFor(() =>
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'google' }),
+    ),
+  )
 })
 
 test('shows the error from the backend', async () => {

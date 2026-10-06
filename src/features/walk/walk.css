@@ -1,0 +1,68 @@
+.walk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.walk-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.walk-row .button-link {
+  width: auto;
+}
+
+.walk-small {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.walk-centered {
+  text-align: center;
+}
+
+.walk-step {
+  width: 3.25rem;
+  font-size: 1.5rem;
+}
+
+.walk-timer {
+  text-align: center;
+}
+
+.walk-timer strong {
+  font-size: 1.75rem;
+}
+
+.walk-place {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-color: transparent;
+  text-align: left;
+}
+
+.walk-place[aria-pressed='true'] {
+  border-color: currentColor;
+}
+
+.walk-time {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.walk-time-number {
+  display: block;
+  font-size: 5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
