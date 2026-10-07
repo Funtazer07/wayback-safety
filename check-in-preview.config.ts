@@ -14,7 +14,6 @@ export default defineConfig({
         find: './useLocationUpdates.ts',
         replacement: path('./src/features/walk/preview/PreviewLocation.ts'),
       },
-      { find: './useNow.ts', replacement: path('./src/features/walk/preview/PreviewClock.ts') },
       {
         find: '../map/CityMap.tsx',
         replacement: path('./src/features/walk/preview/PreviewCityMap.tsx'),

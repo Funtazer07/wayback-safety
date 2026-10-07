@@ -17,6 +17,8 @@ function App() {
     isLoading: isWalkLoading,
     error: walkError,
     start: startWalk,
+    checkIn,
+    finish: finishWalk,
   } = useWalk(session?.user.id)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
 
@@ -58,8 +60,9 @@ function App() {
   // A profile without a name means the user has not finished the onboarding yet.
   if (!profile.displayName) return <NameScreen onSave={saveName} />
 
-  // A walk that is running always wins, also after the app was closed and opened again.
-  if (walk) return <WalkScreen walk={walk} />
+  // A walk that is running always wins, also after the app was closed and opened again. A walk
+  // that was just checked in stays on screen until the user closes the confirmation.
+  if (walk) return <WalkScreen walk={walk} onCheckIn={checkIn} onDone={finishWalk} />
 
   if (isStartingWalk) {
     return <StartWalkScreen onStart={startWalk} onBack={() => setIsStartingWalk(false)} />

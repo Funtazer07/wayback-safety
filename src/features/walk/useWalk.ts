@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchActiveWalk, startWalk, type NewWalk, type Walk } from './walk.ts'
+import { checkInWalk, fetchActiveWalk, startWalk, type NewWalk, type Walk } from './walk.ts'
 
 type WalkState = {
   walk: Walk | null
@@ -36,5 +36,20 @@ export function useWalk(userId: string | undefined) {
     setState({ walk, isLoading: false, error: null })
   }
 
-  return { ...state, start }
+  /**
+   * Tells the server the user is home. The walk stays here with the status 'safe', so the screen
+   * can show the confirmation, until `finish` is called.
+   */
+  async function checkIn() {
+    if (!state.walk) return
+    const walk = await checkInWalk(state.walk.id)
+    setState({ walk, isLoading: false, error: null })
+  }
+
+  /** Forgets the walk that was checked in, so the app goes back to Home. */
+  function finish() {
+    setState({ walk: null, isLoading: false, error: null })
+  }
+
+  return { ...state, start, checkIn, finish }
 }

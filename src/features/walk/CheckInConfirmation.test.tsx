@@ -1,46 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterAll, beforeAll, expect, test, vi } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import CheckInConfirmation from './CheckInConfirmation.tsx'
 
-const originalShowModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
-const originalClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close')
+// The fake for the native modal dialog, which jsdom lacks, is in src/setupTests.ts.
 
-// jsdom does not implement native modal dialogs. The browser manages their focus trap.
-beforeAll(() => {
-  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
-    configurable: true,
-    value: function (this: HTMLDialogElement) {
-      this.open = true
-      this.querySelector<HTMLButtonElement>('button')?.focus()
-    },
-  })
-  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
-    configurable: true,
-    value: function (this: HTMLDialogElement) {
-      this.open = false
-    },
-  })
-})
-
-afterAll(() => {
-  if (originalShowModal) {
-    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', originalShowModal)
-  } else {
-    Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal')
-  }
-  if (originalClose) {
-    Object.defineProperty(HTMLDialogElement.prototype, 'close', originalClose)
-  } else {
-    Reflect.deleteProperty(HTMLDialogElement.prototype, 'close')
-  }
-})
-
-test('shows the arrival confirmation and clearly labels the SMS as a demo', () => {
+test('says the walk has ended without claiming that a message was sent', () => {
   render(<CheckInConfirmation isOpen onClose={vi.fn()} />)
 
   expect(screen.getByRole('dialog', { name: 'You arrived safely!' })).toBeVisible()
-  expect(screen.getByText('SMS sent to “Mum”.')).toBeVisible()
-  expect(screen.getByText('Demo only · No SMS was sent.')).toBeVisible()
+  expect(screen.getByText('Your walk has ended and the timer has stopped.')).toBeVisible()
+  expect(screen.getByText('The app no longer saves where you are.')).toBeVisible()
+  expect(screen.queryByText(/sent/i)).not.toBeInTheDocument()
 })
 
 test('keeps the confirmation hidden until the user checks in', () => {

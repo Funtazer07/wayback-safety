@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef } from 'react'
-import './checkInPreview.css'
+import './checkIn.css'
 
 type CheckInConfirmationProps = {
   isOpen: boolean
   onClose: () => void
 }
 
-/** SCRUM-47 design preview only. Real contact notifications belong to SCRUM-7. */
+/** The message after a check-in: the walk has ended. Closing it brings the user back to Home. */
 function CheckInConfirmation({ isOpen, onClose }: CheckInConfirmationProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -43,8 +43,10 @@ function CheckInConfirmation({ isOpen, onClose }: CheckInConfirmationProps) {
         You arrived safely!
       </h2>
       <div id={descriptionId} className="check-in-confirmation-description">
-        <p>SMS sent to “Mum”.</p>
-        <p className="check-in-confirmation-demo">Demo only · No SMS was sent.</p>
+        {/* The wireframe says "SMS sent to" a contact here. The app cannot send anything yet, so it
+            does not claim to. Telling the contacts is built in SCRUM-7. */}
+        <p>Your walk has ended and the timer has stopped.</p>
+        <p className="check-in-confirmation-note">The app no longer saves where you are.</p>
       </div>
       <div className="check-in-confirmation-actions">
         <button type="button" className="check-in-confirmation-ok" onClick={onClose}>

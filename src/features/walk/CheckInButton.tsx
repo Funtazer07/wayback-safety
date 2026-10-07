@@ -1,11 +1,11 @@
-import './checkInPreview.css'
+import './checkIn.css'
 
 type CheckInButtonProps = {
   onCheckIn: () => void
   disabled?: boolean
 }
 
-/** SCRUM-47: the check-in control, added beside the existing walk screen. */
+/** The "I'm home" button on the walk screen. One tap ends the walk (SCRUM-47, SCRUM-48). */
 function CheckInButton({ onCheckIn, disabled = false }: CheckInButtonProps) {
   return (
     <div className="check-in-actions">

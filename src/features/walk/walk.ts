@@ -19,7 +19,8 @@ export type NewWalk = {
   minutes: number
 }
 
-// A row of the walks table, as the database returns it. See supabase/migrations/0003_walks.sql.
+// A row of the walks table, as the database returns it. See supabase/migrations/0003_walks.sql
+// and 0004_check_in.sql. Only the columns the app uses are listed.
 type WalkRow = {
   id: string
   destination_label: string
@@ -69,6 +70,16 @@ export async function updateWalkLocation(
     lat: latitude,
     lng: longitude,
   })
+  if (error) throw error
+  return toWalk(data)
+}
+
+/**
+ * Tells the server the user is home. The server sets the walk to 'safe', which stops the timer,
+ * and erases the last known location. Fails when the walk has already ended.
+ */
+export async function checkInWalk(walkId: string): Promise<Walk> {
+  const { data, error } = await client().rpc('check_in', { walk_id: walkId })
   if (error) throw error
   return toWalk(data)
 }

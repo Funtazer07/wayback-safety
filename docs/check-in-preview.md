@@ -1,31 +1,32 @@
-# SCRUM-47: I'm home visual prototype
+# Check-in preview: the walk screen without a backend
 
-This preview adds the button and confirmation from the user's Figma screenshot to the existing
-walk screen. The map, round timer, walk panel, app and backend files are unchanged.
+The "I'm home" button and the "You arrived safely!" message are part of the real app (SCRUM-47
+for the design, SCRUM-48 for the build). How the check-in works is described in
+[backend.md](backend.md#checking-in).
 
-Run the separate preview:
+This preview shows the same walk screen with a 20-minute example walk, without logging in and
+without Supabase. Use it to show the check-in in a user test (SCRUM-49).
+
+Run it:
 
 ```
 npx vite --config check-in-preview.config.ts --host 0.0.0.0 --port 5180
 ```
 
-Open the printed Network address with `/check-in-preview.html` on a phone on the same Wi-Fi,
-or use the separately hosted preview link. The normal `npm run dev` still opens the original app.
+Open the printed Network address with `/check-in-preview.html` on a phone on the same Wi-Fi. The
+normal `npm run dev` still opens the real app.
 
-This is a visual prototype, not a completed safety feature. It uses a 20-minute example walk.
-Tapping I'm home freezes only the demo clock and opens a confirmation. Its SMS message is explicitly
-labelled as simulated. Nothing is written to Supabase and no SMS is sent. The optional My location
-map control only draws a location in the existing map; no location is shared with contacts or stored.
-The normal app does not acquire a pretend check-in button.
+What is different from the real app:
 
-The preview config swaps the location hook, clock hook and map wrapper only in this separate build.
-The existing map is used without an automatic location watch. All additions are isolated files.
-Real server check-in and contact notifications need their separate SCRUM implementation.
+- Nothing is written to Supabase. Tapping "I'm home" only changes the example walk on the screen.
+- No location is read automatically or sent anywhere, so the screen says that location is off.
+  The "My location" control on the map only draws a location on the map.
+- Closing the message starts a new example walk, so the demo can be shown again.
+
+The preview config swaps the location hook and the map wrapper, only in this separate build.
 
 Build the preview:
 
 ```
 npx vite build --config check-in-preview.config.ts
 ```
-
-Requirements and layout follow the user's story and screenshot. Jira comments were unavailable.
