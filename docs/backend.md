@@ -37,6 +37,7 @@ database looks like.
 | ---------- | ------------------------------------------------------------------------------------- |
 | `profiles` | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
 | `walks`    | One row per walk home: destination, start time, deadline, status, last known location |
+|            | and, once the user is home, the time of the check-in                                  |
 
 Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
 reference `profiles.id`.
@@ -48,20 +49,39 @@ how many minutes it may take and the database stores the deadline using its own 
 only shows a countdown to that deadline. Locking the phone or closing the app changes nothing: the
 deadline is still there when the app comes back.
 
-The app cannot write to `walks` directly. It calls two database functions:
+The app cannot write to `walks` directly. It calls three database functions:
 
 | Function               | What it does                                                             |
 | ---------------------- | ------------------------------------------------------------------------ |
 | `start_walk`           | Creates the walk with deadline = now + minutes (1 to 180). One at a time |
 | `update_walk_location` | Replaces the last known location of a walk that is active or overdue     |
+| `check_in`             | Ends the walk as `safe`, saves the time and erases the last location     |
 
 A walk has a status: `active` (on the way), `safe` (checked in) or `overdue` (deadline passed, alert
-sent). A walk is late when it is still `active` after its deadline. Nothing sets `safe` or `overdue`
-yet; that belongs to the check-in and alert stories.
+sent). A walk is late when it is still `active` after its deadline. Nothing sets `overdue` yet;
+that belongs to the alert story.
 
-Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation` and `fetchActiveWalk`.
-The screens are in the same folder: `StartWalkScreen` (destination and timer) and `WalkScreen`
-(time left). While the walk screen is open, the app sends the location once a minute.
+Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation`, `checkInWalk` and
+`fetchActiveWalk`. The screens are in the same folder: `StartWalkScreen` (destination and timer)
+and `WalkScreen` (time left and the "I'm home" button). While the walk screen is open, the app
+sends the location once a minute.
+
+### Checking in
+
+The "I'm home" button on the walk screen calls `check_in` (SCRUM-48). In one step the database:
+
+- sets the status to `safe`. That stops the timer: only an `active` walk can become late.
+- saves the time in `checked_in_at`, using its own clock. SCRUM-7 (Sprint 2) reads this to tell
+  the contacts. Nothing is sent to anyone yet, and the app does not say that it is.
+- erases the last known location. From then on the walk refuses new locations, and the app stops
+  reading the phone's location.
+
+The app then shows "You arrived safely!". Closing that message brings the user back to Home. If
+the server cannot be reached, the walk keeps running and the user can tap the button again.
+
+Assumptions: a walk that is already `overdue` can still be checked in, so someone who is late can
+say they are home after all. And the last location is erased at the check-in instead of kept for a
+while. Both are in `0004_check_in.sql` and are ours to change when SCRUM-7 is built.
 
 A locked phone pauses the page, so no location is sent and the countdown on screen stops moving.
 The deadline itself is not affected. When the phone is unlocked the app reads the clock again and
@@ -97,9 +117,11 @@ Written down here because the app handles location and personal data.
 - **Location:** a walk stores the destination and one last known location. Each update
   overwrites the previous one, so there is no trail of where someone walked. Only the user can
   read their own walks.
+- **Location after the walk:** checking in erases the last known location and stops the app from
+  reading the phone's location. A walk that is never checked in keeps its last location.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
-  destination and last location stay until the account is deleted. Decide this before real users
-  sign up.
+  destination, the start time and the check-in time stay until the account is deleted, and so
+  does the last location of a walk without a check-in. Decide this before real users sign up.
 - **Region:** the Supabase project must be in an EU region, so the data stays in the EU.
 - **Not built yet:** deleting an account from inside the app, and a privacy statement. Both are
   needed before real users sign up. Until then an account can be deleted in the Supabase dashboard
@@ -231,5 +253,6 @@ it, and do not paste rows into the group chat.
 | Google says "Access blocked"                   | The consent screen is in Testing mode and this account is not a test user |
 | Signing in on your laptop opens the live site  | The local address is not in the Redirect URLs (step 3)                    |
 | "Could not load your profile"                  | The migrations were not all run (step 2), or there is no connection       |
+| "Could not check you in" on every tap          | `0004_check_in.sql` was not run yet (step 2), or there is no connection   |
 | "Check your email" after signing up with email | "Confirm email" is still on (step 5)                                      |
 | A query returns no rows but data exists        | The table's RLS policy does not allow it                                  |

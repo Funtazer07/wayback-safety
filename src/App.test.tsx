@@ -7,6 +7,7 @@ import { SessionContext } from './features/auth/SessionContext.ts'
 const auth = vi.hoisted(() => ({ signInWithOAuth: vi.fn(), signOut: vi.fn() }))
 const profile = vi.hoisted(() => ({ fetchProfile: vi.fn(), completeProfile: vi.fn() }))
 const walks = vi.hoisted(() => ({
+  checkInWalk: vi.fn(),
   fetchActiveWalk: vi.fn(),
   startWalk: vi.fn(),
   updateWalkLocation: vi.fn(),
@@ -180,4 +181,23 @@ test('a walk that is still running is shown again when the app is reopened', asy
 
   expect(await screen.findByRole('timer')).toHaveAccessibleName('14 min left')
   expect(screen.queryByText('Hi Sam')).not.toBeInTheDocument()
+})
+
+test('a user checks in with "I’m home" and is back on Home after the confirmation', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  const walk = walkEndingIn(14)
+  walks.fetchActiveWalk.mockResolvedValue(walk)
+  walks.checkInWalk.mockResolvedValue({ ...walk, status: 'safe' })
+  renderApp(loggedIn)
+  await screen.findByRole('timer')
+
+  click('I’m home')
+
+  expect(await screen.findByRole('dialog', { name: 'You arrived safely!' })).toBeVisible()
+  expect(walks.checkInWalk).toHaveBeenCalledWith('walk-1')
+
+  click('OK')
+
+  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
+  expect(screen.queryByRole('timer')).not.toBeInTheDocument()
 })

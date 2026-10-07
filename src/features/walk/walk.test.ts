@@ -1,5 +1,5 @@
 import { beforeEach, expect, test, vi } from 'vitest'
-import { fetchActiveWalk, startWalk, updateWalkLocation } from './walk.ts'
+import { checkInWalk, fetchActiveWalk, startWalk, updateWalkLocation } from './walk.ts'
 
 const { rpc, maybeSingle } = vi.hoisted(() => ({ rpc: vi.fn(), maybeSingle: vi.fn() }))
 
@@ -68,6 +68,22 @@ test('a location update is sent for the given walk and returns its current statu
     lng: 5.4752,
   })
   expect(walk.status).toBe('overdue')
+})
+
+test('checking in ends the given walk and returns it as safe', async () => {
+  rpc.mockResolvedValue({ data: { ...row, status: 'safe' }, error: null })
+
+  const walk = await checkInWalk('walk-1')
+
+  expect(rpc).toHaveBeenCalledWith('check_in', { walk_id: 'walk-1' })
+  expect(walk.status).toBe('safe')
+})
+
+test('checking in fails when the server refuses it', async () => {
+  const error = new Error('No walk in progress with this id')
+  rpc.mockResolvedValue({ data: null, error })
+
+  await expect(checkInWalk('walk-1')).rejects.toBe(error)
 })
 
 test('the active walk is returned when there is one', async () => {
