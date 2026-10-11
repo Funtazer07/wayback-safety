@@ -39,8 +39,14 @@
   text-align: center;
 }
 
-.walk-timer strong {
+.walk-timer-minutes {
   font-size: 1.75rem;
+}
+
+/* Normal size and full contrast, with the time in bold, like "Home by" on the walk screen. As
+   small grey text it was easy to miss. */
+.walk-home-by {
+  display: block;
 }
 
 .walk-place {

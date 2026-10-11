@@ -10,6 +10,18 @@ export function secondsUntil(deadline: Date, now: Date): number {
   return Math.max(0, Math.ceil(milliseconds / 1000))
 }
 
+/**
+ * A length of time in words: "35 min", "1 h" or "1 h 35 min". From an hour up, hours and minutes
+ * are quicker to read than "95 min".
+ */
+export function formatDuration(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours === 0) return `${minutes} min`
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`
+}
+
 /** A countdown as on a stopwatch: "12:05", or "1:02:05" from an hour up. */
 export function formatCountdown(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600)
