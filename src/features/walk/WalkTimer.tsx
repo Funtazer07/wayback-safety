@@ -1,5 +1,6 @@
 import {
   formatCountdown,
+  formatDuration,
   minutesUntil,
   secondsUntil,
   timeLeftShare,
@@ -31,7 +32,7 @@ function WalkTimer({ startedAt, deadline, now }: WalkTimerProps) {
       className={`walk-timer-ring is-${phase}`}
       role="timer"
       // Minutes, not seconds: a screen reader should not be told something new every second.
-      aria-label={phase === 'time-up' ? 'Time is up' : `${minutes} min left`}
+      aria-label={phase === 'time-up' ? 'Time is up' : `${formatDuration(minutes)} left`}
     >
       <svg viewBox="0 0 120 120" aria-hidden="true">
         <circle className="walk-timer-track" cx="60" cy="60" r="54" />

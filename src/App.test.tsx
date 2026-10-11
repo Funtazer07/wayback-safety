@@ -139,6 +139,18 @@ test('a user starts a walk home with the timer they picked', async () => {
   expect(walks.startWalk).toHaveBeenCalledWith({ destinationLabel: 'Home', minutes: 25 })
 })
 
+test('a timer from an hour up is shown in hours and minutes', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Start walk')
+  // From the default 20 minutes to 65.
+  for (let tap = 0; tap < 9; tap++) click('5 minutes more')
+
+  expect(screen.getByText('1 h 5 min')).toBeInTheDocument()
+})
+
 test('a user can walk to a typed address instead of Home', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(20))

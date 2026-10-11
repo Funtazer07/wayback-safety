@@ -3,6 +3,7 @@ import {
   addMinutes,
   formatClock,
   formatCountdown,
+  formatDuration,
   minutesUntil,
   secondsUntil,
   timeLeftShare,
@@ -56,4 +57,16 @@ test('warns in the last five minutes and when time is up', () => {
   expect(timerPhase(deadline, new Date('2026-10-06T22:14:59'))).toBe('on-time')
   expect(timerPhase(deadline, new Date('2026-10-06T22:15:00'))).toBe('almost-up')
   expect(timerPhase(deadline, new Date('2026-10-06T22:20:00'))).toBe('time-up')
+})
+
+test('shows a timer under an hour in minutes', () => {
+  expect(formatDuration(35)).toBe('35 min')
+})
+
+test('shows a timer from an hour up in hours and minutes', () => {
+  expect(formatDuration(95)).toBe('1 h 35 min')
+})
+
+test('leaves the minutes out on a whole hour', () => {
+  expect(formatDuration(120)).toBe('2 h')
 })

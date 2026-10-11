@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { HOME } from './destination.ts'
 import DestinationSheet from './DestinationSheet.tsx'
-import { addMinutes, formatClock } from './time.ts'
+import { addMinutes, formatClock, formatDuration } from './time.ts'
 import { useNow } from './useNow.ts'
 import type { NewWalk } from './walk.ts'
 import './walk.css'
@@ -70,8 +70,10 @@ function StartWalkScreen({ onStart, onBack }: StartWalkScreenProps) {
             −
           </button>
           <p className="walk-timer" aria-live="polite">
-            <strong>{minutes} min</strong>
-            <span className="walk-small">Home by {formatClock(addMinutes(now, minutes))}</span>
+            <strong className="walk-timer-minutes">{formatDuration(minutes)}</strong>
+            <span className="walk-home-by">
+              Home by <strong>{formatClock(addMinutes(now, minutes))}</strong>
+            </span>
           </p>
           <button
             type="button"
