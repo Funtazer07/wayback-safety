@@ -17,8 +17,10 @@ const lampExportUrl =
 const footRouter = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/'
 const bikeRouter = 'https://routing.openstreetmap.de/routed-bike/route/v1/bike/'
 
-// Assumption: a lamp lights the route when it stands within 25 m of it.
-const lampReach = 25
+// Assumption: a lamp lights the route when it stands within 5 m of it. A wider reach also
+// counted lamps on a busy road running next to the walking route. Tested with 3 m too: then
+// most lamps on normal streets drop out, because a route often follows the middle of the road.
+const lampReach = 5
 // Assumption: an average walking pace of 5 km/h, to give the cycle-network route a walking time.
 const walkingMetresPerSecond = 5000 / 3600
 const maxRoutes = 3
