@@ -17,6 +17,7 @@ export type NewWalk = {
   longitude?: number
   /** How long the walk may take. The server adds this to its own clock to get the deadline. */
   minutes: number
+  contactIds?: string[]
 }
 
 // A row of the walks table, as the database returns it. See supabase/migrations/0003_walks.sql
@@ -51,6 +52,7 @@ export async function startWalk(newWalk: NewWalk): Promise<Walk> {
     minutes: newWalk.minutes,
     lat: newWalk.latitude,
     lng: newWalk.longitude,
+    contact_ids: newWalk.contactIds,
   })
   if (error) throw error
   return toWalk(data)

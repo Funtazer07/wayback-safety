@@ -33,11 +33,14 @@ Database changes live in `supabase/migrations/`, one numbered file per change. N
 database by hand in the dashboard without adding a file here, or the team loses track of what the
 database looks like.
 
-| Table      | What it holds                                                                         |
-| ---------- | ------------------------------------------------------------------------------------- |
-| `profiles` | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
-| `walks`    | One row per walk home: destination, start time, deadline, status, last known location |
-|            | and, once the user is home, the time of the check-in                                  |
+| Table           | What it holds                                                                         |
+| --------------- | ------------------------------------------------------------------------------------- |
+| `profiles`      | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
+| `walks`         | One row per walk home: destination, start time, deadline, status, last known location |
+|                 | and, once the user is home, the time of the check-in                                  |
+| `contacts`      | One row per trusted contact or open invite: who invited, who accepted, the name the   |
+|                 | user gave them, status, and while open, a fingerprint of the invite link              |
+| `walk_contacts` | Which contacts follow which walk. Chosen when the walk starts                         |
 
 Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
 reference `profiles.id`.
@@ -54,6 +57,7 @@ The app cannot write to `walks` directly. It calls three database functions:
 | Function               | What it does                                                             |
 | ---------------------- | ------------------------------------------------------------------------ |
 | `start_walk`           | Creates the walk with deadline = now + minutes (1 to 180). One at a time |
+|                        | Also saves which contacts follow the walk (see Trusted contacts)         |
 | `update_walk_location` | Replaces the last known location of a walk that is active or overdue     |
 | `check_in`             | Ends the walk as `safe`, saves the time and erases the last location     |
 
@@ -95,6 +99,50 @@ the walking time. The user sets the timer.
 Assumption: the 180-minute maximum is our own guess at the longest walk home. Change it in a new
 migration if the timer screen needs more.
 
+### Trusted contacts
+
+A trusted contact is another WayBack user who looks out for the user (SCRUM-59). Decided on
+15 Oct: a contact needs their own account. Alerts go out by Web Push only (SCRUM-66), and a push
+notification can only reach someone who installed the app and signed in.
+
+How someone becomes a contact:
+
+1. The user gives the contact a name, for example "Mum", and gets an invite link. They send it
+   themselves, in WhatsApp or their own email. We send no email.
+2. The contact opens the link, signs in, sees who invited them and taps accept or decline.
+3. After accepting, the user can pause or remove the contact. The contact can remove the link
+   too, to stop looking out. Removing a contact also takes them off the walks they followed.
+
+The link works once and for 48 hours. The database keeps only a fingerprint (SHA-256 hash) of
+the secret in the link, so someone who reads the table cannot rebuild a working link. The
+fingerprint is erased once the invite is accepted.
+
+When a walk starts, the user picks which contacts follow it. They are saved in `walk_contacts`.
+Only the user's own accepted, not paused contacts can be picked. A walk with no contacts is
+allowed, because users have none until the contacts screens (SCRUM-60) are built. A contact paused
+during a walk stays in `walk_contacts`; the alert code (SCRUM-69, SCRUM-74) must skip paused
+contacts itself.
+
+The app cannot write to `contacts` or `walk_contacts` directly. It calls these functions, or
+deletes a contact row, which both sides are allowed to do:
+
+| Function             | What it does                                                    |
+| -------------------- | --------------------------------------------------------------- |
+| `create_invite`      | Creates an invite and returns the secret for the link, once     |
+| `get_invite`         | Tells the person who opened the link who sent it                |
+| `accept_invite`      | Links the logged-in user as the contact. The link stops working |
+| `decline_invite`     | Deletes the invite                                              |
+| `set_contact_paused` | Pauses a contact, or lets them follow walks again               |
+
+Code: `src/features/contacts/contacts.ts`. The screens come in SCRUM-60, including reading
+`?invite=` from the link when the app opens.
+
+Assumptions: at most 10 contacts and open invites per user (the client talked about three).
+Expired invites are deleted the next time the user creates one. Both are in `0005_contacts.sql`.
+
+Not here yet: an "I'm watching" signal from the contact to the user. The client asked for it
+(SCRUM-27 comment, 13 Oct). It is explored in SCRUM-98 and comes in a later migration.
+
 ### Row level security
 
 The app's API key is public: anyone can read it from the website. What protects the data is row
@@ -122,6 +170,12 @@ Written down here because the app handles location and personal data.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
   does the last location of a walk without a check-in. Decide this before real users sign up.
+- **Contacts:** about a contact we store only the name the user gives them and, once they accept,
+  a link to their account. No phone number and no email address. The contact can read the rows
+  where they are the contact, including that name. Nobody becomes a contact without accepting,
+  and either side can end it.
+- **Invite links:** only a fingerprint of the link is stored, it works for 48 hours, and it is
+  erased when the invite is accepted.
 - **Region:** the Supabase project must be in an EU region, so the data stays in the EU.
 - **Not built yet:** deleting an account from inside the app, and a privacy statement. Both are
   needed before real users sign up. Until then an account can be deleted in the Supabase dashboard

@@ -48,6 +48,17 @@ test('starting a walk sends the duration and returns the deadline the server set
   })
 })
 
+test('starting a walk sends the contacts who follow it', async () => {
+  rpc.mockResolvedValue({ data: row, error: null })
+
+  await startWalk({ destinationLabel: 'Home', minutes: 25, contactIds: ['contact-1', 'contact-2'] })
+
+  expect(rpc).toHaveBeenCalledWith(
+    'start_walk',
+    expect.objectContaining({ contact_ids: ['contact-1', 'contact-2'] }),
+  )
+})
+
 test('starting a walk fails when the server refuses it', async () => {
   const error = new Error('You already have an active walk')
   rpc.mockResolvedValue({ data: null, error })
