@@ -8,8 +8,10 @@ const eindhovenBounds = [
   [5.6, 51.53],
 ]
 
-const lampServiceUrl =
-  'https://gisservice.eindhoven.nl/arcgis/rest/services/ODS_OVL/MapServer/0/query'
+// The municipality's open data portal, dataset "data-openbare-verlichting": the source named in
+// SCRUM-26. (The municipality's map server, used before, was down with an outage page.)
+const lampExportUrl =
+  'https://data.eindhoven.nl/api/explore/v2.1/catalog/datasets/data-openbare-verlichting/exports/geojson'
 // Free public route planners on OpenStreetMap data, run by FOSSGIS. Fine for a test; a real
 // app needs its own or a paid one.
 const footRouter = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/'
@@ -207,28 +209,56 @@ async function fetchRoutes(from, to, signal) {
   return unique.slice(0, maxRoutes)
 }
 
-async function lampsAlong(route, signal) {
-  const body = new URLSearchParams({
-    where: '1=1',
-    geometry: JSON.stringify({
-      paths: [route.coordinates],
-      spatialReference: { wkid: 4326 },
-    }),
-    geometryType: 'esriGeometryPolyline',
-    inSR: '4326',
-    spatialRel: 'esriSpatialRelIntersects',
-    distance: String(lampReach),
-    units: 'esriSRUnit_Meter',
-    outFields: 'OBJECTID,STRAATNAAM,TYPE_LAMP',
-    returnGeometry: 'true',
-    outSR: '4326',
-    f: 'geojson',
-  })
-  // POST, because a long route does not fit in a web address.
-  const answer = await fetchJson(lampServiceUrl, { method: 'POST', body, signal })
+// The portal can only search inside rectangles. One rectangle around a whole route would also
+// hold many lamps far away from it, so the route is cut into pieces of about this length, each
+// with its own rectangle. The exact distance check comes after.
+const pieceLength = 250
 
+function rectanglesAlong(coordinates, routeInMetres) {
+  const margin = lampReach + 5
+  const marginLat = margin / 110540
+  const marginLon = margin / (111320 * Math.cos((coordinates[0][1] * Math.PI) / 180))
+  const rectangles = []
+  let piece = [coordinates[0]]
+  let walked = 0
+
+  for (let index = 1; index < coordinates.length; index++) {
+    piece.push(coordinates[index])
+    const [ax, ay] = routeInMetres[index - 1]
+    const [bx, by] = routeInMetres[index]
+    walked += Math.hypot(bx - ax, by - ay)
+
+    if (walked >= pieceLength || index === coordinates.length - 1) {
+      const lons = piece.map(([lon]) => lon)
+      const lats = piece.map(([, lat]) => lat)
+      rectangles.push({
+        south: Math.min(...lats) - marginLat,
+        west: Math.min(...lons) - marginLon,
+        north: Math.max(...lats) + marginLat,
+        east: Math.max(...lons) + marginLon,
+      })
+      piece = [coordinates[index]]
+      walked = 0
+    }
+  }
+  return rectangles
+}
+
+function inRectangle({ south, west, north, east }) {
+  const values = [south, west, north, east].map((value) => value.toFixed(6))
+  return `in_bbox(geo_point_2d, ${values.join(', ')})`
+}
+
+async function lampsAlong(route, signal) {
   const toMetres = metresAround(route.coordinates[0])
   const routeInMetres = route.coordinates.map(toMetres)
+
+  const params = new URLSearchParams({
+    where: rectanglesAlong(route.coordinates, routeInMetres).map(inRectangle).join(' OR '),
+    select: 'straatnaam,type_lamp,geo_point_2d',
+  })
+  const answer = await fetchJson(`${lampExportUrl}?${params}`, { signal })
+
   const lampsByPlace = new Map()
 
   for (const feature of answer.features ?? []) {
@@ -238,15 +268,15 @@ async function lampsAlong(route, signal) {
     const place = coordinates.map((value) => value.toFixed(6)).join(',')
     if (lampsByPlace.has(place)) continue
 
-    // Checked here as well, so the count never depends on how the service reads "distance".
+    // The rectangles are rough: only lamps really within reach of the route count.
     const { distance, along } = measureFromRoute(routeInMetres, toMetres(coordinates))
     if (distance > lampReach) continue
 
     lampsByPlace.set(place, {
       coordinates,
       along,
-      street: feature.properties?.STRAATNAAM ?? '',
-      lampType: feature.properties?.TYPE_LAMP ?? '',
+      street: feature.properties?.straatnaam ?? '',
+      lampType: feature.properties?.type_lamp ?? '',
     })
   }
 
@@ -266,7 +296,8 @@ async function lampsAlong(route, signal) {
     length,
     lampsPerKm: lamps.length / (length / 1000),
     longestDark,
-    isIncomplete: Boolean(answer.exceededTransferLimit),
+    // The export has no limit, so every lamp along the route is counted.
+    isIncomplete: false,
   }
 }
 
@@ -575,26 +606,43 @@ document.getElementById('locate').addEventListener('click', () => {
 
 // ---- Icons ---------------------------------------------------------------------------------
 
-// A white light bulb in a dark blue badge with a white edge. Drawn at twice the size and shown
-// at half, so it stays sharp. Bulb shape from the Lucide icon set (ISC licence).
-const lampSvg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
-    <circle cx="16" cy="16.75" r="13" fill="#000" opacity="0.22"/>
-    <circle cx="16" cy="15" r="12" fill="${lampColour}" stroke="#fff" stroke-width="2.25"/>
-    <g transform="translate(6.4 5.4) scale(0.8)" fill="none" stroke="#fff" stroke-width="2.4"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
-      <path d="M9 18h6"/>
-      <path d="M10 22h4"/>
-    </g>
-  </svg>`
+// Two looks for a street light, to choose from in the panel. Both are drawn at twice the size and
+// shown at half, so they stay sharp.
+const lampIconSvgs = {
+  // A white light bulb in a dark blue badge with a white edge. Bulb shape from the Lucide icon set
+  // (ISC licence).
+  bulb: `
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
+      <circle cx="16" cy="16.75" r="13" fill="#000" opacity="0.22"/>
+      <circle cx="16" cy="15" r="12" fill="${lampColour}" stroke="#fff" stroke-width="2.25"/>
+      <g transform="translate(6.4 5.4) scale(0.8)" fill="none" stroke="#fff" stroke-width="2.4"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+        <path d="M9 18h6"/>
+        <path d="M10 22h4"/>
+      </g>
+    </svg>`,
+  // A dark blue lamp post (pole, curved arm and lamp head) in a white badge with a dark blue edge.
+  post: `
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
+      <circle cx="16" cy="16.75" r="13" fill="#000" opacity="0.22"/>
+      <circle cx="16" cy="15" r="12" fill="#fff" stroke="${lampColour}" stroke-width="2.25"/>
+      <g transform="translate(-1 -1.5)" stroke="${lampColour}" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 25V12a3.5 3.5 0 0 1 3.5-3.5H20" fill="none"/>
+        <path d="M17.5 8.5h6.5l-1.6 3.6h-3.3z" fill="${lampColour}" stroke-width="1.2"/>
+        <path d="M10 25h6" fill="none"/>
+      </g>
+    </svg>`,
+}
 
 function loadSvg(svg) {
   const image = new Image()
   image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
   return image.decode().then(() => image)
 }
-const lampIcon = loadSvg(lampSvg)
+const lampIcons = Object.entries(lampIconSvgs).map(([name, svg]) => [name, loadSvg(svg)])
+let chosenLampIcon = 'bulb'
 
 // "You are here": a dot with a white edge and a slow pulse around it. Drawn on a canvas each
 // frame. People who asked their phone for less motion get a still glow.
@@ -651,7 +699,9 @@ const emptyCollection = { type: 'FeatureCollection', features: [] }
 
 // setStyle() replaces everything on the map, images included, so our layers go on top again.
 map.on('style.load', async () => {
-  map.addImage('lamp', await lampIcon, { pixelRatio: 2 })
+  for (const [name, image] of lampIcons) {
+    map.addImage(`lamp-${name}`, await image, { pixelRatio: 2 })
+  }
   map.addImage('you-are-here', youAreHereIcon(), { pixelRatio: 2 })
 
   map.addSource('routes', { type: 'geojson', data: emptyCollection })
@@ -712,7 +762,7 @@ map.on('style.load', async () => {
     source: 'lamps',
     minzoom: 16,
     layout: {
-      'icon-image': 'lamp',
+      'icon-image': `lamp-${chosenLampIcon}`,
       'icon-size': ['interpolate', ['linear'], ['zoom'], 16, 0.6, 19, 1],
       // Show every lamp, also when icons touch: hiding some would suggest a dark street.
       'icon-allow-overlap': true,
@@ -753,6 +803,15 @@ map.on('style.load', async () => {
 document.getElementById('style-picker').addEventListener('change', (event) => {
   // No diff: always load the new style fresh, so 'style.load' fires and our layers come back.
   map.setStyle(mapStyles[event.target.value], { diff: false })
+})
+
+document.getElementById('lamp-icon-picker').addEventListener('change', (event) => {
+  chosenLampIcon = event.target.value
+  if (map.getLayer('lamp-icons')) {
+    map.setLayoutProperty('lamp-icons', 'icon-image', `lamp-${chosenLampIcon}`)
+  }
+  // Zoomed out, lamps are dots: say where the new icon can be seen.
+  if (map.getZoom() < 16) setStatus('Zoom in to street level to see the lamp icons.')
 })
 
 updateHint()

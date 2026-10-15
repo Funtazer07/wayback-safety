@@ -17,11 +17,18 @@
       <div class="row">
         <button type="button" class="button-primary" id="locate">My location</button>
         <button type="button" id="clear">Start over</button>
+      </div>
+      <div class="row">
         <label class="visually-hidden" for="style-picker">Map style</label>
         <select class="style-picker" id="style-picker">
-          <option value="street">Street</option>
-          <option value="detailed">Detailed</option>
-          <option value="night">Night</option>
+          <option value="street">Map: Street</option>
+          <option value="detailed">Map: Detailed</option>
+          <option value="night">Map: Night</option>
+        </select>
+        <label class="visually-hidden" for="lamp-icon-picker">Lamp icon</label>
+        <select class="style-picker" id="lamp-icon-picker">
+          <option value="bulb">Lamps: Bulb</option>
+          <option value="post">Lamps: Street lamp</option>
         </select>
       </div>
     </section>
@@ -30,7 +37,7 @@
       <h2 id="routes-title">Choose a route</h2>
       <div class="route-list" id="route-list"></div>
       <p class="routes-note">
-        Lights within 25 m of the route, from the municipality's register: where lamps stand, not
+        Lights from the municipality's register: where lamps stand, not
         whether they are on.
       </p>
     </section>

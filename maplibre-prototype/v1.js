@@ -8,8 +8,10 @@ const eindhovenBounds = [
   [5.6, 51.53],
 ]
 
-const lampServiceUrl =
-  'https://gisservice.eindhoven.nl/arcgis/rest/services/ODS_OVL/MapServer/0/query'
+// The municipality's open data portal, dataset "data-openbare-verlichting": the source named in
+// SCRUM-26. (The municipality's map server, used before, was down with an outage page.)
+const lampExportUrl =
+  'https://data.eindhoven.nl/api/explore/v2.1/catalog/datasets/data-openbare-verlichting/exports/geojson'
 // Free public route planners on OpenStreetMap data, run by FOSSGIS. Fine for a test; a real
 // app needs its own or a paid one.
 const footRouter = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/'
@@ -207,28 +209,56 @@ async function fetchRoutes(from, to, signal) {
   return unique.slice(0, maxRoutes)
 }
 
-async function lampsAlong(route, signal) {
-  const body = new URLSearchParams({
-    where: '1=1',
-    geometry: JSON.stringify({
-      paths: [route.coordinates],
-      spatialReference: { wkid: 4326 },
-    }),
-    geometryType: 'esriGeometryPolyline',
-    inSR: '4326',
-    spatialRel: 'esriSpatialRelIntersects',
-    distance: String(lampReach),
-    units: 'esriSRUnit_Meter',
-    outFields: 'OBJECTID,STRAATNAAM,TYPE_LAMP',
-    returnGeometry: 'true',
-    outSR: '4326',
-    f: 'geojson',
-  })
-  // POST, because a long route does not fit in a web address.
-  const answer = await fetchJson(lampServiceUrl, { method: 'POST', body, signal })
+// The portal can only search inside rectangles. One rectangle around a whole route would also
+// hold many lamps far away from it, so the route is cut into pieces of about this length, each
+// with its own rectangle. The exact distance check comes after.
+const pieceLength = 250
 
+function rectanglesAlong(coordinates, routeInMetres) {
+  const margin = lampReach + 5
+  const marginLat = margin / 110540
+  const marginLon = margin / (111320 * Math.cos((coordinates[0][1] * Math.PI) / 180))
+  const rectangles = []
+  let piece = [coordinates[0]]
+  let walked = 0
+
+  for (let index = 1; index < coordinates.length; index++) {
+    piece.push(coordinates[index])
+    const [ax, ay] = routeInMetres[index - 1]
+    const [bx, by] = routeInMetres[index]
+    walked += Math.hypot(bx - ax, by - ay)
+
+    if (walked >= pieceLength || index === coordinates.length - 1) {
+      const lons = piece.map(([lon]) => lon)
+      const lats = piece.map(([, lat]) => lat)
+      rectangles.push({
+        south: Math.min(...lats) - marginLat,
+        west: Math.min(...lons) - marginLon,
+        north: Math.max(...lats) + marginLat,
+        east: Math.max(...lons) + marginLon,
+      })
+      piece = [coordinates[index]]
+      walked = 0
+    }
+  }
+  return rectangles
+}
+
+function inRectangle({ south, west, north, east }) {
+  const values = [south, west, north, east].map((value) => value.toFixed(6))
+  return `in_bbox(geo_point_2d, ${values.join(', ')})`
+}
+
+async function lampsAlong(route, signal) {
   const toMetres = metresAround(route.coordinates[0])
   const routeInMetres = route.coordinates.map(toMetres)
+
+  const params = new URLSearchParams({
+    where: rectanglesAlong(route.coordinates, routeInMetres).map(inRectangle).join(' OR '),
+    select: 'straatnaam,type_lamp,geo_point_2d',
+  })
+  const answer = await fetchJson(`${lampExportUrl}?${params}`, { signal })
+
   const lampsByPlace = new Map()
 
   for (const feature of answer.features ?? []) {
@@ -238,15 +268,15 @@ async function lampsAlong(route, signal) {
     const place = coordinates.map((value) => value.toFixed(6)).join(',')
     if (lampsByPlace.has(place)) continue
 
-    // Checked here as well, so the count never depends on how the service reads "distance".
+    // The rectangles are rough: only lamps really within reach of the route count.
     const { distance, along } = measureFromRoute(routeInMetres, toMetres(coordinates))
     if (distance > lampReach) continue
 
     lampsByPlace.set(place, {
       coordinates,
       along,
-      street: feature.properties?.STRAATNAAM ?? '',
-      lampType: feature.properties?.TYPE_LAMP ?? '',
+      street: feature.properties?.straatnaam ?? '',
+      lampType: feature.properties?.type_lamp ?? '',
     })
   }
 
@@ -266,7 +296,8 @@ async function lampsAlong(route, signal) {
     length,
     lampsPerKm: lamps.length / (length / 1000),
     longestDark,
-    isIncomplete: Boolean(answer.exceededTransferLimit),
+    // The export has no limit, so every lamp along the route is counted.
+    isIncomplete: false,
   }
 }
 
