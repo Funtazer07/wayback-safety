@@ -64,12 +64,8 @@
   margin: 0 auto;
 }
 
-.walk-live .map-view {
+.walk-live .map-area {
   min-height: 0;
-}
-
-.walk-live .map-canvas {
-  border-radius: 0;
 }
 
 .walk-panel {

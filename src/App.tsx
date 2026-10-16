@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useSession } from './features/auth/SessionContext.ts'
 import Home from './features/home/Home.tsx'
+import type { LngLat } from './features/map/geometry.ts'
+import { clearWalkRoute, loadWalkRoute, saveWalkRoute } from './features/map/walkRoute.ts'
 import NameScreen from './features/onboarding/NameScreen.tsx'
 import Welcome from './features/onboarding/Welcome.tsx'
 import { useProfile } from './features/profile/useProfile.ts'
@@ -21,6 +23,8 @@ function App() {
     finish: finishWalk,
   } = useWalk(session?.user.id)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
+  // The route on the Home map. When a walk starts, it is kept with that walk for the walk screen.
+  const [plannedRoute, setPlannedRoute] = useState<LngLat[] | null>(null)
 
   if (!supabase) {
     return (
@@ -62,13 +66,40 @@ function App() {
 
   // A walk that is running always wins, also after the app was closed and opened again. A walk
   // that was just checked in stays on screen until the user closes the confirmation.
-  if (walk) return <WalkScreen walk={walk} onCheckIn={checkIn} onDone={finishWalk} />
-
-  if (isStartingWalk) {
-    return <StartWalkScreen onStart={startWalk} onBack={() => setIsStartingWalk(false)} />
+  if (walk) {
+    return (
+      <WalkScreen
+        walk={walk}
+        route={loadWalkRoute(walk.id)}
+        onCheckIn={checkIn}
+        onDone={() => {
+          // The walk is over: its route is not needed any more.
+          clearWalkRoute()
+          finishWalk()
+        }}
+      />
+    )
   }
 
-  return <Home displayName={profile.displayName} onStartWalk={() => setIsStartingWalk(true)} />
+  if (isStartingWalk) {
+    return (
+      <StartWalkScreen
+        onStart={async (newWalk) => {
+          const startedWalk = await startWalk(newWalk)
+          if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute)
+        }}
+        onBack={() => setIsStartingWalk(false)}
+      />
+    )
+  }
+
+  return (
+    <Home
+      displayName={profile.displayName}
+      onStartWalk={() => setIsStartingWalk(true)}
+      onRouteChange={setPlannedRoute}
+    />
+  )
 }
 
 export default App

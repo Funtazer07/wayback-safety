@@ -28,7 +28,26 @@ vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
 // The map needs a real browser; it has its own tests in features/map.
-vi.mock('./features/map/CityMap.tsx', () => ({ default: () => null }))
+// A route chosen on Home, from Stratumseind to the station.
+const routeViaStratumseind = vi.hoisted((): [number, number][] => [
+  [5.4791, 51.4385],
+  [5.4794, 51.4409],
+  [5.4797, 51.4433],
+])
+// The Home map's stand-in has a button that chooses a route, and the walk map's stand-in says
+// which route it got.
+vi.mock('./features/map/RoutePlanner.tsx', () => ({
+  default: ({ onRouteChange }: { onRouteChange: (route: [number, number][]) => void }) => (
+    <button type="button" onClick={() => onRouteChange(routeViaStratumseind)}>
+      Choose the route via Stratumseind
+    </button>
+  ),
+}))
+vi.mock('./features/map/WalkMap.tsx', () => ({
+  default: ({ route }: { route: [number, number][] | null }) => (
+    <p>{route ? `Map shows a route of ${route.length} points` : 'Map shows no route'}</p>
+  ),
+}))
 
 const loggedIn = { user: { id: 'user-1' } } as Session
 
@@ -46,6 +65,7 @@ function click(name: string) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   auth.signInWithOAuth.mockResolvedValue({ error: null })
   profile.fetchProfile.mockResolvedValue({ displayName: null })
   profile.completeProfile.mockResolvedValue(undefined)
@@ -200,4 +220,62 @@ test('a user checks in with "I’m home" and is back on Home after the confirmat
 
   expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
   expect(screen.queryByRole('timer')).not.toBeInTheDocument()
+})
+
+test('the route chosen on Home is on the walk map after the walk starts', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockResolvedValue(walkEndingIn(20))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Choose the route via Stratumseind')
+  click('Start walk')
+  click('Start walk')
+
+  expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
+})
+
+test('a walk started without a route shows no route', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockResolvedValue(walkEndingIn(20))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Start walk')
+  click('Start walk')
+
+  expect(await screen.findByText('Map shows no route')).toBeInTheDocument()
+})
+
+test('the route is still on the walk map when the app is opened again during the walk', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.fetchActiveWalk.mockResolvedValue(walkEndingIn(14))
+  localStorage.setItem(
+    'wayback.walkRoute',
+    JSON.stringify({ walkId: 'walk-1', coordinates: routeViaStratumseind }),
+  )
+
+  renderApp(loggedIn)
+
+  expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
+})
+
+test('the route of a walk is erased once the user is home', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  const walk = walkEndingIn(14)
+  walks.fetchActiveWalk.mockResolvedValue(walk)
+  walks.checkInWalk.mockResolvedValue({ ...walk, status: 'safe' })
+  localStorage.setItem(
+    'wayback.walkRoute',
+    JSON.stringify({ walkId: 'walk-1', coordinates: routeViaStratumseind }),
+  )
+  renderApp(loggedIn)
+  await screen.findByRole('timer')
+
+  click('I’m home')
+  await screen.findByRole('dialog', { name: 'You arrived safely!' })
+  click('OK')
+
+  await screen.findByText('Hi Sam')
+  expect(localStorage.getItem('wayback.walkRoute')).toBeNull()
 })

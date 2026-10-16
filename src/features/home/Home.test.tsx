@@ -4,7 +4,7 @@ import Home from './Home.tsx'
 
 vi.mock('../../lib/supabase.ts', () => ({ supabase: { auth: {} } }))
 // The map needs a real browser; it has its own tests in features/map.
-vi.mock('../map/CityMap.tsx', () => ({ default: () => null }))
+vi.mock('../map/RoutePlanner.tsx', () => ({ default: () => null }))
 
 function click(name: string) {
   fireEvent.click(screen.getByRole('button', { name }))
@@ -18,7 +18,7 @@ test('the banner opens the install steps for an iPhone', () => {
   vi.stubGlobal('navigator', {
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
   })
-  render(<Home displayName="Sam" onStartWalk={() => {}} />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} onRouteChange={() => {}} />)
 
   click('Show me how')
 
@@ -31,7 +31,7 @@ test('the banner opens the install steps for an iPhone', () => {
 
 test('other phones get the browser menu steps', () => {
   vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)' })
-  render(<Home displayName="Sam" onStartWalk={() => {}} />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} onRouteChange={() => {}} />)
 
   click('Show me how')
 
@@ -39,7 +39,7 @@ test('other phones get the browser menu steps', () => {
 })
 
 test('"Got it" closes the install steps', () => {
-  render(<Home displayName="Sam" onStartWalk={() => {}} />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} onRouteChange={() => {}} />)
 
   click('Show me how')
   click('Got it')
@@ -50,7 +50,7 @@ test('"Got it" closes the install steps', () => {
 test('the banner is hidden when the app is opened from the home screen', () => {
   vi.stubGlobal('navigator', { userAgent: 'iPhone', standalone: true })
 
-  render(<Home displayName="Sam" onStartWalk={() => {}} />)
+  render(<Home displayName="Sam" onStartWalk={() => {}} onRouteChange={() => {}} />)
 
   expect(screen.queryByRole('button', { name: 'Show me how' })).not.toBeInTheDocument()
 })

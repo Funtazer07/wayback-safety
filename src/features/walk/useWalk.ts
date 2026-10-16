@@ -31,9 +31,11 @@ export function useWalk(userId: string | undefined) {
     }
   }, [userId])
 
-  async function start(newWalk: NewWalk) {
+  /** Starts a walk on the server, and returns it so the caller can keep things that belong to it. */
+  async function start(newWalk: NewWalk): Promise<Walk> {
     const walk = await startWalk(newWalk)
     setState({ walk, isLoading: false, error: null })
+    return walk
   }
 
   /**
