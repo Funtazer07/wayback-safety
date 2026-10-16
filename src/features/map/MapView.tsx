@@ -1,102 +1,130 @@
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import { useEffect, useRef, useState } from 'react'
-import { showLamps } from './showLamps.ts'
-import { showLocation } from './showLocation.ts'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import { useEffect, useRef } from 'react'
+import { eindhovenBounds, eindhovenCentre, type LngLat } from './geometry.ts'
+import { watchHold } from './holdGesture.ts'
+import {
+  addOurLayers,
+  brokenLightsLayer,
+  chosenRouteLayer,
+  drawMapData,
+  routeHitLayer,
+  type MapData,
+} from './mapLayers.ts'
+import { destinationMarker, foundLampMarker, startMarker } from './mapMarkers.ts'
+import { mapStyle } from './mapStyles.ts'
+import { moveCamera, type CameraMove } from './moveCamera.ts'
 
-type MapViewProps = {
-  /** Keeps the user's position up to date and centres the map on it once found. */
-  followsUser?: boolean
-}
+type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
+  Pick<MapData, 'brokenLights' | 'position'> & {
+    start?: LngLat | null
+    destination?: LngLat | null
+    /** The street light about to be reported, marked with a ring. */
+    foundLamp?: LngLat | null
+    camera?: CameraMove | null
+    onTap?: (point: LngLat) => void
+    onHold: (point: LngLat) => void
+    onSelectRoute?: (index: number) => void
+    onBrokenLightTap: (lampId: string) => void
+  }
 
-const eindhovenCentre: L.LatLngTuple = [51.4416, 5.4697]
-const eindhovenBounds = L.latLngBounds([51.35, 5.35], [51.53, 5.6])
-
-/** The map of Eindhoven with the street lights and the user's position. */
-function MapView({ followsUser = false }: MapViewProps) {
+/** The MapLibre map. React hands it the data; this component puts it on the map. */
+function MapView(props: MapViewProps) {
+  const { start, destination, foundLamp, camera } = props
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const lastPositionRef = useRef<L.LatLng | null>(null)
-  const [lampStatus, setLampStatus] = useState('')
-  const [locationStatus, setLocationStatus] = useState('')
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<{
+    start: maplibregl.Marker
+    destination: maplibregl.Marker
+    lamp: maplibregl.Marker
+  } | null>(null)
+
+  const data: MapData = {
+    routes: props.routes ?? [],
+    selectedIndex: props.selectedIndex ?? 0,
+    brokenLights: props.brokenLights,
+    position: props.position,
+  }
+  // MapLibre keeps the handlers from when the map was made. Through these refs they see the
+  // latest props and data.
+  const latest = useRef(props)
+  const dataRef = useRef(data)
+  useEffect(() => {
+    latest.current = props
+    dataRef.current = data
+  })
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-
-    const map = L.map(container, {
+    const map = new maplibregl.Map({
+      container,
+      style: mapStyle,
       center: eindhovenCentre,
-      zoom: 16,
+      zoom: 15,
       minZoom: 12,
-      maxBounds: eindhovenBounds,
-      maxBoundsViscosity: 1,
-    })
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map)
-
-    const stopLamps = showLamps(map, setLampStatus)
-    const stopLocation = showLocation(map, eindhovenBounds, setLocationStatus)
+      maxBounds: eindhovenBounds,
+      attributionControl: { compact: true },
+    })
     mapRef.current = map
+    markersRef.current = {
+      start: startMarker(),
+      destination: destinationMarker(),
+      lamp: foundLampMarker(),
+    }
 
-    // The map's box changes size when the page layout changes; Leaflet only notices window resizes.
-    const resizeObserver = new ResizeObserver(() => map.invalidateSize())
-    resizeObserver.observe(container)
+    map.on('style.load', async () => {
+      await addOurLayers(map)
+      drawMapData(map, dataRef.current)
+    })
+
+    const hold = watchHold(map, (point) => latest.current.onHold(point))
+    map.on('click', (event) => {
+      if (hold.isTapIgnored()) return
+      const layers = [brokenLightsLayer, routeHitLayer, chosenRouteLayer].filter((id) =>
+        map.getLayer(id),
+      )
+      const hits = map.queryRenderedFeatures(event.point, { layers })
+      const brokenLight = hits.find((hit) => hit.layer.id === brokenLightsLayer)
+      const otherRoute = hits.find((hit) => hit.layer.id === routeHitLayer)
+      if (brokenLight) latest.current.onBrokenLightTap(String(brokenLight.properties.lampId))
+      else if (otherRoute) latest.current.onSelectRoute?.(Number(otherRoute.properties.index))
+      // A tap on the chosen route does nothing, so a slip of the finger plans no new walk.
+      else if (hits.length === 0) latest.current.onTap?.([event.lngLat.lng, event.lngLat.lat])
+    })
 
     return () => {
-      resizeObserver.disconnect()
-      stopLamps()
-      stopLocation()
+      hold.stop()
       map.remove()
       mapRef.current = null
+      markersRef.current = null
     }
   }, [])
 
   useEffect(() => {
+    if (mapRef.current?.getSource('routes')) drawMapData(mapRef.current, data)
+  })
+
+  useEffect(() => {
     const map = mapRef.current
-    if (!followsUser || !map) return
-
-    // Centre on the user only the first time, so they can still look around the map while walking.
-    function onFound(event: L.LocationEvent) {
-      if (!lastPositionRef.current) map?.setView(event.latlng, 17)
-      lastPositionRef.current = event.latlng
+    const markers = markersRef.current
+    if (!map || !markers) return
+    for (const [marker, spot] of [
+      [markers.start, start],
+      [markers.destination, destination],
+      [markers.lamp, foundLamp],
+    ] as const) {
+      if (spot) marker.setLngLat(spot).addTo(map)
+      else marker.remove()
     }
+  }, [start, destination, foundLamp])
 
-    map.on('locationfound', onFound)
-    map.locate({ watch: true, enableHighAccuracy: true })
-    return () => {
-      map.off('locationfound', onFound)
-      map.stopLocate()
-      lastPositionRef.current = null
-    }
-  }, [followsUser])
+  useEffect(() => {
+    if (mapRef.current && camera) moveCamera(mapRef.current, camera)
+  }, [camera])
 
-  function locate() {
-    const map = mapRef.current
-    // While following, the position is already being watched: jump back to it.
-    if (followsUser && lastPositionRef.current) {
-      map?.setView(lastPositionRef.current, 17)
-      return
-    }
-    setLocationStatus('Finding your location…')
-    map?.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true })
-  }
-
-  const status = [locationStatus, lampStatus].filter(Boolean).join(' ')
-
-  return (
-    <div className="map-view">
-      <div ref={containerRef} className="map-canvas" />
-      <button type="button" className="map-locate" onClick={locate}>
-        My location
-      </button>
-      <p className="map-status" role="status">
-        {status}
-      </p>
-    </div>
-  )
+  return <div ref={containerRef} className="map-canvas" role="region" aria-label="Map" />
 }
 
 export default MapView
