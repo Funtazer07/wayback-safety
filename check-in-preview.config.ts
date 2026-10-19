@@ -15,8 +15,8 @@ export default defineConfig({
         replacement: path('./src/features/walk/preview/PreviewLocation.ts'),
       },
       {
-        find: '../map/CityMap.tsx',
-        replacement: path('./src/features/walk/preview/PreviewCityMap.tsx'),
+        find: '../map/WalkMap.tsx',
+        replacement: path('./src/features/walk/preview/PreviewWalkMap.tsx'),
       },
     ],
   },

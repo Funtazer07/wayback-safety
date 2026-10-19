@@ -191,6 +191,12 @@ Written down here because the app handles location and personal data.
 - **Location after the walk:** checking in or cancelling erases the last known location, and the
   walk refuses new locations afterwards. A walk that is never checked in or cancelled keeps its
   last location.
+- **Route planning:** to compare routes on the map, the start (often the user's position) and the
+  destination are sent to the free FOSSGIS route planner (routing.openstreetmap.de), outside our
+  own backend. Nothing is stored by our app. The privacy statement must mention this. See
+  [map.md](map.md).
+- **Broken-light reports:** for now saved on the user's phone only, without who reported it. They
+  move to the database with SCRUM-92.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
   does the last location of a walk without a check-in. Decide this before real users sign up.

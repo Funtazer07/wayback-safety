@@ -23,6 +23,7 @@ several teammates are new to coding. Write code, comments and docs so a beginner
 | [docs/code-patterns.md](docs/code-patterns.md) | write a component, hook, test or CSS                |
 | [docs/backend.md](docs/backend.md)             | touch login, the database or anything with Supabase |
 | [docs/deployment.md](docs/deployment.md)       | touch CI, the build, paths or the PWA manifest      |
+| [docs/map.md](docs/map.md)                     | touch the map, routes or broken-light reports       |
 
 4. Find an existing file that does something similar and follow it. `src/features/walk/` is the
    most complete example of a feature.
@@ -60,8 +61,8 @@ pull requests.
 ## Stack
 
 Vite, React 19, TypeScript, plain CSS, Vitest with Testing Library, oxlint, Prettier,
-vite-plugin-pwa, and Supabase for login and database. MapLibre with OpenStreetMap tiles is planned
-(SCRUM-54) but not installed yet. There is no router and no state library.
+vite-plugin-pwa, Supabase for login and database, and MapLibre for the map (SCRUM-99; see
+[docs/map.md](docs/map.md)). There is no router and no state library.
 
 ## How the code is organised
 
