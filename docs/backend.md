@@ -52,21 +52,23 @@ how many minutes it may take and the database stores the deadline using its own 
 only shows a countdown to that deadline. Locking the phone or closing the app changes nothing: the
 deadline is still there when the app comes back.
 
-The app cannot write to `walks` directly. It calls three database functions:
+The app cannot write to `walks` directly. It calls these database functions:
 
-| Function               | What it does                                                             |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `start_walk`           | Creates the walk with deadline = now + minutes (1 to 180). One at a time |
-|                        | Also saves which contacts follow the walk (see Trusted contacts)         |
-| `update_walk_location` | Replaces the last known location of a walk that is active or overdue     |
-| `check_in`             | Ends the walk as `safe`, saves the time and erases the last location     |
+| Function               | What it does                                                              |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `start_walk`           | Creates the walk with deadline = now + minutes (1 to 180). One at a time  |
+|                        | Also saves which contacts follow the walk (see Trusted contacts)          |
+| `update_walk_location` | Replaces the last known location of a walk that is active or overdue      |
+| `check_in`             | Ends the walk as `safe`, saves the time and erases the last location      |
+| `extend_walk`          | Moves the deadline of an active walk later (see Extending and cancelling) |
+| `cancel_walk`          | Ends an active walk as `cancelled` and erases the last location           |
 
-A walk has a status: `active` (on the way), `safe` (checked in) or `overdue` (deadline passed, alert
-sent). A walk is late when it is still `active` after its deadline. Nothing sets `overdue` yet;
-that belongs to the alert story.
+A walk has a status: `active` (on the way), `safe` (checked in), `overdue` (deadline passed, alert
+sent) or `cancelled` (stopped by the user without a check-in). A walk is late when it is still
+`active` after its deadline. Nothing sets `overdue` yet; that belongs to the alert story.
 
-Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation`, `checkInWalk` and
-`fetchActiveWalk`. The screens are in the same folder: `StartWalkScreen` (destination and timer)
+Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation`, `checkInWalk`,
+`extendWalk`, `cancelWalk` and `fetchActiveWalk`. The screens are in the same folder: `StartWalkScreen` (destination and timer)
 and `WalkScreen` (time left and the "I'm home" button). While the walk screen is open, the app
 sends the location once a minute.
 
@@ -86,6 +88,27 @@ the server cannot be reached, the walk keeps running and the user can tap the bu
 Assumptions: a walk that is already `overdue` can still be checked in, so someone who is late can
 say they are home after all. And the last location is erased at the check-in instead of kept for a
 while. Both are in `0004_check_in.sql` and are ours to change when SCRUM-7 is built.
+
+### Extending and cancelling
+
+Both run on the server (SCRUM-63). The buttons on the walk screen are built in SCRUM-94.
+
+**Extending** adds minutes to the deadline. If the deadline has already passed, for example during
+the "Are you OK?" grace period, the minutes count from now instead, so the user really gets the
+time they asked for. The client's rule is that the app never moves the deadline by itself: the
+server only does it when the user taps a button.
+
+**Cancelling** ends the walk as `cancelled` and saves the time in `cancelled_at`. Like a check-in,
+it stops the timer and erases the last known location, and the walk refuses new locations from then
+on. Telling the contacts about it comes with the sending function (SCRUM-69), which reads
+`cancelled_at`.
+
+Assumptions, all in `0006_extend_and_cancel.sql`:
+
+- One tap adds 1 to 60 minutes. The buttons offer 5, 10 and 15.
+- The deadline is never more than 3 hours away, the same limit as when a walk starts.
+- Only an `active` walk can be extended or cancelled. Once a walk is `overdue` the contacts have
+  been alerted, so the user checks in instead and the contacts hear they are safe.
 
 A locked phone pauses the page, so no location is sent and the countdown on screen stops moving.
 The deadline itself is not affected. When the phone is unlocked the app reads the clock again and
@@ -165,8 +188,9 @@ Written down here because the app handles location and personal data.
 - **Location:** a walk stores the destination and one last known location. Each update
   overwrites the previous one, so there is no trail of where someone walked. Only the user can
   read their own walks.
-- **Location after the walk:** checking in erases the last known location and stops the app from
-  reading the phone's location. A walk that is never checked in keeps its last location.
+- **Location after the walk:** checking in or cancelling erases the last known location, and the
+  walk refuses new locations afterwards. A walk that is never checked in or cancelled keeps its
+  last location.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
   does the last location of a walk without a check-in. Decide this before real users sign up.
