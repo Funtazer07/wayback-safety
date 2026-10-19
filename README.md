@@ -1,8 +1,9 @@
 # WayBack Safety
 
 A walking-home safety app for people in Eindhoven at night. Users start a timed walk home; if they
-do not check in on time, their trusted contacts are alerted. A map shows street lighting from the
-Municipality of Eindhoven's open data.
+do not check in on time, their trusted contacts are alerted. The map compares walking routes by the
+registered street lights along them (from the Municipality of Eindhoven's open data), and users
+can report a street light that is broken.
 
 Group student project (Fontys ICT) for the Studio Krom open call "Who owns the night?".
 
@@ -16,10 +17,11 @@ Jira wins.
 - oxlint for linting, Prettier for formatting
 - vite-plugin-pwa, so the app can be installed on a phone
 - Supabase for login and database
+- MapLibre for the map, with OpenFreeMap map tiles on OpenStreetMap data (SCRUM-99)
 - GitHub Actions for checks and GitHub Pages for hosting. A copy of `main` is pushed to the Fontys
   GitLab automatically
 
-Planned in a later subtask: MapLibre with OpenStreetMap tiles (SCRUM-54).
+How the map works, and which outside services it uses: [docs/map.md](docs/map.md).
 
 ## Getting started
 

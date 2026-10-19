@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import CityMap from '../map/CityMap.tsx'
+import type { LngLat } from '../map/geometry.ts'
+import WalkMap from '../map/WalkMap.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import CheckInConfirmation from './CheckInConfirmation.tsx'
 import { formatClock } from './time.ts'
@@ -11,6 +12,8 @@ import './walk.css'
 
 type WalkScreenProps = {
   walk: Walk
+  /** The route chosen on Home for this walk, shown on the map. */
+  route?: LngLat[] | null
   /** Tells the server the user is home. Fails when the server cannot be reached. */
   onCheckIn: () => Promise<void>
   /** Called when the user closes the "You arrived safely!" message. */
@@ -18,7 +21,7 @@ type WalkScreenProps = {
 }
 
 /** Screen 2 of the walk wireframe: the map, with the time left readable at a glance. */
-function WalkScreen({ walk, onCheckIn, onDone }: WalkScreenProps) {
+function WalkScreen({ walk, route = null, onCheckIn, onDone }: WalkScreenProps) {
   const now = useNow()
   const hasCheckedIn = walk.status === 'safe'
   // No location is read or sent once the user is home.
@@ -42,7 +45,7 @@ function WalkScreen({ walk, onCheckIn, onDone }: WalkScreenProps) {
 
   return (
     <main className="walk-live">
-      <CityMap isCompact followsUser />
+      <WalkMap route={route} />
 
       <section className="walk-panel" aria-label="Your walk">
         <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={arrivedAt ?? now} />
