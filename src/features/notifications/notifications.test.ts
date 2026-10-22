@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import {
+  BrowserPushError,
   checkNotifications,
   disableNotifications,
   enableNotifications,
@@ -155,4 +156,12 @@ test('turning off keeps the browser subscription when the server cannot delete i
 
   await expect(disableNotifications()).rejects.toThrow('Network error')
   expect(subscription.unsubscribe).not.toHaveBeenCalled()
+})
+
+test('a push service failure in the browser is reported as a browser problem, not saved', async () => {
+  const pushManager = fakeBrowser()
+  pushManager.subscribe.mockRejectedValue(new Error('Registration failed - push service error'))
+
+  await expect(enableNotifications()).rejects.toBeInstanceOf(BrowserPushError)
+  expect(rpc).not.toHaveBeenCalled()
 })

@@ -71,3 +71,15 @@ test('the card says so when turning on notifications fails', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not turn on notifications.')
   expect(screen.getByRole('button', { name: 'Allow notifications' })).toBeEnabled()
 })
+
+test('the card suggests another browser when the browser itself cannot turn on push', async () => {
+  checkNotifications.mockResolvedValue('off')
+  enableNotifications.mockRejectedValue(new BrowserPushError(new Error('push service error')))
+  render(<NotificationCard reason={reason} />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Allow notifications' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Your browser could not turn on notifications. Try another browser',
+  )
+})
