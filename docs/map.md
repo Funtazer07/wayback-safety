@@ -57,16 +57,9 @@ services sometimes do not answer for half a minute.
 
 ## Broken-light reports
 
-Reports are saved in the `reports` table in Supabase (SCRUM-92), so every signed-in user sees the
-same broken lights. `brokenLights.ts` loads them when the map opens and saves a new report or "It
-works again" straight away. A light can be reported once; anyone can say it works again. A report
-disappears by itself after 30 days. See "Reports" in [backend.md](backend.md).
-
-If the reports cannot be loaded, the map and the routes still work, counting every light as
-working. If a report or "It works again" cannot be saved, the user sees "Could not save this".
-
-Reports that testers made before SCRUM-92 were kept on their own phone (`localStorage`) and are not
-moved to the table.
+For now reports are kept **on the phone only** (`brokenLights.ts`, in `localStorage`), so other
+users do not see them yet. They move to the reports table in Supabase once SCRUM-92 is done: then
+only `loadBrokenLights` and `saveBrokenLights` change, the screens stay the same.
 
 ## Privacy
 
@@ -78,8 +71,8 @@ moved to the table.
   after the app was closed. It includes the start, which is often where the user was. It is erased
   when the user closes the "You arrived safely!" message. A walk that is never checked in keeps it
   until the next walk replaces it.
-- A broken-light report holds the lamp's number, spot and street, and the time of the report.
-  Other users never see who reported it, and the spot is the lamp's, not where the user was.
+- A broken-light report holds the lamp's number, spot and street, and the time of the report. Not
+  who reported it, and not where the user was.
 
 ## Testing
 

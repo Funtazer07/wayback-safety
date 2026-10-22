@@ -5,12 +5,9 @@ import type { Lamp } from './lamps.ts'
 import { useBrokenLights } from './useBrokenLights.ts'
 import { useLampReport } from './useLampReport.ts'
 
-const failed = 'Could not save this. Check your connection and try again.'
-
 /**
  * Reporting broken street lights on a map: the menu after a long press, and the sheet of a light
- * that is already reported. `afterChange` hears about every change, with a thank-you for the user,
- * or with a short error when the server could not save it.
+ * that is already reported. `afterChange` hears about every change, with a thank-you for the user.
  */
 export function useReporting(afterChange: (lights: BrokenLight[], thankYou: string) => void) {
   const { brokenLights, add, remove } = useBrokenLights()
@@ -52,22 +49,13 @@ export function useReporting(afterChange: (lights: BrokenLight[], thankYou: stri
       report.close()
       setOpenLightId(lampId)
     },
-    async reportBroken(lamp: Lamp) {
+    reportBroken(lamp: Lamp) {
       report.close()
-      try {
-        afterChange(await add(lamp), 'Thank you. The light is marked as broken.')
-      } catch {
-        // The list did not change, but the user still hears what happened.
-        afterChange(brokenLights, failed)
-      }
+      afterChange(add(lamp), 'Thank you. The light is marked as broken.')
     },
-    async worksAgain(lampId: string) {
+    worksAgain(lampId: string) {
       setOpenLightId(null)
-      try {
-        afterChange(await remove(lampId), 'Thank you. The light counts as working again.')
-      } catch {
-        afterChange(brokenLights, failed)
-      }
+      afterChange(remove(lampId), 'Thank you. The light counts as working again.')
     },
   }
 }

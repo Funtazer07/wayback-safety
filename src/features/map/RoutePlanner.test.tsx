@@ -8,18 +8,10 @@ const services = vi.hoisted(() => ({
   fetchRoutes: vi.fn(),
   measureRouteLamps: vi.fn(),
   findLampNear: vi.fn(),
-  fetchBrokenLights: vi.fn(),
-  reportBrokenLight: vi.fn(),
 }))
 
-// Stand-ins for the route planner, the lamp register and the reports table, so the test never goes
-// online.
+// Stand-ins for the route planner and the lamp register, so the test never goes online.
 vi.mock('./routes.ts', () => ({ fetchRoutes: services.fetchRoutes }))
-vi.mock('./brokenLights.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./brokenLights.ts')>()),
-  fetchBrokenLights: services.fetchBrokenLights,
-  reportBrokenLight: services.reportBrokenLight,
-}))
 vi.mock('./lamps.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lamps.ts')>()),
   measureRouteLamps: services.measureRouteLamps,
@@ -29,13 +21,8 @@ vi.mock('./lamps.ts', async (importOriginal) => ({
 // Stand-in for the MapLibre map, which needs a real browser. Its buttons play the taps and the
 // long press a user would do on the map.
 vi.mock('./MapView.tsx', () => ({
-  default: (props: {
-    brokenLights: unknown[]
-    onTap?: (point: LngLat) => void
-    onHold: (point: LngLat) => void
-  }) => (
+  default: (props: { onTap?: (point: LngLat) => void; onHold: (point: LngLat) => void }) => (
     <div>
-      <p>Broken lights on the map: {props.brokenLights.length}</p>
       <button type="button" onClick={() => props.onTap?.([5.4791, 51.4385])}>
         Tap Stratumseind
       </button>
@@ -73,22 +60,9 @@ function click(name: string | RegExp) {
   fireEvent.click(screen.getByRole('button', { name }))
 }
 
-const vestdijkLamp = {
-  lampId: '776',
-  coordinates: [5.478385, 51.441212] as LngLat,
-  street: 'Vestdijk',
-  number: '002',
-}
-
 beforeEach(() => {
+  localStorage.clear()
   vi.clearAllMocks()
-  services.fetchBrokenLights.mockResolvedValue([])
-  services.reportBrokenLight.mockImplementation(async (lamp: typeof vestdijkLamp) => ({
-    lampId: lamp.lampId,
-    coordinates: lamp.coordinates,
-    street: lamp.street,
-    reportedAt: '2026-10-16T22:30:00.000Z',
-  }))
   services.fetchRoutes.mockResolvedValue([quickWay, viaCityCentre])
   // The quick way has fewer lights; a broken light takes one off the route through the centre.
   services.measureRouteLamps.mockImplementation(async (route, brokenPlaces: Set<string>) =>
@@ -96,7 +70,12 @@ beforeEach(() => {
       ? measured(quickWay, 27)
       : measured(viaCityCentre, 91 - brokenPlaces.size, brokenPlaces.size),
   )
-  services.findLampNear.mockResolvedValue(vestdijkLamp)
+  services.findLampNear.mockResolvedValue({
+    lampId: '776',
+    coordinates: [5.478385, 51.441212],
+    street: 'Vestdijk',
+    number: '002',
+  })
 })
 
 test('a user picks a start and a destination and gets the routes, most street lights first', async () => {
@@ -151,43 +130,13 @@ test('a long press reports the nearest street light, and the routes are counted 
   expect(screen.getByRole('region', { name: 'Choose a route' })).toHaveTextContent(
     '90 lights, 90 per km',
   )
-  expect(services.reportBrokenLight).toHaveBeenCalledWith(vestdijkLamp)
-})
-
-test('the user is told when a report could not be saved', async () => {
-  services.reportBrokenLight.mockRejectedValue(new Error('Network error'))
-  render(<RoutePlanner onRouteChange={onRouteChange} />)
-
-  click('Hold at Vestdijk')
-  fireEvent.click(await screen.findByRole('button', { name: /Vestdijk, number 002/ }))
-
-  expect(
-    await screen.findByText('Could not save this. Check your connection and try again.'),
-  ).toBeInTheDocument()
-})
-
-test('lights other users reported are loaded when the map opens', async () => {
-  services.fetchBrokenLights.mockResolvedValue([
-    {
-      lampId: '776',
-      coordinates: vestdijkLamp.coordinates,
-      street: 'Vestdijk',
-      reportedAt: '2026-10-16T22:30:00.000Z',
-    },
-  ])
-  render(<RoutePlanner onRouteChange={onRouteChange} />)
-  expect(await screen.findByText('Broken lights on the map: 1')).toBeInTheDocument()
-
-  click('Hold at Vestdijk')
-
-  expect(await screen.findByText(/is already reported as broken/)).toBeInTheDocument()
+  expect(JSON.parse(localStorage.getItem('wayback.brokenLights') ?? '[]')).toHaveLength(1)
 })
 
 test('a light that is already reported cannot be reported twice', async () => {
   render(<RoutePlanner onRouteChange={onRouteChange} />)
   click('Hold at Vestdijk')
   fireEvent.click(await screen.findByRole('button', { name: /Vestdijk, number 002/ }))
-  await screen.findByText('Broken lights on the map: 1')
 
   click('Hold at Vestdijk')
 

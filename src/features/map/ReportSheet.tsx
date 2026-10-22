@@ -56,7 +56,7 @@ function ReportSheet({ menu, onReport, onCancel }: ReportSheetProps) {
           <span>{lampText(menu)}</span>
         </span>
       </button>
-      <p className="map-note">Other users see the light on the map, but not who reported it.</p>
+      <p className="map-note">For now reports are saved on this phone only, not shared yet.</p>
       <button type="button" className="button-link" onClick={onCancel}>
         Cancel
       </button>
