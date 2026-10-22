@@ -1,4 +1,4 @@
-import { isIphone } from './install.ts'
+import { isIphone } from '../../lib/install.ts'
 
 type InstallSheetProps = {
   onClose: () => void

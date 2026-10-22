@@ -63,6 +63,16 @@ Import the file, or build the path with `import.meta.env.BASE_URL`.
 
 If the GitHub repository is renamed, the URL changes and installed copies of the app stop working.
 
+## The service worker
+
+vite-plugin-pwa writes the service worker (`sw.js`) during the build. It keeps the app's files
+for offline use and updates the app as soon as a new version is deployed. It cannot show push
+notifications, so `vite.config.ts` tells it to load `public/push-sw.js` as well (SCRUM-68). Change
+push behaviour there, not in the generated `sw.js`.
+
+The build needs `VITE_VAPID_PUBLIC_KEY` as a repository variable, next to the two Supabase values.
+Without it the site works, but cannot turn on notifications. See docs/backend.md, "Push keys".
+
 ## If something fails
 
 | Problem                               | Likely cause                                                                       |
