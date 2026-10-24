@@ -224,6 +224,9 @@ Written down here because the app handles location and personal data.
   and either side can end it.
 - **Invite links:** only a fingerprint of the link is stored, it works for 48 hours, and it is
   erased when the invite is accepted.
+- **Push subscriptions:** per phone we store only the push service address and its two keys. No
+  device name, browser or IP address. The row is deleted when notifications are turned off on that
+  phone, and with the account.
 - **Region:** the Supabase project must be in an EU region, so the data stays in the EU.
 - **Not built yet:** deleting an account from inside the app, and a privacy statement. Both are
   needed before real users sign up. Until then an account can be deleted in the Supabase dashboard
@@ -296,6 +299,24 @@ Each teammate needs their own `.env.local` with the same two values.
 
 **Never** put the `secret` / `service_role` key, the Google client secret, or the database
 password in the code, in `.env.local`, in GitHub variables or in the group chat.
+
+### 7. Push keys
+
+Push needs one key pair for the whole project, made once. This command uses only Node's built-in
+`crypto`, no package:
+
+```
+node -e "const k=require('crypto').generateKeyPairSync('ec',{namedCurve:'prime256v1'});const p=k.publicKey.export({format:'jwk'});const b=s=>Buffer.from(s,'base64url');console.log('VITE_VAPID_PUBLIC_KEY='+Buffer.concat([Buffer.from([4]),b(p.x),b(p.y)]).toString('base64url'));console.log('VAPID_PRIVATE_KEY='+k.privateKey.export({format:'jwk'}).d)"
+```
+
+- **Public key** (`VITE_VAPID_PUBLIC_KEY`): in `.env.local` on each laptop, and as a GitHub
+  repository variable with the same name, like step 6. Restart `npm run dev`.
+- **Private key** (`VAPID_PRIVATE_KEY`): only in Supabase, **Edge Functions > Secrets**. The
+  sending function (SCRUM-69) reads it there. Never in the code, `.env.local`, GitHub or the group
+  chat.
+
+Make the pair once. A new pair makes every saved subscription useless: everyone would have to allow
+notifications again.
 
 ## Giving teammates access to the database
 

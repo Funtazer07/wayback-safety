@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { logOut } from '../auth/auth.ts'
 import type { LngLat } from '../map/geometry.ts'
 import RoutePlanner from '../map/RoutePlanner.tsx'
-import { isInstalled } from './install.ts'
+import { isInstalled } from '../../lib/install.ts'
 import InstallSheet from './InstallSheet.tsx'
 import './home.css'
 

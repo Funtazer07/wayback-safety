@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import NotificationCard from '../notifications/NotificationCard.tsx'
 import { HOME } from './destination.ts'
 import DestinationSheet from './DestinationSheet.tsx'
 import { addMinutes, formatClock, formatDuration } from './time.ts'
@@ -89,6 +90,10 @@ function StartWalkScreen({ onStart, onBack }: StartWalkScreenProps) {
             (that needs an address lookup and a route), so it asks the user instead. */}
         <p className="walk-small">Set how long your walk takes. Add time if you are not sure.</p>
       </div>
+
+      {/* Not in the wireframe. Asked here because the warning when time runs out (SCRUM-73) is a
+          push notification, and iPhones only ask after a tap (SCRUM-68). */}
+      <NotificationCard reason="WayBack can then warn you if your timer runs out, also when your phone is locked." />
 
       <div className="screen-actions">
         {error && <p role="alert">{error}</p>}

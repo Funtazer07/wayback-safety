@@ -15,6 +15,9 @@ export default defineConfig({
       // A safety app should not keep running an old version: update as soon as a new one is deployed.
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo.svg', 'apple-touch-icon-180x180.png'],
+      // The generated service worker cannot show push notifications. It loads public/push-sw.js,
+      // which can (SCRUM-68).
+      workbox: { importScripts: ['push-sw.js'] },
       manifest: {
         name: 'WayBack Safety',
         short_name: 'WayBack',
