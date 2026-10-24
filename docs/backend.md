@@ -1,7 +1,8 @@
 # Backend
 
 The backend is [Supabase](https://supabase.com): a hosted database (Postgres) with login built in.
-There is no server code of our own. The app talks to Supabase directly from the phone.
+The app talks to Supabase directly from the phone. The only server code of our own is one Edge
+Function that sends push notifications (see "Sending push").
 
 ## How login works
 
@@ -33,15 +34,16 @@ Database changes live in `supabase/migrations/`, one numbered file per change. N
 database by hand in the dashboard without adding a file here, or the team loses track of what the
 database looks like.
 
-| Table           | What it holds                                                                         |
-| --------------- | ------------------------------------------------------------------------------------- |
-| `profiles`      | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
-| `walks`         | One row per walk home: destination, start time, deadline, status, last known location |
-|                 | and, once the user is home, the time of the check-in                                  |
-| `contacts`      | One row per trusted contact or open invite: who invited, who accepted, the name the   |
-|                 | user gave them, status, and while open, a fingerprint of the invite link              |
-| `walk_contacts` | Which contacts follow which walk. Chosen when the walk starts                         |
-| `reports`       | Place reports and broken street lights: category, a rounded spot or the lamp, time    |
+| Table                | What it holds                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `profiles`           | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
+| `walks`              | One row per walk home: destination, start time, deadline, status, last known location |
+|                      | and, once the user is home, the time of the check-in                                  |
+| `contacts`           | One row per trusted contact or open invite: who invited, who accepted, the name the   |
+|                      | user gave them, status, and while open, a fingerprint of the invite link              |
+| `walk_contacts`      | Which contacts follow which walk. Chosen when the walk starts                         |
+| `reports`            | Place reports and broken street lights: category, a rounded spot or the lamp, time    |
+| `push_subscriptions` | One row per phone that allowed notifications: the push address and its keys           |
 
 Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
 reference `profiles.id`.
@@ -101,8 +103,7 @@ server only does it when the user taps a button.
 
 **Cancelling** ends the walk as `cancelled` and saves the time in `cancelled_at`. Like a check-in,
 it stops the timer and erases the last known location, and the walk refuses new locations from then
-on. Telling the contacts about it comes with the sending function (SCRUM-69), which reads
-`cancelled_at`.
+on. The contacts get a push notification with the time from `cancelled_at` (see "Sending push").
 
 Assumptions, all in `0006_extend_and_cancel.sql`:
 
@@ -205,6 +206,122 @@ Assumptions until SCRUM-90 (research) decides, all in `0008_reports.sql`:
 - A report is kept 30 days. Expired reports are not shown, and the next new report deletes them.
 - One person can make at most 20 reports a day.
 
+### Notifications
+
+Decided in SCRUM-66 (research on Confluence, 13 Oct): alerts go out by **Web Push only**, sent
+from the server. No email, because sending email to other people needs a paid domain. A Supabase
+Edge Function sends the messages (see "Sending push" below, SCRUM-69), and a scheduled job in the
+database (`pg_cron`, SCRUM-73) will start the late-walk alerts, so they also arrive when the phone
+is locked or the app is closed.
+
+What this means for people:
+
+- A user or contact only gets notifications if they allowed them. On iPhone that also needs iOS
+  16.4 or newer and the app on the Home Screen.
+- Every contact therefore needs the app and an account (see Trusted contacts).
+- Messages pass through Apple's or Google's push service, encrypted on the way. Everything else
+  stays in our Supabase project in the EU.
+- The free Supabase plan pauses a project after a week without activity. While paused, no alert
+  goes out. Fine for testing, not for real users.
+
+How a phone is signed up (SCRUM-68):
+
+1. The user taps "Allow notifications" on a card. It is on the start-walk screen now, and the
+   screen where a contact accepts an invite (SCRUM-60) will show it too. iPhones only ask after a
+   tap, which is why there is a button.
+2. The browser asks the push service for an address for this phone, and the app saves it with
+   `save_push_subscription` in the `push_subscriptions` table: one row per phone.
+3. Each time the app opens with notifications on, it saves the row again, so a phone always
+   belongs to the account that is signed in now.
+
+`disableNotifications()` deletes the row and stops the subscription in the browser. There is no
+button for it yet; a settings screen will use it. Deleting the account deletes the rows too.
+
+The service worker that vite-plugin-pwa writes cannot show notifications, so it loads
+`public/push-sw.js`, which can. That file also opens the app when a notification is tapped. On
+`npm run dev` there is no service worker, so the card says notifications only work in a build
+(`npm run build`, then `npm run preview -- --port 5173`).
+
+Push uses a key pair (VAPID): the public key is in the app as `VITE_VAPID_PUBLIC_KEY`, the private
+key only in Supabase Edge Function secrets. See "Push keys" under One-time setup.
+
+Code: `src/features/notifications/`.
+
+### Sending push
+
+When a walk starts, is checked in or is cancelled, its contacts get a push notification
+(SCRUM-69). No location is ever in these messages:
+
+| When                      | Title                   | Text                                         |
+| ------------------------- | ----------------------- | -------------------------------------------- |
+| The walk starts           | Anna is on the way home | Expected home at 22:36.                      |
+| The user checks in        | Anna has arrived safely | Checked in at 22:31.                         |
+| The user cancels the walk | Anna stopped the walk   | Cancelled at 22:20. No check-in will follow. |
+
+The cancelled message was added on 24 Oct: SCRUM-63 and SCRUM-12 promise it, and no other subtask
+built it. Extending a walk sends nothing.
+
+How it works:
+
+1. `start_walk`, `check_in` or `cancel_walk` changes the `walks` table. A trigger in the database
+   (`0009_walk_push.sql`) notices and calls the Edge Function `send-walk-push` with the walk's id.
+   The database makes this call by itself, after the change is saved, so it also works when the
+   phone is locked or loses its connection right after the tap.
+2. The Edge Function (`supabase/functions/send-walk-push/index.ts`) looks up the walk's contacts,
+   keeps those who accepted and are not paused, and finds their phones in `push_subscriptions`
+   (SCRUM-68).
+3. It sends the message to each phone with the `web-push` library, through Apple's or Google's push
+   service. Phones that no longer exist are removed from `push_subscriptions`.
+
+Who gets a message, and the exact wording, are in `supabase/functions/send-walk-push/walkPush.ts`, tested
+by `walkPush.test.ts`. A contact only gets a message when they are linked to that walk, which is
+chosen at the start of the walk. Until the contacts screens (SCRUM-60) let users pick contacts, no
+walk has any, so no message goes out.
+
+The Edge Function is called with a secret that only the database knows. Without it, the function
+answers "Forbidden", so nobody else can make phones buzz.
+
+A problem with push never stops a walk (`0010_walk_push_never_blocks.sql`). If the call cannot even
+be queued, for example because of a wrong Vault value, the walk is still started, checked in or
+cancelled, and the database writes a warning to **Logs > Postgres** instead. The contacts then miss
+that one message.
+
+Assumption: a message that cannot reach a phone within an hour (phone off) is dropped. "Anna is on
+the way home" an hour late would only confuse.
+
+Not here yet: the "Are you OK?" warning (SCRUM-73) and the alert with the last known location
+(SCRUM-74). They add their own event to the same function.
+
+#### Setting it up
+
+Done once by the owner of the Supabase account, in this order. The push key pair comes from
+SCRUM-68 ("Push keys"); the private key never goes in the code, `.env.local`, GitHub or the chat.
+
+1. **Edge Function secrets.** **Edge Functions > Secrets**, add:
+   - `VAPID_PUBLIC_KEY`: the same public key as `VITE_VAPID_PUBLIC_KEY` in the app.
+   - `VAPID_PRIVATE_KEY`: the private key of that pair.
+   - `VAPID_SUBJECT`: a way for Apple's and Google's push services to reach whoever sends the
+     messages: `mailto:` and a team email address, or the live site's `https://` address.
+   - `WALK_PUSH_SECRET`: a long random text. Make one with
+     `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+2. **Deploy the function.** **Edge Functions > Deploy a new function > Via editor**, name
+   `send-walk-push`. Paste `supabase/functions/send-walk-push/index.ts` into `index.ts`, and add a
+   second file named `walkPush.ts` (next to `index.ts`, no folder) with the contents of
+   `supabase/functions/send-walk-push/walkPush.ts`. Turn **Verify JWT** off: the function checks
+   its own secret instead. Copy the function's URL.
+3. **Vault secrets.** **Project settings > Vault** (or Integrations > Vault), add two secrets:
+   - `walk_push_url`: only the function's address, nothing around it:
+     `https://<project>.supabase.co/functions/v1/send-walk-push`. The dashboard also shows a whole
+     `curl` command; do not copy that.
+   - `walk_push_secret`: the same text as `WALK_PUSH_SECRET`.
+4. **Run the migrations.** `0009_walk_push.sql`, then `0010_walk_push_never_blocks.sql`, in the SQL
+   Editor, after 0005, 0006 and 0007.
+
+When the function code changes, deploy it again the same way. To see what happened to a message,
+open the function's **Logs**, or run `select * from net._http_response order by created desc limit
+10;` in the SQL Editor to see what the function answered. When nothing shows up there at all, look
+for a `send_walk_push` warning under **Logs > Postgres**.
+
 ### Row level security
 
 The app's API key is public: anyone can read it from the website. What protects the data is row
@@ -251,6 +368,9 @@ Written down here because the app handles location and personal data.
 - **Push subscriptions:** per phone we store only the push service address and its two keys. No
   device name, browser or IP address. The row is deleted when notifications are turned off on that
   phone, and with the account.
+- **Push messages:** hold the user's name and a time, never a location. They pass through Apple's
+  or Google's push service, encrypted on the way, so those services cannot read them. Only
+  contacts who accepted and are not paused get them.
 - **Region:** the Supabase project must be in an EU region, so the data stays in the EU.
 - **Not built yet:** deleting an account from inside the app, and a privacy statement. Both are
   needed before real users sign up. Until then an account can be deleted in the Supabase dashboard
