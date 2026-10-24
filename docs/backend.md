@@ -33,14 +33,15 @@ Database changes live in `supabase/migrations/`, one numbered file per change. N
 database by hand in the dashboard without adding a file here, or the team loses track of what the
 database looks like.
 
-| Table           | What it holds                                                                         |
-| --------------- | ------------------------------------------------------------------------------------- |
-| `profiles`      | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
-| `walks`         | One row per walk home: destination, start time, deadline, status, last known location |
-|                 | and, once the user is home, the time of the check-in                                  |
-| `contacts`      | One row per trusted contact or open invite: who invited, who accepted, the name the   |
-|                 | user gave them, status, and while open, a fingerprint of the invite link              |
-| `walk_contacts` | Which contacts follow which walk. Chosen when the walk starts                         |
+| Table                | What it holds                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `profiles`           | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
+| `walks`              | One row per walk home: destination, start time, deadline, status, last known location |
+|                      | and, once the user is home, the time of the check-in                                  |
+| `contacts`           | One row per trusted contact or open invite: who invited, who accepted, the name the   |
+|                      | user gave them, status, and while open, a fingerprint of the invite link              |
+| `walk_contacts`      | Which contacts follow which walk. Chosen when the walk starts                         |
+| `push_subscriptions` | One row per phone that allowed notifications: the push address and its keys           |
 
 Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
 reference `profiles.id`.
@@ -143,6 +144,45 @@ Expired invites are deleted the next time the user creates one. Both are in `000
 Not here yet: an "I'm watching" signal from the contact to the user. The client asked for it
 (SCRUM-27 comment, 13 Oct). It is explored in SCRUM-98 and comes in a later migration.
 
+### Notifications
+
+Decided in SCRUM-66 (research on Confluence, 13 Oct): alerts go out by **Web Push only**, sent
+from the server. No email, because sending email to other people needs a paid domain. A scheduled
+job in the database (`pg_cron`) and a Supabase Edge Function will send the messages, so they also
+arrive when the phone is locked or the app is closed. That server code comes in SCRUM-69 and
+SCRUM-73; this part only gets phones ready to receive.
+
+What this means for people:
+
+- A user or contact only gets notifications if they allowed them. On iPhone that also needs iOS
+  16.4 or newer and the app on the Home Screen.
+- Every contact therefore needs the app and an account (see Trusted contacts).
+- Messages pass through Apple's or Google's push service, encrypted on the way. Everything else
+  stays in our Supabase project in the EU.
+- The free Supabase plan pauses a project after a week without activity. While paused, no alert
+  goes out. Fine for testing, not for real users.
+
+How a phone is signed up (SCRUM-68):
+
+1. The user taps "Allow notifications" on a card. It is on the start-walk screen now, and the
+   screen where a contact accepts an invite (SCRUM-60) will show it too. iPhones only ask after a
+   tap, which is why there is a button.
+2. The browser asks the push service for an address for this phone, and the app saves it with
+   `save_push_subscription` in the `push_subscriptions` table: one row per phone.
+3. Each time the app opens with notifications on, it saves the row again, so a phone always
+   belongs to the account that is signed in now.
+
+`disableNotifications()` deletes the row and stops the subscription in the browser. There is no
+button for it yet; a settings screen will use it. Deleting the account deletes the rows too.
+
+The service worker that vite-plugin-pwa writes cannot show notifications, so it loads
+`public/push-sw.js`, which can. That file also opens the app when a notification is tapped.
+
+Push uses a key pair (VAPID): the public key is in the app as `VITE_VAPID_PUBLIC_KEY`, the private
+key only in Supabase Edge Function secrets. See "Push keys" under One-time setup.
+
+Code: `src/features/notifications/`.
+
 ### Row level security
 
 The app's API key is public: anyone can read it from the website. What protects the data is row
@@ -182,6 +222,9 @@ Written down here because the app handles location and personal data.
   and either side can end it.
 - **Invite links:** only a fingerprint of the link is stored, it works for 48 hours, and it is
   erased when the invite is accepted.
+- **Push subscriptions:** per phone we store only the push service address and its two keys. No
+  device name, browser or IP address. The row is deleted when notifications are turned off on that
+  phone, and with the account.
 - **Region:** the Supabase project must be in an EU region, so the data stays in the EU.
 - **Not built yet:** deleting an account from inside the app, and a privacy statement. Both are
   needed before real users sign up. Until then an account can be deleted in the Supabase dashboard
@@ -254,6 +297,24 @@ Each teammate needs their own `.env.local` with the same two values.
 
 **Never** put the `secret` / `service_role` key, the Google client secret, or the database
 password in the code, in `.env.local`, in GitHub variables or in the group chat.
+
+### 7. Push keys
+
+Push needs one key pair for the whole project, made once. This command uses only Node's built-in
+`crypto`, no package:
+
+```
+node -e "const k=require('crypto').generateKeyPairSync('ec',{namedCurve:'prime256v1'});const p=k.publicKey.export({format:'jwk'});const b=s=>Buffer.from(s,'base64url');console.log('VITE_VAPID_PUBLIC_KEY='+Buffer.concat([Buffer.from([4]),b(p.x),b(p.y)]).toString('base64url'));console.log('VAPID_PRIVATE_KEY='+k.privateKey.export({format:'jwk'}).d)"
+```
+
+- **Public key** (`VITE_VAPID_PUBLIC_KEY`): in `.env.local` on each laptop, and as a GitHub
+  repository variable with the same name, like step 6. Restart `npm run dev`.
+- **Private key** (`VAPID_PRIVATE_KEY`): only in Supabase, **Edge Functions > Secrets**. The
+  sending function (SCRUM-69) reads it there. Never in the code, `.env.local`, GitHub or the group
+  chat.
+
+Make the pair once. A new pair makes every saved subscription useless: everyone would have to allow
+notifications again.
 
 ## Giving teammates access to the database
 
