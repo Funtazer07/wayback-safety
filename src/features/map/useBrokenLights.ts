@@ -1,28 +1,43 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  brokenLightFrom,
-  loadBrokenLights,
-  saveBrokenLights,
+  fetchBrokenLights,
+  markLightWorking,
+  reportBrokenLight,
   type BrokenLight,
 } from './brokenLights.ts'
 import type { Lamp } from './lamps.ts'
 
-/** The street lights reported as broken. Adding or removing one returns the new list. */
+/**
+ * The street lights reported as broken, by anyone. Adding or removing one saves it on the server
+ * and returns the new list; it throws when the server refuses.
+ */
 export function useBrokenLights() {
-  const [brokenLights, setBrokenLights] = useState<BrokenLight[]>(loadBrokenLights)
+  const [brokenLights, setBrokenLights] = useState<BrokenLight[]>([])
 
-  function update(next: BrokenLight[]): BrokenLight[] {
+  useEffect(() => {
+    let isCurrent = true
+    fetchBrokenLights()
+      .then((lights) => isCurrent && setBrokenLights(lights))
+      // The map and the routes still work without the reports, so a failed load is not shown as an
+      // error. The routes then count every light as working.
+      .catch(() => {})
+    return () => {
+      isCurrent = false
+    }
+  }, [])
+
+  async function add(lamp: Lamp): Promise<BrokenLight[]> {
+    const light = await reportBrokenLight(lamp)
+    const next = [...brokenLights.filter((other) => other.lampId !== light.lampId), light]
     setBrokenLights(next)
-    saveBrokenLights(next)
     return next
   }
 
-  function add(lamp: Lamp): BrokenLight[] {
-    return update([...brokenLights, brokenLightFrom(lamp, new Date())])
-  }
-
-  function remove(lampId: string): BrokenLight[] {
-    return update(brokenLights.filter((light) => light.lampId !== lampId))
+  async function remove(lampId: string): Promise<BrokenLight[]> {
+    await markLightWorking(lampId)
+    const next = brokenLights.filter((light) => light.lampId !== lampId)
+    setBrokenLights(next)
+    return next
   }
 
   return { brokenLights, add, remove }

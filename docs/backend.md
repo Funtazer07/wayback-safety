@@ -33,15 +33,15 @@ Database changes live in `supabase/migrations/`, one numbered file per change. N
 database by hand in the dashboard without adding a file here, or the team loses track of what the
 database looks like.
 
-| Table                | What it holds                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `profiles`           | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
-| `walks`              | One row per walk home: destination, start time, deadline, status, last known location |
-|                      | and, once the user is home, the time of the check-in                                  |
-| `contacts`           | One row per trusted contact or open invite: who invited, who accepted, the name the   |
-|                      | user gave them, status, and while open, a fingerprint of the invite link              |
-| `walk_contacts`      | Which contacts follow which walk. Chosen when the walk starts                         |
-| `push_subscriptions` | One row per phone that allowed notifications: the push address and its keys           |
+| Table           | What it holds                                                                         |
+| --------------- | ------------------------------------------------------------------------------------- |
+| `profiles`      | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
+| `walks`         | One row per walk home: destination, start time, deadline, status, last known location |
+|                 | and, once the user is home, the time of the check-in                                  |
+| `contacts`      | One row per trusted contact or open invite: who invited, who accepted, the name the   |
+|                 | user gave them, status, and while open, a fingerprint of the invite link              |
+| `walk_contacts` | Which contacts follow which walk. Chosen when the walk starts                         |
+| `reports`       | Place reports and broken street lights: category, a rounded spot or the lamp, time    |
 
 Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
 reference `profiles.id`.
@@ -144,44 +144,43 @@ Expired invites are deleted the next time the user creates one. Both are in `000
 Not here yet: an "I'm watching" signal from the contact to the user. The client asked for it
 (SCRUM-27 comment, 13 Oct). It is explored in SCRUM-98 and comes in a later migration.
 
-### Notifications
+### Reports
 
-Decided in SCRUM-66 (research on Confluence, 13 Oct): alerts go out by **Web Push only**, sent
-from the server. No email, because sending email to other people needs a paid domain. A scheduled
-job in the database (`pg_cron`) and a Supabase Edge Function will send the messages, so they also
-arrive when the phone is locked or the app is closed. That server code comes in SCRUM-69 and
-SCRUM-73; this part only gets phones ready to receive.
+One table, `reports`, for two kinds of report (SCRUM-92):
 
-What this means for people:
+- **Place report** (SCRUM-8, the form comes in SCRUM-96): a category (no light, quiet or empty, an
+  unsafe feeling, other), the spot where the user is, and an optional note of at most 140
+  characters.
+- **Broken street light** (the map, see [map.md](map.md)): one lamp from the register, saved at
+  the lamp's own spot with its street.
 
-- A user or contact only gets notifications if they allowed them. On iPhone that also needs iOS
-  16.4 or newer and the app on the Home Screen.
-- Every contact therefore needs the app and an account (see Trusted contacts).
-- Messages pass through Apple's or Google's push service, encrypted on the way. Everything else
-  stays in our Supabase project in the EU.
-- The free Supabase plan pauses a project after a week without activity. While paused, no alert
-  goes out. Fine for testing, not for real users.
+Decided on 22 Oct, different from the SCRUM-92 text in Jira, which kept reports hidden until
+SCRUM-10: every signed-in user can see reports, so the map can show them. Hidden from other users:
 
-How a phone is signed up (SCRUM-68):
+- **who** reported it. The table keeps `user_id` only to delete a user's reports with their
+  account and to limit how many reports one person makes. Column rights stop the app from reading
+  it.
+- **where the reporter was.** A place report is rounded to 3 decimals before it leaves the phone,
+  and the server rounds it again. A broken-light report uses the lamp's spot, which is public data.
+- **the note**, until reports can be flagged (SCRUM-32). A note could name or describe someone. The
+  team can read notes in the dashboard.
 
-1. The user taps "Allow notifications" on a card. It is on the start-walk screen now, and the
-   screen where a contact accepts an invite (SCRUM-60) will show it too. iPhones only ask after a
-   tap, which is why there is a button.
-2. The browser asks the push service for an address for this phone, and the app saves it with
-   `save_push_subscription` in the `push_subscriptions` table: one row per phone.
-3. Each time the app opens with notifications on, it saves the row again, so a phone always
-   belongs to the account that is signed in now.
+The app cannot write to `reports` directly. It calls these functions:
 
-`disableNotifications()` deletes the row and stops the subscription in the browser. There is no
-button for it yet; a settings screen will use it. Deleting the account deletes the rows too.
+| Function              | What it does                                                      |
+| --------------------- | ----------------------------------------------------------------- |
+| `report_place`        | Saves a place report at a rounded spot                            |
+| `report_broken_light` | Saves a broken light. A light that is already reported is refused |
+| `mark_light_working`  | "It works again": removes the report of that lamp. Any user may   |
 
-The service worker that vite-plugin-pwa writes cannot show notifications, so it loads
-`public/push-sw.js`, which can. That file also opens the app when a notification is tapped.
+Code: `src/features/reports/reports.ts` (place reports) and `src/features/map/brokenLights.ts`
+(broken lights).
 
-Push uses a key pair (VAPID): the public key is in the app as `VITE_VAPID_PUBLIC_KEY`, the private
-key only in Supabase Edge Function secrets. See "Push keys" under One-time setup.
+Assumptions until SCRUM-90 (research) decides, all in `0008_reports.sql`:
 
-Code: `src/features/notifications/`.
+- The spot is rounded to 3 decimals: about 110 m north–south and 70 m east–west in Eindhoven.
+- A report is kept 30 days. Expired reports are not shown, and the next new report deletes them.
+- One person can make at most 20 reports a day.
 
 ### Row level security
 
@@ -211,8 +210,11 @@ Written down here because the app handles location and personal data.
   destination are sent to the free FOSSGIS route planner (routing.openstreetmap.de), outside our
   own backend. Nothing is stored by our app. The privacy statement must mention this. See
   [map.md](map.md).
-- **Broken-light reports:** for now saved on the user's phone only, without who reported it. They
-  move to the database with SCRUM-92.
+- **Reports:** every signed-in user sees the category, the spot and the time, never who reported
+  it. A place report is stored rounded (about 100 m), never at the GPS position; a broken light at
+  the lamp's own spot. Notes are hidden from other users until flagging exists (SCRUM-32). No
+  photos and no link to a walk or route. Reports are deleted after 30 days, and with the account.
+  See Reports above.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
   does the last location of a walk without a check-in. Decide this before real users sign up.

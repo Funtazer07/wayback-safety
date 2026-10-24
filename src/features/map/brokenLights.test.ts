@@ -1,11 +1,18 @@
-import { beforeEach, expect, test } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 import {
-  brokenLightFrom,
+  fetchBrokenLights,
   isReportedBroken,
-  loadBrokenLights,
-  saveBrokenLights,
+  markLightWorking,
+  reportBrokenLight,
+  type BrokenLight,
 } from './brokenLights.ts'
 import type { Lamp } from './lamps.ts'
+
+const { rpc, single, not } = vi.hoisted(() => ({ rpc: vi.fn(), single: vi.fn(), not: vi.fn() }))
+
+vi.mock('../../lib/supabase.ts', () => ({
+  supabase: { rpc, from: () => ({ select: () => ({ not }) }) },
+}))
 
 const vestdijk: Lamp = {
   lampId: '776',
@@ -15,15 +22,26 @@ const vestdijk: Lamp = {
 }
 
 beforeEach(() => {
-  localStorage.clear()
+  rpc.mockReset()
+  single.mockReset()
+  not.mockReset()
 })
 
-test('a report is there again after the page is reloaded', () => {
-  const report = brokenLightFrom(vestdijk, new Date('2026-10-16T22:30:00Z'))
+test('the broken lights everyone reported are loaded from the server', async () => {
+  not.mockResolvedValue({
+    data: [
+      {
+        lamp_id: '776',
+        lat: 51.441212,
+        lng: 5.478385,
+        street: 'Vestdijk',
+        created_at: '2026-10-16T22:30:00+00:00',
+      },
+    ],
+    error: null,
+  })
 
-  saveBrokenLights([report])
-
-  expect(loadBrokenLights()).toEqual([
+  expect(await fetchBrokenLights()).toEqual([
     {
       lampId: '776',
       coordinates: [5.478385, 51.441212],
@@ -31,20 +49,52 @@ test('a report is there again after the page is reloaded', () => {
       reportedAt: '2026-10-16T22:30:00.000Z',
     },
   ])
+  // Only lamp reports, not place reports.
+  expect(not).toHaveBeenCalledWith('lamp_id', 'is', null)
 })
 
-test('starts empty when nothing is saved or the saved data is broken', () => {
-  expect(loadBrokenLights()).toEqual([])
+test('loading the broken lights fails when the server refuses it', async () => {
+  const error = new Error('Network error')
+  not.mockResolvedValue({ data: null, error })
 
-  localStorage.setItem('wayback.brokenLights', '{not json')
-  expect(loadBrokenLights()).toEqual([])
+  await expect(fetchBrokenLights()).rejects.toBe(error)
+})
 
-  localStorage.setItem('wayback.brokenLights', JSON.stringify([{ lampId: 1 }]))
-  expect(loadBrokenLights()).toEqual([])
+test('a broken light is reported at the lamp’s own spot, not where the user is', async () => {
+  rpc.mockReturnValue({ single })
+  single.mockResolvedValue({ data: { created_at: '2026-10-16T22:30:00+00:00' }, error: null })
+
+  const light = await reportBrokenLight(vestdijk)
+
+  expect(rpc).toHaveBeenCalledWith('report_broken_light', {
+    lamp_id: '776',
+    lat: 51.441212,
+    lng: 5.478385,
+    street: 'Vestdijk',
+  })
+  expect(light.reportedAt).toBe('2026-10-16T22:30:00.000Z')
+})
+
+test('reporting a light that someone already reported fails', async () => {
+  const error = new Error('This light is already reported as broken')
+  rpc.mockReturnValue({ single })
+  single.mockResolvedValue({ data: null, error })
+
+  await expect(reportBrokenLight(vestdijk)).rejects.toBe(error)
+})
+
+test('"It works again" removes the report of that lamp', async () => {
+  rpc.mockResolvedValue({ error: null })
+
+  await markLightWorking('776')
+
+  expect(rpc).toHaveBeenCalledWith('mark_light_working', { lamp_id: '776' })
 })
 
 test('knows when a street light is already reported', () => {
-  const reports = [brokenLightFrom(vestdijk, new Date())]
+  const reports: BrokenLight[] = [
+    { lampId: '776', coordinates: vestdijk.coordinates, street: 'Vestdijk', reportedAt: '' },
+  ]
 
   expect(isReportedBroken(vestdijk, reports)).toBe(true)
   expect(isReportedBroken({ ...vestdijk, coordinates: [5.479, 51.44] }, reports)).toBe(false)
