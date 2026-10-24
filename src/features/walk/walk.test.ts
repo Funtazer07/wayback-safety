@@ -1,5 +1,12 @@
 import { beforeEach, expect, test, vi } from 'vitest'
-import { checkInWalk, fetchActiveWalk, startWalk, updateWalkLocation } from './walk.ts'
+import {
+  cancelWalk,
+  checkInWalk,
+  extendWalk,
+  fetchActiveWalk,
+  startWalk,
+  updateWalkLocation,
+} from './walk.ts'
 
 const { rpc, maybeSingle } = vi.hoisted(() => ({ rpc: vi.fn(), maybeSingle: vi.fn() }))
 
@@ -95,6 +102,38 @@ test('checking in fails when the server refuses it', async () => {
   rpc.mockResolvedValue({ data: null, error })
 
   await expect(checkInWalk('walk-1')).rejects.toBe(error)
+})
+
+test('extending a walk sends the minutes and returns the new deadline the server set', async () => {
+  rpc.mockResolvedValue({ data: { ...row, deadline: '2026-10-06T22:35:00+00:00' }, error: null })
+
+  const walk = await extendWalk('walk-1', 10)
+
+  expect(rpc).toHaveBeenCalledWith('extend_walk', { walk_id: 'walk-1', minutes: 10 })
+  expect(walk.deadline).toEqual(new Date('2026-10-06T22:35:00Z'))
+})
+
+test('extending a walk fails when the server refuses it', async () => {
+  const error = new Error('The deadline cannot be more than 3 hours from now')
+  rpc.mockResolvedValue({ data: null, error })
+
+  await expect(extendWalk('walk-1', 15)).rejects.toBe(error)
+})
+
+test('cancelling ends the given walk and returns it as cancelled', async () => {
+  rpc.mockResolvedValue({ data: { ...row, status: 'cancelled' }, error: null })
+
+  const walk = await cancelWalk('walk-1')
+
+  expect(rpc).toHaveBeenCalledWith('cancel_walk', { walk_id: 'walk-1' })
+  expect(walk.status).toBe('cancelled')
+})
+
+test('cancelling fails when the server refuses it', async () => {
+  const error = new Error('No walk in progress with this id')
+  rpc.mockResolvedValue({ data: null, error })
+
+  await expect(cancelWalk('walk-1')).rejects.toBe(error)
 })
 
 test('the active walk is returned when there is one', async () => {

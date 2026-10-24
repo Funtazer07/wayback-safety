@@ -7,7 +7,7 @@ export type Walk = {
   startedAt: Date
   /** When the user should be home. Set by the server, so it is the same on every device. */
   deadline: Date
-  status: 'active' | 'safe' | 'overdue'
+  status: 'active' | 'safe' | 'overdue' | 'cancelled'
 }
 
 export type NewWalk = {
@@ -20,8 +20,8 @@ export type NewWalk = {
   contactIds?: string[]
 }
 
-// A row of the walks table, as the database returns it. See supabase/migrations/0003_walks.sql
-// and 0004_check_in.sql. Only the columns the app uses are listed.
+// A row of the walks table, as the database returns it. See supabase/migrations/0003_walks.sql,
+// 0004_check_in.sql and 0006_extend_and_cancel.sql. Only the columns the app uses are listed.
 type WalkRow = {
   id: string
   destination_label: string
@@ -82,6 +82,28 @@ export async function updateWalkLocation(
  */
 export async function checkInWalk(walkId: string): Promise<Walk> {
   const { data, error } = await client().rpc('check_in', { walk_id: walkId })
+  if (error) throw error
+  return toWalk(data)
+}
+
+/**
+ * Gives the user more time. The server adds the minutes to the deadline, or to now if the deadline
+ * has passed, and returns the walk with the new deadline. Fails when the walk has ended or is
+ * overdue, or when the deadline would be more than 3 hours away.
+ */
+export async function extendWalk(walkId: string, minutes: number): Promise<Walk> {
+  const { data, error } = await client().rpc('extend_walk', { walk_id: walkId, minutes })
+  if (error) throw error
+  return toWalk(data)
+}
+
+/**
+ * Stops the walk without a check-in, for example when the user gets a lift. The server sets it to
+ * 'cancelled', which stops the timer, and erases the last known location. Fails when the walk has
+ * already ended or is overdue.
+ */
+export async function cancelWalk(walkId: string): Promise<Walk> {
+  const { data, error } = await client().rpc('cancel_walk', { walk_id: walkId })
   if (error) throw error
   return toWalk(data)
 }
