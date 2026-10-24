@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import type { LngLat } from './geometry.ts'
 import type { MeasuredRoute } from './lamps.ts'
@@ -162,7 +162,8 @@ test('tells which route is on the map, so the walk can show it', async () => {
   click('Tap Stratumseind')
   click('Tap the station')
   await screen.findByRole('region', { name: 'Choose a route' })
-  expect(onRouteChange).toHaveBeenLastCalledWith(viaCityCentre.coordinates)
+  // The list can be on screen a moment before React tells the parent about the route, so wait.
+  await waitFor(() => expect(onRouteChange).toHaveBeenLastCalledWith(viaCityCentre.coordinates))
 
   fireEvent.click(screen.getByRole('button', { name: /Fastest/ }))
   expect(onRouteChange).toHaveBeenLastCalledWith(quickWay.coordinates)
