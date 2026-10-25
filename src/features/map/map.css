@@ -8,9 +8,13 @@
   isolation: isolate;
 }
 
-/* On Home the map shares the screen with the greeting and the buttons, so it gets a fixed size. */
+/* On Home the map shares the screen with the greeting and the buttons. It takes the room they leave
+   (.home-screen in home.css), down to this floor on very small phones. A fixed 30rem made the page
+   taller than a phone once the bottom bar came (SCRUM-60), and a page that scrolls under a map is
+   hard to use. Assumption: 11rem still shows enough streets to plan a walk; it keeps Start walk
+   above the bottom bar on the smallest phones we checked (320 × 568). */
 .planner {
-  min-height: 30rem;
+  min-height: 11rem;
   border-radius: 0.75rem;
 }
 
