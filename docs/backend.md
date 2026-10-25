@@ -68,7 +68,7 @@ The app cannot write to `walks` directly. It calls these database functions:
 
 A walk has a status: `active` (on the way), `safe` (checked in), `overdue` (deadline passed, alert
 sent) or `cancelled` (stopped by the user without a check-in). A walk is late when it is still
-`active` after its deadline. Nothing sets `overdue` yet; that belongs to the alert story.
+`active` after its deadline. The scheduled check sets `overdue` (see "Late walks").
 
 Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation`, `checkInWalk`,
 `extendWalk`, `cancelWalk` and `fetchActiveWalk`. The screens are in the same folder: `StartWalkScreen` (destination and timer)
@@ -287,10 +287,10 @@ cancelled, and the database writes a warning to **Logs > Postgres** instead. The
 that one message.
 
 Assumption: a message that cannot reach a phone within an hour (phone off) is dropped. "Anna is on
-the way home" an hour late would only confuse.
+the way home" an hour late would only confuse. "Are you OK?" is kept only for the grace period.
 
-Not here yet: the "Are you OK?" warning (SCRUM-73) and the alert with the last known location
-(SCRUM-74). They add their own event to the same function.
+The same function also sends the "Are you OK?" warning to the walker (see "Late walks"). Not here
+yet: the alert with the last known location to the contacts (SCRUM-74), which adds its own event.
 
 #### Setting it up
 
@@ -320,7 +320,45 @@ SCRUM-68 ("Push keys"); the private key never goes in the code, `.env.local`, Gi
 When the function code changes, deploy it again the same way. To see what happened to a message,
 open the function's **Logs**, or run `select * from net._http_response order by created desc limit
 10;` in the SQL Editor to see what the function answered. When nothing shows up there at all, look
-for a `send_walk_push` warning under **Logs > Postgres**.
+for a `queue_walk_push` warning under **Logs > Postgres**.
+
+### Late walks
+
+A job in the database checks every minute for walks that ran past their deadline (SCRUM-73,
+`0011_late_walks.sql`). It runs on the server, so it works when the phone is locked, the app is
+closed or the battery is dead. For each late walk, once per deadline:
+
+1. **Warning.** The deadline passed and the walk is still `active`: the walker gets "Are you OK?"
+   on their own phone ("Your timer has run out. Open WayBack to say you are home or add time.
+   Otherwise your contacts are told in 5 minutes."). The time is saved in `warned_at`.
+2. **Overdue.** Still `active` 5 minutes after that warning: the status becomes `overdue` and the
+   time is saved in `overdue_at`. Alerting the contacts with the last known location at that moment
+   is SCRUM-74; until then nobody is told.
+
+Rules that keep it fair:
+
+- The grace period counts from the warning, not from the deadline. If the check runs late, the user
+  still gets the full 5 minutes after the warning.
+- Checking in, cancelling or extending during the grace period stops it. After extending, the walk
+  is warned again only when the new deadline passes; it can never become overdue on an old
+  warning.
+- A walk is warned once per deadline and becomes overdue once. An overdue walk can still be checked
+  in (`0004_check_in.sql`).
+
+Assumptions, until SCRUM-71 (research) decides:
+
+- The grace period is 5 minutes, from the 05:00 on the SCRUM-72 prototype. It is in two places
+  that must match: `grace_period` in `0011_late_walks.sql` and `GRACE_MINUTES` in
+  `supabase/functions/send-walk-push/walkPush.ts`.
+- The check runs every minute, so the warning can come up to a minute after the deadline.
+
+The free Supabase plan pauses a project after a week without activity. While it is paused the
+check does not run, and nobody is warned or alerted.
+
+To set it up, after "Sending push" works: deploy `send-walk-push` again (it now knows `are_you_ok`),
+then run `0011_late_walks.sql`. If the SQL Editor says pg_cron is not available, turn it on under
+**Database > Extensions** first. **Integrations > Cron** then shows the job `check-late-walks` and
+each run. The rules are tested by `supabase/tests/late_walks_test.sql` (see "Testing the database").
 
 ### Row level security
 
@@ -496,6 +534,18 @@ for everyone straight away.
 
 Editing a table by hand in the Table Editor is fine for test rows. It is not fine for columns,
 tables or policies: those go through a migration file.
+
+### Testing the database
+
+The app's tests (Vitest) never reach the database. Rules that live in the database itself are
+tested with SQL files in `supabase/tests/`. Paste one into the **SQL Editor** and click **Run**,
+after its migration is run. Each file makes up its own users, runs inside one transaction and ends
+with `rollback`, so nothing stays behind and no push message is sent. The last result is "ALL
+CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
+
+| File                  | Tests                                                |
+| --------------------- | ---------------------------------------------------- |
+| `late_walks_test.sql` | The warning, the grace period and overdue (SCRUM-73) |
 
 ### This is real personal data
 

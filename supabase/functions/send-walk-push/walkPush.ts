@@ -10,11 +10,20 @@
  * - home_safe: the user checked in (SCRUM-7, SCRUM-48).
  * - cancelled: the user stopped the walk without a check-in (SCRUM-12, SCRUM-63). Added here on
  *   24 Oct: SCRUM-63 and SCRUM-12 promise it, but no other subtask builds it.
- * SCRUM-73 and SCRUM-74 add their own events here ("Are you OK?", the alert).
+ * - are_you_ok: the timer ran out without a check-in (SCRUM-73). Goes to the walker, not to the
+ *   contacts.
+ * SCRUM-74 adds the alert to the contacts here.
  */
-export type WalkEvent = 'started' | 'home_safe' | 'cancelled'
+export type WalkEvent = 'started' | 'home_safe' | 'cancelled' | 'are_you_ok'
 
-const walkEvents: WalkEvent[] = ['started', 'home_safe', 'cancelled']
+const walkEvents: WalkEvent[] = ['started', 'home_safe', 'cancelled', 'are_you_ok']
+
+/**
+ * Assumption: 5 minutes between "Are you OK?" and alerting the contacts, from the 05:00 on the
+ * SCRUM-72 prototype, until SCRUM-71 (research) decides. Keep it the same as GRACE_PERIOD in
+ * supabase/migrations/0011_late_walks.sql.
+ */
+export const GRACE_MINUTES = 5
 
 /** What the service worker (public/push-sw.js) shows. */
 export type PushMessage = { title: string; body: string }
@@ -27,6 +36,20 @@ export type WalkContact = {
 
 export function isWalkEvent(value: unknown): value is WalkEvent {
   return walkEvents.includes(value as WalkEvent)
+}
+
+/** Who gets the message: the walker themselves, or the walk's contacts. */
+export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
+  return event === 'are_you_ok' ? 'walker' : 'contacts'
+}
+
+/**
+ * How long, in seconds, the push service keeps trying to reach a phone that is off.
+ * Assumption: an hour for news about a walk; after that "Anna is on the way home" only confuses.
+ * Only the grace period for "Are you OK?": after it, the contacts are already being told.
+ */
+export function timeToLive(event: WalkEvent): number {
+  return event === 'are_you_ok' ? GRACE_MINUTES * 60 : 60 * 60
 }
 
 /**
@@ -77,6 +100,13 @@ export function messageFor(
       return {
         title: `${name} stopped the walk`,
         body: `Cancelled at ${formatClock(walk.cancelledAt ?? new Date())}. No check-in will follow.`,
+      }
+    case 'are_you_ok':
+      // To the walker. Says what to do and what happens otherwise, without sounding like an alarm
+      // (SCRUM-72 prototype, screen 06). Nobody has been told anything yet.
+      return {
+        title: 'Are you OK?',
+        body: `Your timer has run out. Open WayBack to say you are home or add time. Otherwise your contacts are told in ${GRACE_MINUTES} minutes.`,
       }
   }
 }

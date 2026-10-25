@@ -1,9 +1,10 @@
-// SCRUM-69: sends a push notification to the contacts of a walk.
+// SCRUM-69: sends a push notification about a walk.
 //
 // Runs on Supabase as an Edge Function (Deno, not Node). The database calls it by itself when a
-// walk starts or is checked in (trigger in supabase/migrations/0009_walk_push.sql), so it also
-// works when the phone is locked or the app was closed right after the tap. A cancelled walk is
-// announced too (SCRUM-63).
+// walk starts, is checked in or is cancelled (trigger in supabase/migrations/0009_walk_push.sql),
+// so it also works when the phone is locked or the app was closed right after the tap. Those
+// messages go to the walk's contacts. The scheduled check for late walks (SCRUM-73,
+// 0011_late_walks.sql) calls it too, for the "Are you OK?" warning to the walker.
 //
 // Deployed by hand in the Supabase dashboard; steps in docs/backend.md, "Sending push". Vitest does
 // not run this file. The rules it uses (who gets a message, what it says) are in
@@ -14,7 +15,14 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3'
-import { isSubscriptionGone, isWalkEvent, messageFor, recipientsOf } from './walkPush.ts'
+import {
+  audienceOf,
+  isSubscriptionGone,
+  isWalkEvent,
+  messageFor,
+  recipientsOf,
+  timeToLive,
+} from './walkPush.ts'
 
 // All values come from Edge Function secrets. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are added
 // by Supabase itself; the others are set once (docs/backend.md). Never write them in this file.
@@ -35,9 +43,22 @@ webpush.setVapidDetails(
 // users' contacts and phones. It stays on the server and never reaches the app.
 const database = createClient(secret('SUPABASE_URL'), secret('SUPABASE_SERVICE_ROLE_KEY'))
 
-// Assumption: a message that cannot be delivered within an hour (phone off) is not worth showing
-// any more. "Anna is on the way home" an hour late only confuses.
-const ONE_HOUR = 60 * 60
+/** The accounts of the walk's contacts who should hear about it. */
+async function contactsOf(walkId: string): Promise<string[]> {
+  // The contacts chosen for this walk, with their current status: someone paused during the walk
+  // still has a row in walk_contacts.
+  const { data: links, error } = await database
+    .from('walk_contacts')
+    .select('contacts(contact_user_id, status)')
+    .eq('walk_id', walkId)
+  if (error) throw error
+  return recipientsOf(
+    links.map((link) => ({
+      contactUserId: link.contacts.contact_user_id,
+      status: link.contacts.status,
+    })),
+  )
+}
 
 async function sendWalkPush(request: Request): Promise<Response> {
   // Only the database knows this secret. Without it anyone could make phones buzz.
@@ -52,10 +73,15 @@ async function sendWalkPush(request: Request): Promise<Response> {
 
   const { data: walk, error: walkError } = await database
     .from('walks')
-    .select('user_id, deadline, checked_in_at, cancelled_at')
+    .select('user_id, status, deadline, checked_in_at, cancelled_at')
     .eq('id', walkId)
     .single()
   if (walkError) return new Response(walkError.message, { status: 404 })
+
+  // The walker checked in or cancelled just before this message went out: no warning needed.
+  if (event === 'are_you_ok' && walk.status !== 'active') {
+    return Response.json({ sent: 0, failed: 0, removed: 0 })
+  }
 
   const { data: profile } = await database
     .from('profiles')
@@ -63,20 +89,8 @@ async function sendWalkPush(request: Request): Promise<Response> {
     .eq('id', walk.user_id)
     .single()
 
-  // The contacts chosen for this walk, with their current status: someone paused during the walk
-  // still has a row in walk_contacts.
-  const { data: links, error: linksError } = await database
-    .from('walk_contacts')
-    .select('contacts(contact_user_id, status)')
-    .eq('walk_id', walkId)
-  if (linksError) return new Response(linksError.message, { status: 500 })
-
-  const recipients = recipientsOf(
-    links.map((link) => ({
-      contactUserId: link.contacts.contact_user_id,
-      status: link.contacts.status,
-    })),
-  )
+  const recipients =
+    audienceOf(event) === 'walker' ? [walk.user_id as string] : await contactsOf(walkId)
   if (recipients.length === 0) return Response.json({ sent: 0, failed: 0, removed: 0 })
 
   const { data: phones, error: phonesError } = await database
@@ -96,7 +110,7 @@ async function sendWalkPush(request: Request): Promise<Response> {
       webpush.sendNotification(
         { endpoint: phone.endpoint, keys: { p256dh: phone.p256dh, auth: phone.auth } },
         JSON.stringify(message),
-        { TTL: ONE_HOUR },
+        { TTL: timeToLive(event) },
       ),
     ),
   )
