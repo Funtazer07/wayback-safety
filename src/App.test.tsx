@@ -8,7 +8,7 @@ const auth = vi.hoisted(() => ({ signInWithOAuth: vi.fn(), signOut: vi.fn() }))
 const profile = vi.hoisted(() => ({ fetchProfile: vi.fn(), completeProfile: vi.fn() }))
 const walks = vi.hoisted(() => ({
   checkInWalk: vi.fn(),
-  fetchActiveWalk: vi.fn(),
+  fetchCurrentWalk: vi.fn(),
   startWalk: vi.fn(),
   updateWalkLocation: vi.fn(),
 }))
@@ -69,7 +69,7 @@ beforeEach(() => {
   auth.signInWithOAuth.mockResolvedValue({ error: null })
   profile.fetchProfile.mockResolvedValue({ displayName: null })
   profile.completeProfile.mockResolvedValue(undefined)
-  walks.fetchActiveWalk.mockResolvedValue(null)
+  walks.fetchCurrentWalk.mockResolvedValue(null)
 })
 
 test('a new visitor can sign in with Google from the welcome screen', async () => {
@@ -207,7 +207,7 @@ test('shows a message when the walk cannot be started', async () => {
 
 test('a walk that is still running is shown again when the app is reopened', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
-  walks.fetchActiveWalk.mockResolvedValue(walkEndingIn(14))
+  walks.fetchCurrentWalk.mockResolvedValue(walkEndingIn(14))
 
   renderApp(loggedIn)
 
@@ -218,7 +218,7 @@ test('a walk that is still running is shown again when the app is reopened', asy
 test('a user checks in with "I’m home" and is back on Home after the confirmation', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   const walk = walkEndingIn(14)
-  walks.fetchActiveWalk.mockResolvedValue(walk)
+  walks.fetchCurrentWalk.mockResolvedValue(walk)
   walks.checkInWalk.mockResolvedValue({ ...walk, status: 'safe' })
   renderApp(loggedIn)
   await screen.findByRole('timer')
@@ -261,7 +261,7 @@ test('a walk started without a route shows no route', async () => {
 
 test('the route is still on the walk map when the app is opened again during the walk', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
-  walks.fetchActiveWalk.mockResolvedValue(walkEndingIn(14))
+  walks.fetchCurrentWalk.mockResolvedValue(walkEndingIn(14))
   localStorage.setItem(
     'wayback.walkRoute',
     JSON.stringify({ walkId: 'walk-1', coordinates: routeViaStratumseind }),
@@ -275,7 +275,7 @@ test('the route is still on the walk map when the app is opened again during the
 test('the route of a walk is erased once the user is home', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   const walk = walkEndingIn(14)
-  walks.fetchActiveWalk.mockResolvedValue(walk)
+  walks.fetchCurrentWalk.mockResolvedValue(walk)
   walks.checkInWalk.mockResolvedValue({ ...walk, status: 'safe' })
   localStorage.setItem(
     'wayback.walkRoute',

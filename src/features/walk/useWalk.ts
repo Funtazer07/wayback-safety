@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { checkInWalk, fetchActiveWalk, startWalk, type NewWalk, type Walk } from './walk.ts'
+import {
+  checkInWalk,
+  extendWalk,
+  fetchCurrentWalk,
+  startWalk,
+  type NewWalk,
+  type Walk,
+} from './walk.ts'
 
 type WalkState = {
   walk: Walk | null
@@ -17,7 +24,7 @@ export function useWalk(userId: string | undefined) {
     if (!userId) return
 
     let isCurrent = true
-    fetchActiveWalk()
+    fetchCurrentWalk()
       .then((walk) => isCurrent && setState({ walk, isLoading: false, error: null }))
       .catch(
         () =>
@@ -48,10 +55,32 @@ export function useWalk(userId: string | undefined) {
     setState({ walk, isLoading: false, error: null })
   }
 
+  /** Gives the user more time (the "Add 5 minutes" button, SCRUM-101). */
+  async function extend(minutes: number) {
+    if (!state.walk) return
+    const walk = await extendWalk(state.walk.id, minutes)
+    setState({ walk, isLoading: false, error: null })
+  }
+
+  /**
+   * Asks the server for the walk again, to hear about the "Are you OK?" warning and about the walk
+   * becoming overdue. A failed refresh keeps what is on screen: the next one tries again.
+   */
+  async function refresh() {
+    try {
+      const walk = await fetchCurrentWalk()
+      // Null means the walk ended somewhere else (another device). Keep showing it until the user
+      // acts, instead of jumping away from the screen they are looking at.
+      if (walk) setState({ walk, isLoading: false, error: null })
+    } catch {
+      // Offline for a moment: nothing to show the user.
+    }
+  }
+
   /** Forgets the walk that was checked in, so the app goes back to Home. */
   function finish() {
     setState({ walk: null, isLoading: false, error: null })
   }
 
-  return { ...state, start, checkIn, finish }
+  return { ...state, start, checkIn, extend, refresh, finish }
 }

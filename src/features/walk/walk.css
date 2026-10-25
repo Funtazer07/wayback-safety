@@ -186,3 +186,46 @@
     transition: none;
   }
 }
+
+/* Screen 06, "Are you okay?" (SCRUM-101): centred, calm, with the countdown in a warm yellow box. */
+.walk-alert {
+  align-items: center;
+  text-align: center;
+}
+
+.walk-alert .screen-actions {
+  width: 100%;
+}
+
+.walk-alert .check-in-actions,
+.walk-alert .check-in-button {
+  width: 100%;
+}
+
+.walk-alert-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  padding: 1rem;
+  border-radius: 50%;
+  fill: none;
+  stroke: #b45309;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  background: #fef3c7;
+}
+
+.walk-alert-box {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  /* Dark text on light yellow keeps strong contrast; the words carry the meaning, not the colour. */
+  color: #78350f;
+  background: #fef3c7;
+}
+
+.walk-alert-countdown {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
