@@ -4,7 +4,8 @@
 // walk starts, is checked in or is cancelled (trigger in supabase/migrations/0009_walk_push.sql),
 // so it also works when the phone is locked or the app was closed right after the tap. Those
 // messages go to the walk's contacts. The scheduled check for late walks (SCRUM-73,
-// 0011_late_walks.sql) calls it too, for the "Are you OK?" warning to the walker.
+// 0011_late_walks.sql) calls it too, for the "Are you OK?" warning to the walker, and the walk
+// becoming overdue sends the alert to the contacts (SCRUM-74, 0012_overdue_alert.sql).
 //
 // Deployed by hand in the Supabase dashboard; steps in docs/backend.md, "Sending push". Vitest does
 // not run this file. The rules it uses (who gets a message, what it says) are in
@@ -73,7 +74,8 @@ async function sendWalkPush(request: Request): Promise<Response> {
 
   const { data: walk, error: walkError } = await database
     .from('walks')
-    .select('user_id, status, deadline, checked_in_at, cancelled_at')
+    // Only the time of the last location, never the place: the message does not carry it.
+    .select('user_id, status, deadline, checked_in_at, cancelled_at, overdue_at, last_location_at')
     .eq('id', walkId)
     .single()
   if (walkError) return new Response(walkError.message, { status: 404 })
@@ -99,10 +101,14 @@ async function sendWalkPush(request: Request): Promise<Response> {
     .in('user_id', recipients)
   if (phonesError) return new Response(phonesError.message, { status: 500 })
 
+  const toDate = (value: string | null) => (value ? new Date(value) : null)
   const message = messageFor(event, profile?.display_name ?? null, {
+    id: walkId,
     deadline: new Date(walk.deadline),
-    checkedInAt: walk.checked_in_at ? new Date(walk.checked_in_at) : null,
-    cancelledAt: walk.cancelled_at ? new Date(walk.cancelled_at) : null,
+    checkedInAt: toDate(walk.checked_in_at),
+    cancelledAt: toDate(walk.cancelled_at),
+    overdueAt: toDate(walk.overdue_at),
+    lastLocationAt: toDate(walk.last_location_at),
   })
 
   const results = await Promise.allSettled(

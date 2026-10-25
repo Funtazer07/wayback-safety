@@ -249,14 +249,21 @@ Code: `src/features/notifications/`.
 
 ### Sending push
 
-When a walk starts, is checked in or is cancelled, its contacts get a push notification
-(SCRUM-69). No location is ever in these messages:
+When a walk starts, is checked in, is cancelled or becomes overdue, its contacts get a push
+notification (SCRUM-69, SCRUM-74). No location is ever in these messages, only the time it was
+saved:
 
-| When                      | Title                   | Text                                         |
-| ------------------------- | ----------------------- | -------------------------------------------- |
-| The walk starts           | Anna is on the way home | Expected home at 22:36.                      |
-| The user checks in        | Anna has arrived safely | Checked in at 22:31.                         |
-| The user cancels the walk | Anna stopped the walk   | Cancelled at 22:20. No check-in will follow. |
+| When                          | Title                      | Text                                                                                                                                                                                       |
+| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The walk starts               | Anna is on the way home    | Expected home at 22:36.                                                                                                                                                                    |
+| The user checks in            | Anna has arrived safely    | Checked in at 22:31.                                                                                                                                                                       |
+| The user cancels the walk     | Anna stopped the walk      | Cancelled at 22:20. No check-in will follow.                                                                                                                                               |
+| The walk becomes overdue      | Anna hasn't checked in yet | Anna was expected home at 22:36 but hasn't confirmed arriving safely. This does not necessarily mean something is wrong. Last known location from 22:31, not live. Open WayBack to see it. |
+| The user checks in after that | Anna is safe               | Anna checked in at 22:44, after the missed check-in alert. No need to look any further.                                                                                                    |
+
+Without a saved location the alert says "No location was shared during this walk." Tapping the
+alert opens the app with `?walk=<id>`; the contact's screen with the location on a map is SCRUM-102.
+Until that is built the app opens on its start page.
 
 The cancelled message was added on 24 Oct: SCRUM-63 and SCRUM-12 promise it, and no other subtask
 built it. Extending a walk sends nothing.
@@ -289,8 +296,8 @@ that one message.
 Assumption: a message that cannot reach a phone within an hour (phone off) is dropped. "Anna is on
 the way home" an hour late would only confuse. "Are you OK?" is kept only for the grace period.
 
-The same function also sends the "Are you OK?" warning to the walker (see "Late walks"). Not here
-yet: the alert with the last known location to the contacts (SCRUM-74), which adds its own event.
+The same function also sends the "Are you OK?" warning to the walker and the alert to the contacts
+(see "Late walks"). The alert is kept for a day for a phone that is off.
 
 #### Setting it up
 
@@ -332,8 +339,12 @@ closed or the battery is dead. For each late walk, once per deadline:
    on their own phone ("Your timer has run out. Open WayBack to say you are home or add time.
    Otherwise your contacts are told in 5 minutes."). The time is saved in `warned_at`.
 2. **Overdue.** Still `active` 5 minutes after that warning: the status becomes `overdue` and the
-   time is saved in `overdue_at`. Alerting the contacts with the last known location at that moment
-   is SCRUM-74; until then nobody is told.
+   time is saved in `overdue_at`. That change sends the alert to the walk's contacts (SCRUM-74,
+   `0012_overdue_alert.sql`): who missed the check-in, and when the last location was saved. If
+   the user checks in afterwards, the contacts get "Anna is safe".
+3. **Erase the location.** 24 hours after a walk became overdue, its last known location is erased,
+   and the walk takes no new location. Assumption, decided on 25 Oct until SCRUM-71 and SCRUM-30
+   decide: by then the contacts have looked, or the alert is old news.
 
 Rules that keep it fair:
 
@@ -360,6 +371,9 @@ then run `0011_late_walks.sql`. If the SQL Editor says pg_cron is not available,
 **Database > Extensions** first. **Integrations > Cron** then shows the job `check-late-walks` and
 each run. The rules are tested by `supabase/tests/late_walks_test.sql` (see "Testing the database").
 
+For the alert (SCRUM-74): deploy `send-walk-push` again (it now knows `overdue`), then run
+`0012_overdue_alert.sql`. Tested by `supabase/tests/overdue_alert_test.sql`.
+
 ### Row level security
 
 The app's API key is public: anyone can read it from the website. What protects the data is row
@@ -383,8 +397,9 @@ Written down here because the app handles location and personal data.
   overwrites the previous one, so there is no trail of where someone walked. Only the user can
   read their own walks.
 - **Location after the walk:** checking in or cancelling erases the last known location, and the
-  walk refuses new locations afterwards. A walk that is never checked in or cancelled keeps its
-  last location.
+  walk refuses new locations afterwards. A walk that became overdue keeps it for 24 hours, so the
+  contacts know where to look, and then it is erased too (assumption until SCRUM-71 and SCRUM-30
+  decide). The alert itself never carries the location, only the time it was saved.
 - **Route planning:** to compare routes on the map, the start (often the user's position) and the
   destination are sent to the free FOSSGIS route planner (routing.openstreetmap.de), outside our
   own backend. Nothing is stored by our app. The privacy statement must mention this. See
@@ -543,9 +558,10 @@ after its migration is run. Each file makes up its own users, runs inside one tr
 with `rollback`, so nothing stays behind and no push message is sent. The last result is "ALL
 CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 
-| File                  | Tests                                                |
-| --------------------- | ---------------------------------------------------- |
-| `late_walks_test.sql` | The warning, the grace period and overdue (SCRUM-73) |
+| File                     | Tests                                                                       |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `late_walks_test.sql`    | The warning, the grace period and overdue (SCRUM-73)                        |
+| `overdue_alert_test.sql` | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
 
 ### This is real personal data
 
