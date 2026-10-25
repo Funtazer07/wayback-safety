@@ -17,7 +17,7 @@ function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   return (
-    <main className="screen">
+    <main className="screen home-screen">
       <div>
         <p>Hi {displayName}</p>
         <h1>Ready when you are</h1>

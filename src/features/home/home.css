@@ -47,3 +47,15 @@
   color: Canvas;
   background: CanvasText;
 }
+
+/* Places is exactly one phone screen tall, bottom bar included, so it never scrolls: the map in the
+   middle grows or shrinks to fill what the greeting and the Start walk button leave. */
+.home-screen {
+  height: 100dvh;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+}
+
+.home-screen .screen-actions {
+  padding-top: 0;
+}
