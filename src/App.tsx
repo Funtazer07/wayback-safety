@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useSession } from './features/auth/SessionContext.ts'
+import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
+import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
 import type { LngLat } from './features/map/geometry.ts'
 import { clearWalkRoute, loadWalkRoute, saveWalkRoute } from './features/map/walkRoute.ts'
@@ -27,6 +29,8 @@ function App() {
   const [isStartingWalk, setIsStartingWalk] = useState(false)
   // The route on the Home map. When a walk starts, it is kept with that walk for the walk screen.
   const [plannedRoute, setPlannedRoute] = useState<LngLat[] | null>(null)
+  // Someone else's walk, when the app was opened from an alert (?walk=<id>, SCRUM-74/102).
+  const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
 
   if (!supabase) {
     return (
@@ -65,6 +69,20 @@ function App() {
 
   // A profile without a name means the user has not finished the onboarding yet.
   if (!profile.displayName) return <NameScreen onSave={saveName} />
+
+  // A contact who tapped an alert sees that walk first, also if they are on a walk themselves:
+  // someone may need them now. Back leads to their own screens.
+  if (openedWalkId) {
+    return (
+      <FollowedWalkScreen
+        walkId={openedWalkId}
+        onClose={() => {
+          forgetOpenedWalk()
+          setOpenedWalkId(null)
+        }}
+      />
+    )
+  }
 
   // A walk that is running always wins, also after the app was closed and opened again. A walk
   // that was just checked in stays on screen until the user closes the confirmation.
