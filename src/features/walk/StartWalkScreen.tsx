@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import ContactToggles from '../contacts/ContactToggles.tsx'
+import { useContacts } from '../contacts/useContacts.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
 import { HOME } from './destination.ts'
 import DestinationSheet from './DestinationSheet.tsx'
@@ -8,6 +10,8 @@ import type { NewWalk } from './walk.ts'
 import './walk.css'
 
 type StartWalkScreenProps = {
+  /** The logged-in user, to list their trusted contacts. */
+  userId: string
   onStart: (newWalk: NewWalk) => Promise<void>
   onBack: () => void
 }
@@ -19,19 +23,26 @@ const STEP = 5
 const MAX_MINUTES = 180
 
 /** Screen 1 of the walk wireframe: check the destination and the timer, then go. */
-function StartWalkScreen({ onStart, onBack }: StartWalkScreenProps) {
+function StartWalkScreen({ userId, onStart, onBack }: StartWalkScreenProps) {
   const [destination, setDestination] = useState(HOME)
   const [minutes, setMinutes] = useState(DEFAULT_MINUTES)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const now = useNow()
+  // Every contact who accepted follows the walk, as on screen 04, unless the user switches them off.
+  const contacts = useContacts(userId)
+  const [switchedOffIds, setSwitchedOffIds] = useState<string[]>([])
+  const acceptedIds = contacts.contacts
+    .filter((contact) => contact.status === 'accepted')
+    .map((contact) => contact.id)
+  const contactIds = acceptedIds.filter((id) => !switchedOffIds.includes(id))
 
   async function handleStart() {
     setError(null)
     setIsBusy(true)
     try {
-      await onStart({ destinationLabel: destination, minutes })
+      await onStart({ destinationLabel: destination, minutes, contactIds })
     } catch {
       setError('Could not start the walk. Check your connection and try again.')
       setIsBusy(false)
@@ -90,6 +101,15 @@ function StartWalkScreen({ onStart, onBack }: StartWalkScreenProps) {
             (that needs an address lookup and a route), so it asks the user instead. */}
         <p className="walk-small">Set how long your walk takes. Add time if you are not sure.</p>
       </div>
+
+      <ContactToggles
+        contacts={contacts.contacts}
+        isLoading={contacts.isLoading}
+        selectedIds={contactIds}
+        onChange={(selectedIds) =>
+          setSwitchedOffIds(acceptedIds.filter((id) => !selectedIds.includes(id)))
+        }
+      />
 
       {/* Not in the wireframe. Asked here because the warning when time runs out (SCRUM-73) is a
           push notification, and iPhones only ask after a tap (SCRUM-68). */}

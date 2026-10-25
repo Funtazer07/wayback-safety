@@ -1,5 +1,10 @@
 import { useState } from 'react'
+import TabBar, { type Tab } from './components/TabBar.tsx'
+import AccountScreen from './features/account/AccountScreen.tsx'
 import { useSession } from './features/auth/SessionContext.ts'
+import AcceptInviteScreen from './features/contacts/AcceptInviteScreen.tsx'
+import ContactsScreen from './features/contacts/ContactsScreen.tsx'
+import { forgetInviteToken, takeInviteToken } from './features/contacts/invites.ts'
 import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
 import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
@@ -31,6 +36,9 @@ function App() {
   const [plannedRoute, setPlannedRoute] = useState<LngLat[] | null>(null)
   // Someone else's walk, when the app was opened from an alert (?walk=<id>, SCRUM-74/102).
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
+  // An invite to become someone's trusted contact (?invite=<secret>, SCRUM-60).
+  const [inviteToken, setInviteToken] = useState(takeInviteToken)
+  const [tab, setTab] = useState<Tab>('places')
 
   if (!supabase) {
     return (
@@ -70,6 +78,20 @@ function App() {
   // A profile without a name means the user has not finished the onboarding yet.
   if (!profile.displayName) return <NameScreen onSave={saveName} />
 
+  // Someone opened an invite link: answering it comes first, then the contacts list.
+  if (inviteToken) {
+    return (
+      <AcceptInviteScreen
+        token={inviteToken}
+        onClose={() => {
+          forgetInviteToken()
+          setInviteToken(null)
+          setTab('contacts')
+        }}
+      />
+    )
+  }
+
   // A contact who tapped an alert sees that walk first, also if they are on a walk themselves:
   // someone may need them now. Back leads to their own screens.
   if (openedWalkId) {
@@ -106,6 +128,7 @@ function App() {
   if (isStartingWalk) {
     return (
       <StartWalkScreen
+        userId={session.user.id}
         onStart={async (newWalk) => {
           const startedWalk = await startWalk(newWalk)
           if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute)
@@ -115,12 +138,23 @@ function App() {
     )
   }
 
+  // The three tabs of screen 09. A walk, its start screen and the screens above take the whole
+  // phone, without the bar.
   return (
-    <Home
-      displayName={profile.displayName}
-      onStartWalk={() => setIsStartingWalk(true)}
-      onRouteChange={setPlannedRoute}
-    />
+    <div className="with-tab-bar">
+      {tab === 'places' && (
+        <Home
+          displayName={profile.displayName}
+          onStartWalk={() => setIsStartingWalk(true)}
+          onRouteChange={setPlannedRoute}
+        />
+      )}
+      {tab === 'contacts' && (
+        <ContactsScreen userId={session.user.id} displayName={profile.displayName} />
+      )}
+      {tab === 'account' && <AccountScreen displayName={profile.displayName} />}
+      <TabBar current={tab} onChange={setTab} />
+    </div>
   )
 }
 
