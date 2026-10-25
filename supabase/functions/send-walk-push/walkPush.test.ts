@@ -1,10 +1,12 @@
 import { expect, test } from 'vitest'
 import {
+  audienceOf,
   formatClock,
   isSubscriptionGone,
   isWalkEvent,
   messageFor,
   recipientsOf,
+  timeToLive,
 } from './walkPush.ts'
 
 test('only contacts who accepted and are not paused get a message', () => {
@@ -83,6 +85,7 @@ test('only the known events are accepted', () => {
   expect(isWalkEvent('started')).toBe(true)
   expect(isWalkEvent('home_safe')).toBe(true)
   expect(isWalkEvent('cancelled')).toBe(true)
+  expect(isWalkEvent('are_you_ok')).toBe(true)
   expect(isWalkEvent('overdue')).toBe(false)
   expect(isWalkEvent(undefined)).toBe(false)
 })
@@ -92,4 +95,24 @@ test('a phone that removed its subscription is recognised by the push service an
   expect(isSubscriptionGone(404)).toBe(true)
   expect(isSubscriptionGone(429)).toBe(false)
   expect(isSubscriptionGone(undefined)).toBe(false)
+})
+
+test('"Are you OK?" goes to the walker; everything else to the contacts', () => {
+  expect(audienceOf('are_you_ok')).toBe('walker')
+  expect(audienceOf('started')).toBe('contacts')
+  expect(audienceOf('home_safe')).toBe('contacts')
+  expect(audienceOf('cancelled')).toBe('contacts')
+})
+
+test('"Are you OK?" tells the walker what to do and when the contacts are told', () => {
+  const message = messageFor('are_you_ok', 'Anna', walk)
+
+  expect(message.title).toBe('Are you OK?')
+  expect(message.body).toContain('say you are home or add time')
+  expect(message.body).toContain('your contacts are told in 5 minutes')
+})
+
+test('"Are you OK?" is only worth delivering during the grace period', () => {
+  expect(timeToLive('are_you_ok')).toBe(5 * 60)
+  expect(timeToLive('started')).toBe(60 * 60)
 })
