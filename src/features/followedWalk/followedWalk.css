@@ -1,0 +1,49 @@
+/* Screen 10 (SCRUM-102): what a contact sees after an alert. */
+.followed {
+  gap: 1rem;
+}
+
+.followed-back {
+  align-self: flex-start;
+  width: auto;
+  padding-left: 0;
+}
+
+.followed-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+/* Dark text on a light tint keeps strong contrast; the words carry the meaning, not the colour. */
+.followed-box.is-overdue {
+  color: #78350f;
+  background: #fef3c7;
+}
+
+.followed-box.is-safe {
+  color: #14532d;
+  background: #dcfce7;
+}
+
+.followed-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+/* The map needs a fixed height inside a normal screen; on the walk screen it fills the rest. */
+.followed-map .map-area {
+  height: 16rem;
+  border-radius: 0.75rem;
+}
+
+.followed-map figcaption,
+.followed-note {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}

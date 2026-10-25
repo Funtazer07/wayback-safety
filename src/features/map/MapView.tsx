@@ -11,7 +11,12 @@ import {
   routeHitLayer,
   type MapData,
 } from './mapLayers.ts'
-import { destinationMarker, foundLampMarker, startMarker } from './mapMarkers.ts'
+import {
+  destinationMarker,
+  foundLampMarker,
+  lastLocationMarker,
+  startMarker,
+} from './mapMarkers.ts'
 import { mapStyle } from './mapStyles.ts'
 import { moveCamera, type CameraMove } from './moveCamera.ts'
 
@@ -21,6 +26,8 @@ type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
     destination?: LngLat | null
     /** The street light about to be reported, marked with a ring. */
     foundLamp?: LngLat | null
+    /** Where a walker was last seen, for a contact after a missed check-in (SCRUM-102). */
+    lastLocation?: LngLat | null
     camera?: CameraMove | null
     onTap?: (point: LngLat) => void
     onHold: (point: LngLat) => void
@@ -30,13 +37,14 @@ type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
 
 /** The MapLibre map. React hands it the data; this component puts it on the map. */
 function MapView(props: MapViewProps) {
-  const { start, destination, foundLamp, camera } = props
+  const { start, destination, foundLamp, lastLocation, camera } = props
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{
     start: maplibregl.Marker
     destination: maplibregl.Marker
     lamp: maplibregl.Marker
+    last: maplibregl.Marker
   } | null>(null)
 
   const data: MapData = {
@@ -72,6 +80,7 @@ function MapView(props: MapViewProps) {
       start: startMarker(),
       destination: destinationMarker(),
       lamp: foundLampMarker(),
+      last: lastLocationMarker(),
     }
 
     map.on('style.load', async () => {
@@ -114,11 +123,12 @@ function MapView(props: MapViewProps) {
       [markers.start, start],
       [markers.destination, destination],
       [markers.lamp, foundLamp],
+      [markers.last, lastLocation],
     ] as const) {
       if (spot) marker.setLngLat(spot).addTo(map)
       else marker.remove()
     }
-  }, [start, destination, foundLamp])
+  }, [start, destination, foundLamp, lastLocation])
 
   useEffect(() => {
     if (mapRef.current && camera) moveCamera(mapRef.current, camera)

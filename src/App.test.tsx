@@ -27,6 +27,11 @@ function walkEndingIn(minutes: number) {
 vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
+const followed = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn() }))
+vi.mock('./features/followedWalk/followedWalk.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./features/followedWalk/followedWalk.ts')>()),
+  fetchFollowedWalk: followed.fetchFollowedWalk,
+}))
 // The map needs a real browser; it has its own tests in features/map.
 // A route chosen on Home, from Stratumseind to the station.
 const routeViaStratumseind = vi.hoisted((): [number, number][] => [
@@ -66,6 +71,7 @@ function click(name: string) {
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  sessionStorage.clear()
   auth.signInWithOAuth.mockResolvedValue({ error: null })
   profile.fetchProfile.mockResolvedValue({ displayName: null })
   profile.completeProfile.mockResolvedValue(undefined)
@@ -290,4 +296,26 @@ test('the route of a walk is erased once the user is home', async () => {
 
   await screen.findByText('Hi Sam')
   expect(localStorage.getItem('wayback.walkRoute')).toBeNull()
+})
+
+test('opening the app from an alert shows that walk to the contact, and Back leads Home', async () => {
+  window.history.replaceState(null, '', '/?walk=554f1173-05c1-496b-8481-77df511e55de')
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  followed.fetchFollowedWalk.mockResolvedValue({
+    walkerName: 'Anna',
+    status: 'safe',
+    deadline: new Date(),
+    overdueAt: new Date(),
+    checkedInAt: new Date(),
+    cancelledAt: null,
+    lastLocation: null,
+  })
+  renderApp(loggedIn)
+
+  expect(await screen.findByRole('heading', { name: 'Anna is safe' })).toBeInTheDocument()
+  expect(followed.fetchFollowedWalk).toHaveBeenCalledWith('554f1173-05c1-496b-8481-77df511e55de')
+
+  click('Back')
+
+  expect(screen.queryByRole('heading', { name: 'Anna is safe' })).not.toBeInTheDocument()
 })

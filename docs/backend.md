@@ -289,8 +289,7 @@ saved:
 | The user checks in after that | Anna is safe               | Anna checked in at 22:44, after the missed check-in alert. No need to look any further.                                                                                                    |
 
 Without a saved location the alert says "No location was shared during this walk." Tapping the
-alert opens the app with `?walk=<id>`; the contact's screen with the location on a map is SCRUM-102.
-Until that is built the app opens on its start page.
+alert opens the app with `?walk=<id>` on the contact's view of that walk (see "The contact's view").
 
 The cancelled message was added on 24 Oct: SCRUM-63 and SCRUM-12 promise it, and no other subtask
 built it. Extending a walk sends nothing.
@@ -401,6 +400,32 @@ each run. The rules are tested by `supabase/tests/late_walks_test.sql` (see "Tes
 For the alert (SCRUM-74): deploy `send-walk-push` again (it now knows `overdue`), then run
 `0012_overdue_alert.sql`. Tested by `supabase/tests/overdue_alert_test.sql`.
 
+### The contact's view
+
+Tapping the alert opens screen 10 of the SCRUM-72 prototype for the contact (SCRUM-102,
+`src/features/followedWalk/`): whose walk it is, "Check-in overdue" with the due time, and the last
+known location on a map with the time it was saved, under the line "This is the last shared
+location, not a live position." When the walker checks in, the screen changes to "Anna is safe" by
+itself: it asks the server again every 30 seconds while the walk is overdue.
+
+What a contact may see comes from one database function, `followed_walk` (`0013_contact_walk_view.sql`):
+
+- Only a contact who was added to this walk, accepted, and is not paused. Anyone else gets "This
+  walk is not shared with you", also for a walk that does not exist.
+- The location only while the walk is overdue. Before that the contact sees only "on the way, home
+  by 22:36"; after the check-in only "safe", because the check-in erases the location.
+- Never the destination, the start time or the route. Decided on 25 Oct: a typed destination can be
+  a home address. The design shows "Destination: Home"; that line is left out.
+
+Jira asked for "an RLS rule". A row policy would open the whole walk row, destination included, so
+a function that returns only these fields is used instead, like `get_invite` for invites.
+
+The `?walk=<id>` part of the link is kept in the browser tab (`sessionStorage`) while the contact
+signs in, because signing in with Google loses it. Back closes the screen and forgets it.
+
+"Call" and "Message" from the design are left out: the app has no phone numbers. The map only
+covers Eindhoven; a last location outside it is shown as coordinates instead.
+
 ### Row level security
 
 The app's API key is public: anyone can read it from the website. What protects the data is row
@@ -448,6 +473,11 @@ Written down here because the app handles location and personal data.
 - **Push subscriptions:** per phone we store only the push service address and its two keys. No
   device name, browser or IP address. The row is deleted when notifications are turned off on that
   phone, and with the account.
+- **Contacts reading a walk:** the first and only time someone other than the owner reads walk
+  data (SCRUM-102). A contact who was added to the walk, accepted and is not paused sees the
+  walker's name, the status, the due time and the check-in or cancel time. The last known location
+  only while the walk is overdue, and so for at most 24 hours. Never the destination, the start
+  time or the route. See "The contact's view".
 - **Push messages:** hold the user's name and a time, never a location. They pass through Apple's
   or Google's push service, encrypted on the way, so those services cannot read them. Only
   contacts who accepted and are not paused get them.
@@ -585,10 +615,11 @@ after its migration is run. Each file makes up its own users, runs inside one tr
 with `rollback`, so nothing stays behind and no push message is sent. The last result is "ALL
 CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 
-| File                     | Tests                                                                       |
-| ------------------------ | --------------------------------------------------------------------------- |
-| `late_walks_test.sql`    | The warning, the grace period and overdue (SCRUM-73)                        |
-| `overdue_alert_test.sql` | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
+| File                         | Tests                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `late_walks_test.sql`        | The warning, the grace period and overdue (SCRUM-73)                        |
+| `overdue_alert_test.sql`     | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
+| `contact_walk_view_test.sql` | Who may see a walk, and the location only while overdue (SCRUM-102)         |
 
 ### This is real personal data
 
