@@ -7,6 +7,7 @@ import {
   messageFor,
   recipientsOf,
   timeToLive,
+  type WalkFacts,
 } from './walkPush.ts'
 
 test('only contacts who accepted and are not paused get a message', () => {
@@ -40,10 +41,13 @@ test('times are shown in Eindhoven time, also in summer', () => {
 })
 
 // A walk from Stratumseind, to be home by 22:36 Eindhoven time.
-const walk = {
+const walk: WalkFacts = {
+  id: 'walk-1',
   deadline: new Date('2026-10-15T20:36:00Z'),
   checkedInAt: null,
   cancelledAt: null,
+  overdueAt: null,
+  lastLocationAt: null,
 }
 
 test('a started walk tells the contact who and when they should be home, without a location', () => {
@@ -86,7 +90,8 @@ test('only the known events are accepted', () => {
   expect(isWalkEvent('home_safe')).toBe(true)
   expect(isWalkEvent('cancelled')).toBe(true)
   expect(isWalkEvent('are_you_ok')).toBe(true)
-  expect(isWalkEvent('overdue')).toBe(false)
+  expect(isWalkEvent('overdue')).toBe(true)
+  expect(isWalkEvent('alarm')).toBe(false)
   expect(isWalkEvent(undefined)).toBe(false)
 })
 
@@ -115,4 +120,51 @@ test('"Are you OK?" tells the walker what to do and when the contacts are told',
 test('"Are you OK?" is only worth delivering during the grace period', () => {
   expect(timeToLive('are_you_ok')).toBe(5 * 60)
   expect(timeToLive('started')).toBe(60 * 60)
+})
+
+// Late: due at 22:36, last location sent at 22:31, overdue at 22:42.
+const overdueWalk: WalkFacts = {
+  ...walk,
+  overdueAt: new Date('2026-10-15T20:42:00Z'),
+  lastLocationAt: new Date('2026-10-15T20:31:00Z'),
+}
+
+test('the alert says who missed the check-in, without causing panic, and goes to the contacts', () => {
+  const message = messageFor('overdue', 'Anna', overdueWalk)
+
+  expect(audienceOf('overdue')).toBe('contacts')
+  expect(message.title).toBe("Anna hasn't checked in yet")
+  expect(message.body).toContain('Anna was expected home at 22:36')
+  expect(message.body).toContain('This does not necessarily mean something is wrong.')
+})
+
+test('the alert gives the time of the last known location and says it is not live', () => {
+  expect(messageFor('overdue', 'Anna', overdueWalk).body).toContain(
+    'Last known location from 22:31, not live.',
+  )
+})
+
+test('the alert says so when no location was shared, instead of pointing to one', () => {
+  const body = messageFor('overdue', 'Anna', { ...overdueWalk, lastLocationAt: null }).body
+
+  expect(body).toContain('No location was shared during this walk.')
+  expect(body).not.toContain('Last known location')
+})
+
+test('tapping the alert opens the app on this walk', () => {
+  expect(messageFor('overdue', 'Anna', overdueWalk).url).toBe('?walk=walk-1')
+})
+
+test('a check-in after the alert tells the contacts clearly that the person is safe', () => {
+  const message = messageFor('home_safe', 'Anna', {
+    ...overdueWalk,
+    checkedInAt: new Date('2026-10-15T20:44:00Z'),
+  })
+
+  expect(message.title).toBe('Anna is safe')
+  expect(message.body).toContain('checked in at 22:44, after the missed check-in alert')
+})
+
+test('the alert is kept for a day for a phone that is off', () => {
+  expect(timeToLive('overdue')).toBe(24 * 60 * 60)
 })

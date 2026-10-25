@@ -12,11 +12,12 @@
  *   24 Oct: SCRUM-63 and SCRUM-12 promise it, but no other subtask builds it.
  * - are_you_ok: the timer ran out without a check-in (SCRUM-73). Goes to the walker, not to the
  *   contacts.
- * SCRUM-74 adds the alert to the contacts here.
+ * - overdue: no check-in during the grace period either. The alert to the contacts, with the time
+ *   of the last known location (SCRUM-74).
  */
-export type WalkEvent = 'started' | 'home_safe' | 'cancelled' | 'are_you_ok'
+export type WalkEvent = 'started' | 'home_safe' | 'cancelled' | 'are_you_ok' | 'overdue'
 
-const walkEvents: WalkEvent[] = ['started', 'home_safe', 'cancelled', 'are_you_ok']
+const walkEvents: WalkEvent[] = ['started', 'home_safe', 'cancelled', 'are_you_ok', 'overdue']
 
 /**
  * Assumption: 5 minutes between "Are you OK?" and alerting the contacts, from the 05:00 on the
@@ -25,8 +26,21 @@ const walkEvents: WalkEvent[] = ['started', 'home_safe', 'cancelled', 'are_you_o
  */
 export const GRACE_MINUTES = 5
 
-/** What the service worker (public/push-sw.js) shows. */
-export type PushMessage = { title: string; body: string }
+/**
+ * What the service worker (public/push-sw.js) shows. url is the page that opens when the
+ * notification is tapped, relative to the app; without it the app opens on its start page.
+ */
+export type PushMessage = { title: string; body: string; url?: string }
+
+/** What messageFor needs to know about the walk. Times are null until they happened. */
+export type WalkFacts = {
+  id: string
+  deadline: Date
+  checkedInAt: Date | null
+  cancelledAt: Date | null
+  overdueAt: Date | null
+  lastLocationAt: Date | null
+}
 
 /** A contact linked to the walk, as stored in the contacts table (0005_contacts.sql). */
 export type WalkContact = {
@@ -47,9 +61,13 @@ export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
  * How long, in seconds, the push service keeps trying to reach a phone that is off.
  * Assumption: an hour for news about a walk; after that "Anna is on the way home" only confuses.
  * Only the grace period for "Are you OK?": after it, the contacts are already being told.
+ * A day for the alert: a contact whose phone was off must still get it, and the last location is
+ * kept that long too (0012_overdue_alert.sql).
  */
 export function timeToLive(event: WalkEvent): number {
-  return event === 'are_you_ok' ? GRACE_MINUTES * 60 : 60 * 60
+  if (event === 'are_you_ok') return GRACE_MINUTES * 60
+  if (event === 'overdue') return 24 * 60 * 60
+  return 60 * 60
 }
 
 /**
@@ -73,13 +91,15 @@ export function formatClock(time: Date): string {
 }
 
 /**
- * The message for an event. Short and calm, and never a location (SCRUM-67). The wording follows
- * the SCRUM-67 prototype without "her" or "his": the app does not know anyone's pronouns.
+ * The message for an event. Short and calm, and never the location itself: that is shown in the
+ * app (SCRUM-102), where the contact can see that it is the last known point and not live. The
+ * wording follows the "Trusted contact notifications" design without "her" or "his": the app does
+ * not know anyone's pronouns.
  */
 export function messageFor(
   event: WalkEvent,
   walkerName: string | null,
-  walk: { deadline: Date; checkedInAt: Date | null; cancelledAt: Date | null },
+  walk: WalkFacts,
 ): PushMessage {
   // Every user picks a name in onboarding, but the server should not crash on an old account.
   const name = walkerName?.trim() || 'Your contact'
@@ -90,9 +110,29 @@ export function messageFor(
         body: `Expected home at ${formatClock(walk.deadline)}.`,
       }
     case 'home_safe':
+      // After an alert the contacts may be worried or already searching: say clearly it is over.
+      if (walk.overdueAt) {
+        return {
+          title: `${name} is safe`,
+          body: `${name} checked in at ${formatClock(walk.checkedInAt ?? new Date())}, after the missed check-in alert. No need to look any further.`,
+        }
+      }
       return {
         title: `${name} has arrived safely`,
         body: `Checked in at ${formatClock(walk.checkedInAt ?? new Date())}.`,
+      }
+    case 'overdue':
+      // From the design: say what happened without causing panic. Where the location came from and
+      // that it is not live matters most to someone deciding where to look (SCRUM-71, SCRUM-72).
+      return {
+        title: `${name} hasn't checked in yet`,
+        body: [
+          `${name} was expected home at ${formatClock(walk.deadline)} but hasn't confirmed arriving safely. This does not necessarily mean something is wrong.`,
+          walk.lastLocationAt
+            ? `Last known location from ${formatClock(walk.lastLocationAt)}, not live. Open WayBack to see it.`
+            : 'No location was shared during this walk.',
+        ].join(' '),
+        url: `?walk=${walk.id}`,
       }
     case 'cancelled':
       // The second sentence matters: without it a contact may wait for a check-in that never comes
