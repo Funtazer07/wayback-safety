@@ -27,6 +27,16 @@ function walkEndingIn(minutes: number) {
 vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
+const contactsApi = vi.hoisted(() => ({
+  fetchContacts: vi.fn(),
+  fetchInvite: vi.fn(),
+  acceptInvite: vi.fn(),
+  declineInvite: vi.fn(),
+}))
+vi.mock('./features/contacts/contacts.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./features/contacts/contacts.ts')>()),
+  ...contactsApi,
+}))
 const followed = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn() }))
 vi.mock('./features/followedWalk/followedWalk.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/followedWalk/followedWalk.ts')>()),
@@ -76,6 +86,7 @@ beforeEach(() => {
   profile.fetchProfile.mockResolvedValue({ displayName: null })
   profile.completeProfile.mockResolvedValue(undefined)
   walks.fetchCurrentWalk.mockResolvedValue(null)
+  contactsApi.fetchContacts.mockResolvedValue([])
 })
 
 test('a new visitor can sign in with Google from the welcome screen', async () => {
@@ -162,7 +173,11 @@ test('a user starts a walk home with the timer they picked', async () => {
   expect(within(walkPanel).getByText('Walking to')).toBeInTheDocument()
   expect(within(walkPanel).getByText('Home')).toBeInTheDocument()
   expect(screen.getByRole('timer')).toHaveAccessibleName('25 min left')
-  expect(walks.startWalk).toHaveBeenCalledWith({ destinationLabel: 'Home', minutes: 25 })
+  expect(walks.startWalk).toHaveBeenCalledWith({
+    destinationLabel: 'Home',
+    minutes: 25,
+    contactIds: [],
+  })
 })
 
 test('a timer from an hour up is shown in hours and minutes', async () => {
@@ -195,6 +210,7 @@ test('a user can walk to a typed address instead of Home', async () => {
     expect(walks.startWalk).toHaveBeenCalledWith({
       destinationLabel: 'Kruisstraat 12, Eindhoven',
       minutes: 20,
+      contactIds: [],
     }),
   )
 })
@@ -318,4 +334,54 @@ test('opening the app from an alert shows that walk to the contact, and Back lea
   click('Back')
 
   expect(screen.queryByRole('heading', { name: 'Anna is safe' })).not.toBeInTheDocument()
+})
+
+test('the bottom bar switches between Places, Contacts and Account', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Anna' })
+  renderApp(loggedIn)
+  expect(await screen.findByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
+
+  click('Contacts')
+  expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Contacts' })).toHaveAttribute('aria-current', 'page')
+
+  click('Account')
+  expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
+
+  click('Places')
+  expect(screen.getByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
+})
+
+test('opening an invite link asks the contact to accept, then shows their contacts', async () => {
+  window.history.replaceState(null, '', '/?invite=0ddc2e61-c2a8-4dc4-9586-6656c2bdc63a')
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  contactsApi.fetchInvite.mockResolvedValue({ inviterName: 'Anna', expiresAt: new Date() })
+  contactsApi.declineInvite.mockResolvedValue(undefined)
+  renderApp(loggedIn)
+
+  expect(await screen.findByRole('heading', { name: 'Anna invited you' })).toBeInTheDocument()
+  click('Decline')
+
+  expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
+})
+
+test('a walk is started with the contacts who are switched on', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Anna' })
+  contactsApi.fetchContacts.mockResolvedValue([
+    { id: 'c-mum', label: 'Mum', status: 'accepted', inviteExpiresAt: null },
+    { id: 'c-alex', label: 'Alex', status: 'accepted', inviteExpiresAt: null },
+  ])
+  walks.startWalk.mockResolvedValue(walkEndingIn(20))
+  renderApp(loggedIn)
+
+  await screen.findByRole('heading', { name: 'Ready when you are' })
+  click('Start walk')
+  fireEvent.click(await screen.findByRole('switch', { name: 'Alex' }))
+  click('Start walk')
+
+  await vi.waitFor(() =>
+    expect(walks.startWalk).toHaveBeenCalledWith(
+      expect.objectContaining({ contactIds: ['c-mum'] }),
+    ),
+  )
 })

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { logOut } from '../auth/auth.ts'
 import type { LngLat } from '../map/geometry.ts'
 import RoutePlanner from '../map/RoutePlanner.tsx'
 import { isInstalled } from '../../lib/install.ts'
@@ -38,10 +37,6 @@ function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
       <div className="screen-actions">
         <button type="button" className="button-primary" onClick={onStartWalk}>
           Start walk
-        </button>
-        {/* Not in the wireframe: without it there is no way to switch accounts while testing. */}
-        <button type="button" className="button-link" onClick={() => logOut()}>
-          Log out
         </button>
       </div>
 

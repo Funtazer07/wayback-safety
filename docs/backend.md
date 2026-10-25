@@ -171,7 +171,8 @@ fingerprint is erased once the invite is accepted.
 
 When a walk starts, the user picks which contacts follow it. They are saved in `walk_contacts`.
 Only the user's own accepted, not paused contacts can be picked. A walk with no contacts is
-allowed, because users have none until the contacts screens (SCRUM-60) are built. A contact paused
+allowed: someone without contacts can still use the timer, and the screen then says nobody will
+be alerted. A contact paused
 during a walk stays in `walk_contacts`; the alert code (SCRUM-69, SCRUM-74) must skip paused
 contacts itself.
 
@@ -186,8 +187,28 @@ deletes a contact row, which both sides are allowed to do:
 | `decline_invite`     | Deletes the invite                                              |
 | `set_contact_paused` | Pauses a contact, or lets them follow walks again               |
 
-Code: `src/features/contacts/contacts.ts`. The screens come in SCRUM-60, including reading
-`?invite=` from the link when the app opens.
+Code: `src/features/contacts/contacts.ts` talks to the database.
+
+#### The contacts screens
+
+Built in SCRUM-60 from the prototype:
+
+- **Contacts tab** (screen 14, `ContactsScreen.tsx`): the list with "Invitation accepted",
+  "Invitation pending", "Invitation expired" or "Updates paused". Tapping a contact shows its
+  options: Pause or Resume updates, Remove contact (asks first), or Cancel invite for an open one.
+- **Invite by link or email** (`InviteSheet.tsx`): the user types what they call the contact, gets
+  the link, and the phone's own share menu opens (WhatsApp, Mail, Messages...). Where there is no
+  share menu, mostly on laptops, the link is shown with a Copy button. Decided on 25 Oct: we send no
+  email ourselves (SCRUM-66).
+- **Accepting** (screen 09's "Sam invited you", `AcceptInviteScreen.tsx`): opening the link shows
+  who invited them, what accepting means, and Accept or Decline. After accepting, the app offers to
+  turn on notifications; the system question only appears after that tap. The `?invite=` part of
+  the link is kept in the browser tab while signing in, like `?walk=`.
+- **Start a walk** (screen 04, `ContactToggles.tsx`): "Notify these trusted contacts" with a switch
+  per contact who accepted. All are on by default; the ones that are on follow this walk.
+
+Not built: the contact's own list of people they look out for (a contact can only leave through
+the database for now), and the Activity feed from screen 09.
 
 Assumptions: at most 10 contacts and open invites per user (the client talked about three).
 Expired invites are deleted the next time the user creates one. Both are in `0005_contacts.sql`.
@@ -253,8 +274,8 @@ What this means for people:
 
 How a phone is signed up (SCRUM-68):
 
-1. The user taps "Allow notifications" on a card. It is on the start-walk screen now, and the
-   screen where a contact accepts an invite (SCRUM-60) will show it too. iPhones only ask after a
+1. The user taps "Allow notifications" on a card. It is on the start-walk screen, and on the
+   screen where a contact has just accepted an invite (SCRUM-60). iPhones only ask after a
    tap, which is why there is a button.
 2. The browser asks the push service for an address for this phone, and the app saves it with
    `save_push_subscription` in the `push_subscriptions` table: one row per phone.
@@ -308,8 +329,7 @@ How it works:
 
 Who gets a message, and the exact wording, are in `supabase/functions/send-walk-push/walkPush.ts`, tested
 by `walkPush.test.ts`. A contact only gets a message when they are linked to that walk, which is
-chosen at the start of the walk. Until the contacts screens (SCRUM-60) let users pick contacts, no
-walk has any, so no message goes out.
+chosen at the start of the walk with the switches on the start-walk screen (SCRUM-60).
 
 The Edge Function is called with a secret that only the database knows. Without it, the function
 answers "Forbidden", so nobody else can make phones buzz.
