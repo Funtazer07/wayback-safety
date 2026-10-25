@@ -8,6 +8,11 @@ export type Walk = {
   /** When the user should be home. Set by the server, so it is the same on every device. */
   deadline: Date
   status: 'active' | 'safe' | 'overdue' | 'cancelled'
+  /**
+   * When the server sent "Are you OK?" for this deadline (SCRUM-73). The grace period counts from
+   * here. Null before the deadline; left out in tests and previews that do not need it.
+   */
+  warnedAt?: Date | null
 }
 
 export type NewWalk = {
@@ -21,14 +26,18 @@ export type NewWalk = {
 }
 
 // A row of the walks table, as the database returns it. See supabase/migrations/0003_walks.sql,
-// 0004_check_in.sql and 0006_extend_and_cancel.sql. Only the columns the app uses are listed.
+// 0004_check_in.sql, 0006_extend_and_cancel.sql and 0011_late_walks.sql. Only the columns the app
+// uses are listed.
 type WalkRow = {
   id: string
   destination_label: string
   started_at: string
   deadline: string
   status: Walk['status']
+  warned_at: string | null
 }
+
+const walkColumns = 'id, destination_label, started_at, deadline, status, warned_at'
 
 function client() {
   if (!supabase) throw new Error('The backend is not set up. See docs/backend.md.')
@@ -42,6 +51,7 @@ function toWalk(row: WalkRow): Walk {
     startedAt: new Date(row.started_at),
     deadline: new Date(row.deadline),
     status: row.status,
+    warnedAt: row.warned_at ? new Date(row.warned_at) : null,
   }
 }
 
@@ -108,15 +118,39 @@ export async function cancelWalk(walkId: string): Promise<Walk> {
   return toWalk(data)
 }
 
-/** The walk the logged-in user is on, or null. Use it to pick the timer up after reopening the app. */
-export async function fetchActiveWalk(): Promise<Walk | null> {
-  // No user filter needed: row level security only returns the user's own walks, and the database
-  // allows one active walk per user.
+/**
+ * The walk the logged-in user is on, or null. Use it to pick the timer up after reopening the app,
+ * and to hear about changes the server made (the "Are you OK?" warning, overdue).
+ *
+ * An overdue walk counts too: the user has not checked in, and must still be able to tap "I'm home"
+ * to tell their contacts they are safe (SCRUM-101). The newest one wins.
+ */
+export async function fetchCurrentWalk(): Promise<Walk | null> {
+  // No user filter needed: row level security only returns the user's own walks.
   const { data, error } = await client()
     .from('walks')
-    .select('id, destination_label, started_at, deadline, status')
-    .eq('status', 'active')
+    .select(walkColumns)
+    .in('status', ['active', 'overdue'])
+    .order('started_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
   if (error) throw error
   return data ? toWalk(data) : null
+}
+
+/**
+ * The names the user gave the contacts who follow this walk, for example ["Mum", "Alex"]. Empty
+ * when nobody follows it.
+ */
+export async function fetchWalkContactNames(walkId: string): Promise<string[]> {
+  const { data, error } = await client()
+    .from('walk_contacts')
+    .select('contacts(label)')
+    .eq('walk_id', walkId)
+  if (error) throw error
+  // The app has no generated database types, so this says what one row looks like: the linked
+  // contact, or null if it was removed in the meantime.
+  return (data as unknown as { contacts: { label: string } | null }[])
+    .map((link) => link.contacts?.label)
+    .filter((label): label is string => Boolean(label))
 }

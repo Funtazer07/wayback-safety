@@ -42,13 +42,26 @@ test('the time left is right again as soon as the phone is unlocked', () => {
   expect(screen.getByText('08:00')).toBeInTheDocument()
 })
 
-test('says the time is up when the phone is unlocked after the deadline', () => {
+test('asks "Are you okay?" when the phone is unlocked after the deadline', () => {
   render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onDone={vi.fn()} />)
 
-  lockPhoneUntil('2026-10-06T22:25:00')
+  lockPhoneUntil('2026-10-06T22:22:00')
 
-  expect(screen.getByRole('timer')).toHaveAccessibleName('Time is up')
-  expect(screen.getByText('Time is up')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Are you okay?' })).toBeInTheDocument()
+  // The deadline was 22:20, so 3 of the 5 minutes are left.
+  expect(screen.getByRole('timer')).toHaveAccessibleName('We’ll notify your contacts in 3 min')
+})
+
+test('asks the server for news while the grace period runs, not before', () => {
+  const onRefresh = vi.fn().mockResolvedValue(undefined)
+  render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onRefresh={onRefresh} onDone={vi.fn()} />)
+  expect(onRefresh).not.toHaveBeenCalled()
+
+  act(() => lockPhoneUntil('2026-10-06T22:21:00'))
+  expect(onRefresh).toHaveBeenCalledTimes(1)
+
+  act(() => vi.advanceTimersByTime(15_000))
+  expect(onRefresh).toHaveBeenCalledTimes(2)
 })
 
 test('sends a fresh location when the phone is unlocked', () => {

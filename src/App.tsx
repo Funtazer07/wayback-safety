@@ -20,6 +20,8 @@ function App() {
     error: walkError,
     start: startWalk,
     checkIn,
+    extend: extendWalk,
+    refresh: refreshWalk,
     finish: finishWalk,
   } = useWalk(session?.user.id)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
@@ -72,6 +74,8 @@ function App() {
         walk={walk}
         route={loadWalkRoute(walk.id)}
         onCheckIn={checkIn}
+        onExtend={extendWalk}
+        onRefresh={refreshWalk}
         onDone={() => {
           // The walk is over: its route is not needed any more.
           clearWalkRoute()

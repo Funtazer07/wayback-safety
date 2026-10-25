@@ -3,17 +3,33 @@ import {
   cancelWalk,
   checkInWalk,
   extendWalk,
-  fetchActiveWalk,
+  fetchCurrentWalk,
+  fetchWalkContactNames,
   startWalk,
   updateWalkLocation,
 } from './walk.ts'
 
-const { rpc, maybeSingle } = vi.hoisted(() => ({ rpc: vi.fn(), maybeSingle: vi.fn() }))
+const { rpc, maybeSingle, inStatus, eq } = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  maybeSingle: vi.fn(),
+  inStatus: vi.fn(),
+  eq: vi.fn(),
+}))
 
+// fetchCurrentWalk asks walks with .in().order().limit().maybeSingle(); fetchWalkContactNames asks
+// walk_contacts with .eq().
 vi.mock('../../lib/supabase.ts', () => ({
   supabase: {
     rpc,
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }),
+    from: () => ({
+      select: () => ({
+        in: (...args: unknown[]) => {
+          inStatus(...args)
+          return { order: () => ({ limit: () => ({ maybeSingle }) }) }
+        },
+        eq,
+      }),
+    }),
   },
 }))
 
@@ -23,11 +39,14 @@ const row = {
   started_at: '2026-10-06T22:00:00+00:00',
   deadline: '2026-10-06T22:25:00+00:00',
   status: 'active',
+  warned_at: null,
 }
 
 beforeEach(() => {
   rpc.mockReset()
   maybeSingle.mockReset()
+  inStatus.mockReset()
+  eq.mockReset()
 })
 
 test('starting a walk sends the duration and returns the deadline the server set', async () => {
@@ -52,6 +71,7 @@ test('starting a walk sends the duration and returns the deadline the server set
     startedAt: new Date('2026-10-06T22:00:00Z'),
     deadline: new Date('2026-10-06T22:25:00Z'),
     status: 'active',
+    warnedAt: null,
   })
 })
 
@@ -139,13 +159,36 @@ test('cancelling fails when the server refuses it', async () => {
 test('the active walk is returned when there is one', async () => {
   maybeSingle.mockResolvedValue({ data: row, error: null })
 
-  const walk = await fetchActiveWalk()
+  const walk = await fetchCurrentWalk()
 
   expect(walk?.deadline).toEqual(new Date('2026-10-06T22:25:00Z'))
 })
 
-test('there is no active walk when the user is not on one', async () => {
+test('an overdue walk still counts, so the user can still check in', async () => {
+  maybeSingle.mockResolvedValue({
+    data: { ...row, status: 'overdue', warned_at: '2026-10-06T22:26:00+00:00' },
+    error: null,
+  })
+
+  const walk = await fetchCurrentWalk()
+
+  expect(inStatus).toHaveBeenCalledWith('status', ['active', 'overdue'])
+  expect(walk?.status).toBe('overdue')
+  expect(walk?.warnedAt).toEqual(new Date('2026-10-06T22:26:00Z'))
+})
+
+test('there is no current walk when the user is not on one', async () => {
   maybeSingle.mockResolvedValue({ data: null, error: null })
 
-  expect(await fetchActiveWalk()).toBeNull()
+  expect(await fetchCurrentWalk()).toBeNull()
+})
+
+test('the names of the contacts who follow a walk are returned', async () => {
+  eq.mockResolvedValue({
+    data: [{ contacts: { label: 'Mum' } }, { contacts: { label: 'Alex' } }, { contacts: null }],
+    error: null,
+  })
+
+  expect(await fetchWalkContactNames('walk-1')).toEqual(['Mum', 'Alex'])
+  expect(eq).toHaveBeenCalledWith('walk_id', 'walk-1')
 })

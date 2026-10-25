@@ -71,9 +71,36 @@ sent) or `cancelled` (stopped by the user without a check-in). A walk is late wh
 `active` after its deadline. The scheduled check sets `overdue` (see "Late walks").
 
 Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation`, `checkInWalk`,
-`extendWalk`, `cancelWalk` and `fetchActiveWalk`. The screens are in the same folder: `StartWalkScreen` (destination and timer)
-and `WalkScreen` (time left and the "I'm home" button). While the walk screen is open, the app
-sends the location once a minute.
+`extendWalk`, `cancelWalk`, `fetchCurrentWalk` and `fetchWalkContactNames`. The screens are in the
+same folder: `StartWalkScreen` (destination and timer) and `WalkScreen` (time left and the "I'm
+home" button). While the walk screen is open, the app sends the location once a minute.
+
+`fetchCurrentWalk` returns an `active` walk, and also an `overdue` one: the user has not checked in
+yet and must still be able to tap "I'm home" to tell their contacts they are safe.
+
+### The "Are you okay?" screen
+
+When the deadline passes, the walk screen turns into screen 06 of the SCRUM-72 prototype
+(SCRUM-101, `AreYouOkScreen.tsx`). It works with the scheduled check on the server (SCRUM-73):
+
+- **Grace period:** "Are you okay?", who will be told ("We'll notify Mum and Alex in 04:32"), "I'm
+  home" and "I'm okay · Add 5 minutes". The countdown starts at `warned_at`, the moment the server
+  sent the warning, because that is where the server counts from too. Until the screen knows that
+  moment it counts from the deadline, which shows a little less time, never more.
+- **Overdue:** "We told Mum and Alex", and "I'm home" to say they are safe. Adding time is not
+  possible any more: the server refuses to extend an overdue walk.
+- **Nobody follows the walk:** the screen says nobody will be alerted, instead of promising an
+  alert.
+
+During the grace period the app asks the server for the walk every 15 seconds and when it comes
+back on screen, so it notices the warning and the change to overdue. "I need help" from the
+prototype is SOS (SCRUM-28), not built yet.
+
+The overdue text says the contacts were told. That is only true once SCRUM-74 sends the alert, so
+SCRUM-101 is merged together with or after SCRUM-74.
+
+Assumptions: 5 minutes of grace (`GRACE_MINUTES` in `src/features/walk/grace.ts`, the same as on
+the server, until SCRUM-71 decides), and asking the server every 15 seconds.
 
 ### Checking in
 
