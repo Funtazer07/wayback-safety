@@ -46,11 +46,83 @@
 /* "− 20 min +" on a green tint, with round white buttons. */
 .walk-stepper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   background: var(--green-soft);
+}
+
+.walk-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* The slider: a thick track, filled green up to the thumb, and a big round thumb that is easy to
+   hold with a thumb (44 px including its edge). --fill is set by TimerPicker. */
+.walk-slider {
+  width: 100%;
+  min-height: 0;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.walk-slider::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(
+    to right,
+    var(--green-button) var(--fill),
+    var(--surface) var(--fill)
+  );
+}
+
+.walk-slider::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--surface);
+}
+
+.walk-slider::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--green-button);
+}
+
+.walk-slider::-webkit-slider-thumb {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: -0.625rem;
+  border: 0.25rem solid var(--green-button);
+  border-radius: 50%;
+  background: var(--surface);
+  appearance: none;
+}
+
+.walk-slider::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0.25rem solid var(--green-button);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.walk-slider:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
+.walk-slider-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
 }
 
 .walk-step {
@@ -181,6 +253,28 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* "Mum is watching your walk" (SCRUM-114): green, with an eye, in words. */
+.walk-watchers {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: var(--green-text);
+  background: var(--green-soft);
+}
+
+.walk-watchers svg {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
 }
 
 .walk-panel-text .walk-small {

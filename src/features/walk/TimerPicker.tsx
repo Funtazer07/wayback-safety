@@ -1,48 +1,74 @@
 import { addMinutes, formatClock, formatDuration } from './time.ts'
+import type { TimerRange } from './timerSuggestion.ts'
 
 type TimerPickerProps = {
   minutes: number
   onChange: (minutes: number) => void
+  /** How far the slider goes; adapts to the planned route (timerSuggestion.ts). */
+  range: TimerRange
+  /** The quick choices under the slider, in minutes. */
+  presets: number[]
   now: Date
 }
 
-// Assumptions: the design shows − and + around "20 min" but not the step size or the limits. The
-// server accepts 1 to 180 minutes.
-const STEP = 5
-const MAX_MINUTES = 180
-// The four quick choices under the timer on screen 04.
-const PRESETS = [10, 15, 20, 30]
+/**
+ * "Choose your timer" on screen 04: the minutes in big text, a slider in steps of one minute with
+ * − and + for a single minute, the quick choices, and "Check in by 22:26". The design has − and +
+ * only; the slider was added on 26 Oct because steps of 5 minutes felt too rough.
+ */
+function TimerPicker({ minutes, onChange, range, presets, now }: TimerPickerProps) {
+  const checkInBy = formatClock(addMinutes(now, minutes))
 
-/** "Choose your timer" on screen 04: − 20 min +, the quick choices, and "Check in by 22:26". */
-function TimerPicker({ minutes, onChange, now }: TimerPickerProps) {
   return (
     <section className="walk-timer-picker" aria-labelledby="walk-timer-title">
       <h2 id="walk-timer-title">Choose your timer</h2>
       <div className="walk-stepper">
-        <button
-          type="button"
-          className="walk-step"
-          aria-label={`${STEP} minutes less`}
-          disabled={minutes <= STEP}
-          onClick={() => onChange(minutes - STEP)}
-        >
-          −
-        </button>
-        <strong className="walk-timer-minutes" aria-live="polite">
-          {formatDuration(minutes)}
-        </strong>
-        <button
-          type="button"
-          className="walk-step"
-          aria-label={`${STEP} minutes more`}
-          disabled={minutes >= MAX_MINUTES}
-          onClick={() => onChange(minutes + STEP)}
-        >
-          +
-        </button>
+        <div className="walk-stepper-row">
+          <button
+            type="button"
+            className="walk-step"
+            aria-label="1 minute less"
+            disabled={minutes <= range.min}
+            onClick={() => onChange(minutes - 1)}
+          >
+            −
+          </button>
+          <strong className="walk-timer-minutes" aria-live="polite">
+            {formatDuration(minutes)}
+          </strong>
+          <button
+            type="button"
+            className="walk-step"
+            aria-label="1 minute more"
+            disabled={minutes >= range.max}
+            onClick={() => onChange(minutes + 1)}
+          >
+            +
+          </button>
+        </div>
+        <input
+          type="range"
+          className="walk-slider"
+          aria-label="Walk timer in minutes"
+          // Read out as "17 minutes, check in by 22:23" instead of only a number.
+          aria-valuetext={`${formatDuration(minutes)}, check in by ${checkInBy}`}
+          min={range.min}
+          max={range.max}
+          step={1}
+          value={minutes}
+          // Filled up to the thumb, so the chosen amount is visible at a glance.
+          style={{
+            ['--fill' as string]: `${((minutes - range.min) / Math.max(1, range.max - range.min)) * 100}%`,
+          }}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <div className="walk-slider-ends" aria-hidden="true">
+          <span>{formatDuration(range.min)}</span>
+          <span>{formatDuration(range.max)}</span>
+        </div>
       </div>
       <div className="walk-presets">
-        {PRESETS.map((preset) => (
+        {presets.map((preset) => (
           <button
             key={preset}
             type="button"
@@ -50,7 +76,7 @@ function TimerPicker({ minutes, onChange, now }: TimerPickerProps) {
             aria-pressed={minutes === preset}
             onClick={() => onChange(preset)}
           >
-            {preset} min
+            {formatDuration(preset)}
           </button>
         ))}
       </div>
@@ -59,7 +85,7 @@ function TimerPicker({ minutes, onChange, now }: TimerPickerProps) {
           <circle cx="12" cy="12" r="9" />
           <path d="M12 7v5l3 2" />
         </svg>
-        Check in by {formatClock(addMinutes(now, minutes))}
+        Check in by {checkInBy}
       </p>
     </section>
   )

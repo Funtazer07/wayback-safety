@@ -14,6 +14,12 @@
   height: 2.75rem;
 }
 
+.followed-watch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .followed-centered {
   text-align: center;
 }

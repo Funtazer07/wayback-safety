@@ -10,6 +10,7 @@ const walks = vi.hoisted(() => ({
   checkInWalk: vi.fn(),
   fetchCurrentWalk: vi.fn(),
   fetchWalkContacts: vi.fn(),
+  fetchWalkWatchers: vi.fn(),
   startWalk: vi.fn(),
   updateWalkLocation: vi.fn(),
 }))
@@ -66,7 +67,7 @@ vi.mock('./features/map/RoutePlanner.tsx', () => ({
     <button
       type="button"
       onClick={() =>
-        onRouteChange({ coordinates: routeViaStratumseind, seconds: 720, metres: 900 })
+        onRouteChange({ coordinates: routeViaStratumseind, seconds: 1500, metres: 1900 })
       }
     >
       Choose the route via Stratumseind
@@ -102,6 +103,7 @@ beforeEach(() => {
   profile.completeProfile.mockResolvedValue(undefined)
   walks.fetchCurrentWalk.mockResolvedValue(null)
   walks.fetchWalkContacts.mockResolvedValue([])
+  walks.fetchWalkWatchers.mockResolvedValue([])
   contactsApi.fetchContacts.mockResolvedValue([])
   contactsApi.fetchAlertStatus.mockResolvedValue(new Map())
   followed.fetchContactWalks.mockResolvedValue([])
@@ -184,7 +186,9 @@ test('a user starts a walk home with the timer they picked', async () => {
 
   click('Start walk')
   expect(screen.getByRole('heading', { name: 'Set your check-in' })).toBeInTheDocument()
-  click('5 minutes more')
+  fireEvent.change(screen.getByRole('slider', { name: 'Walk timer in minutes' }), {
+    target: { value: '25' },
+  })
   click('Start walk')
 
   const walkPanel = await screen.findByRole('region', { name: 'Your walk' })
@@ -205,7 +209,9 @@ test('a timer from an hour up is shown in hours and minutes', async () => {
 
   click('Start walk')
   // From the default 20 minutes to 65.
-  for (let tap = 0; tap < 9; tap++) click('5 minutes more')
+  fireEvent.change(screen.getByRole('slider', { name: 'Walk timer in minutes' }), {
+    target: { value: '65' },
+  })
 
   expect(screen.getByText('1 h 5 min')).toBeInTheDocument()
 })
@@ -282,9 +288,12 @@ test('the route chosen on Home is on the walk map after the walk starts', async 
 
   click('Choose the route via Stratumseind')
   click('Start walk')
+  // A 25-minute route: the timer starts at 25 + 5 minutes extra.
+  expect(screen.getByText('30 min', { selector: 'strong' })).toBeInTheDocument()
   click('Start walk')
 
   expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
+  expect(walks.startWalk).toHaveBeenCalledWith(expect.objectContaining({ minutes: 30 }))
 })
 
 test('a walk started without a route shows no route', async () => {

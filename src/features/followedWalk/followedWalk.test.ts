@@ -5,6 +5,7 @@ import {
   fetchContactWalks,
   forgetOpenedWalk,
   takeOpenedWalkId,
+  watchWalk,
 } from './followedWalk.ts'
 
 const { rpc, single } = vi.hoisted(() => ({ rpc: vi.fn(), single: vi.fn() }))
@@ -24,6 +25,7 @@ const row = {
   last_lat: 51.4385,
   last_lng: 5.4791,
   last_location_at: '2026-10-15T20:31:00Z',
+  you_are_watching: false,
 }
 
 beforeEach(() => {
@@ -47,6 +49,7 @@ test('a contact gets the walk with the last location and when it was saved', asy
     checkedInAt: null,
     cancelledAt: null,
     lastLocation: { coordinates: [5.4791, 51.4385], savedAt: new Date('2026-10-15T20:31:00Z') },
+    youAreWatching: false,
   })
 })
 
@@ -160,4 +163,19 @@ test('anything that is not a walk id is ignored', () => {
   window.history.replaceState(null, '', '/?walk=not-a-walk')
 
   expect(takeOpenedWalkId()).toBeNull()
+})
+
+test('"I’m watching" is sent for this walk', async () => {
+  rpc.mockResolvedValue({ error: null })
+
+  await watchWalk(walkId)
+
+  expect(rpc).toHaveBeenCalledWith('watch_walk', { walk_id: walkId })
+})
+
+test('"I’m watching" fails when the server refuses, for example after the walk ended', async () => {
+  const error = new Error('This walk is not shared with you, or it is no longer on the way')
+  rpc.mockResolvedValue({ error })
+
+  await expect(watchWalk(walkId)).rejects.toBe(error)
 })

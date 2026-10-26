@@ -6,6 +6,7 @@ import {
   fetchCurrentWalk,
   fetchWalkContactNames,
   fetchWalkContacts,
+  fetchWalkWatchers,
   startWalk,
   updateWalkLocation,
 } from './walk.ts'
@@ -214,5 +215,20 @@ test('the contacts of a walk come with their status, without removed ones', asyn
     { id: 'c-mum', label: 'Mum', status: 'accepted' },
     { id: 'c-pat', label: 'Pat', status: 'paused' },
   ])
+  expect(eq).toHaveBeenCalledWith('walk_id', 'walk-1')
+})
+
+test('the names of the contacts who are watching come first-tapped first', async () => {
+  eq.mockResolvedValue({
+    data: [
+      { watching_at: '2026-10-26T22:09:00Z', contacts: { label: 'Alex' } },
+      { watching_at: null, contacts: { label: 'Sam' } },
+      { watching_at: '2026-10-26T22:07:00Z', contacts: { label: 'Mum' } },
+      { watching_at: '2026-10-26T22:08:00Z', contacts: null },
+    ],
+    error: null,
+  })
+
+  expect(await fetchWalkWatchers('walk-1')).toEqual(['Mum', 'Alex'])
   expect(eq).toHaveBeenCalledWith('walk_id', 'walk-1')
 })
