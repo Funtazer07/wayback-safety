@@ -21,6 +21,21 @@
   list-style: none;
 }
 
+.contacts-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+/* "Check-in overdue · View walk" (SCRUM-104). The same colours as the overdue box on the walk the
+   button opens (followedWalk.css), with a thick edge; the words carry the meaning, not the colour. */
+.contacts-overdue {
+  border: 2px solid #b45309;
+  color: #78350f;
+  background: #fef3c7;
+  font-weight: 600;
+}
+
 .contacts-row {
   display: flex;
   align-items: center;

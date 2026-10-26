@@ -106,17 +106,25 @@ export class BrowserPushError extends Error {
 }
 
 /**
- * Stops alerts on this phone: deletes it on the server first, then in the browser. There is no
- * button for this yet; a settings screen will use it.
+ * Stops alerts on this phone (SCRUM-105): deletes it on the server, then in the browser. Used by
+ * the Account tab and before logging out, so it must also work where push never worked.
+ *
+ * Either step alone is enough to stop the alerts: without the server row nothing is sent, and
+ * without the browser subscription the push service refuses the message (the Edge Function then
+ * deletes the row, see isSubscriptionGone). So it only fails when both steps fail.
  */
 export async function disableNotifications(): Promise<void> {
-  const subscription = await currentSubscription()
+  if (!isPushSupported()) return
+  // getRegistration, not ready: on the dev server there is no service worker, and ready would
+  // wait forever. That would also block logging out.
+  const registration = await navigator.serviceWorker.getRegistration()
+  const subscription = await registration?.pushManager.getSubscription()
   if (!subscription) return
 
   const { error } = await client()
     .from('push_subscriptions')
     .delete()
     .eq('endpoint', subscription.endpoint)
-  if (error) throw error
-  await subscription.unsubscribe()
+  const isUnsubscribed = await subscription.unsubscribe().catch(() => false)
+  if (error && !isUnsubscribed) throw error
 }

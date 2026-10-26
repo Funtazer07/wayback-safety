@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { useOverdueWalks } from '../followedWalk/useOverdueWalks.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
 import ContactOptions from './ContactOptions.tsx'
-import { contactStatusText, initialOf } from './contactStatus.ts'
+import ContactRow, { OtherOverdueWalks } from './ContactRow.tsx'
 import InviteSheet from './InviteSheet.tsx'
 import { useContacts } from './useContacts.ts'
 import './contacts.css'
@@ -10,16 +11,23 @@ type ContactsScreenProps = {
   userId: string
   /** The user's own name, put in the invite text: "Anna would like you as a trusted contact". */
   displayName: string
+  /** Opens the walk of someone the user looks out for, when its check-in is overdue (SCRUM-104). */
+  onOpenWalk: (walkId: string) => void
 }
 
 /** Screen 14 of the prototype: the user's trusted contacts, and inviting a new one (SCRUM-60). */
-function ContactsScreen({ userId, displayName }: ContactsScreenProps) {
+function ContactsScreen({ userId, displayName, onOpenWalk }: ContactsScreenProps) {
   const { contacts, isLoading, error, invite, pause, remove } = useContacts(userId)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isInviting, setIsInviting] = useState(false)
   // Read once: whether an invite has expired does not need to change while the screen is open.
   const [now] = useState(() => new Date())
   const selected = contacts.find((contact) => contact.id === selectedId) ?? null
+  const overdueWalks = useOverdueWalks()
+  // Wait for the contacts, or every walk would look like it has no row yet.
+  const otherOverdueWalks = isLoading
+    ? []
+    : overdueWalks.filter((walk) => !contacts.some((contact) => contact.id === walk.contactId))
 
   return (
     <main className="screen">
@@ -38,25 +46,22 @@ function ContactsScreen({ userId, displayName }: ContactsScreenProps) {
         </p>
       )}
 
+      <OtherOverdueWalks walks={otherOverdueWalks} onOpenWalk={onOpenWalk} />
+
       <ul className="contacts-list" aria-label="Your trusted contacts">
-        {contacts.map((contact) => (
-          <li key={contact.id}>
-            <button
-              type="button"
-              className="contacts-row"
-              aria-pressed={contact.id === selectedId}
-              onClick={() => setSelectedId(contact.id === selectedId ? null : contact.id)}
-            >
-              <span className="contacts-initial" aria-hidden="true">
-                {initialOf(contact.label)}
-              </span>
-              <span>
-                <strong>{contact.label}</strong>
-                <span className="contacts-small">{contactStatusText(contact, now)}</span>
-              </span>
-            </button>
-          </li>
-        ))}
+        {contacts.map((contact) => {
+          const overdueWalk = overdueWalks.find((walk) => walk.contactId === contact.id)
+          return (
+            <ContactRow
+              key={contact.id}
+              contact={contact}
+              now={now}
+              isSelected={contact.id === selectedId}
+              onSelect={() => setSelectedId(contact.id === selectedId ? null : contact.id)}
+              onOpenOverdueWalk={overdueWalk && (() => onOpenWalk(overdueWalk.walkId))}
+            />
+          )
+        })}
       </ul>
 
       {selected && (

@@ -37,10 +37,10 @@ vi.mock('./features/contacts/contacts.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/contacts/contacts.ts')>()),
   ...contactsApi,
 }))
-const followed = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn() }))
+const followed = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn(), fetchOverdueWalks: vi.fn() }))
 vi.mock('./features/followedWalk/followedWalk.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/followedWalk/followedWalk.ts')>()),
-  fetchFollowedWalk: followed.fetchFollowedWalk,
+  ...followed,
 }))
 // The map needs a real browser; it has its own tests in features/map.
 // A route chosen on Home, from Stratumseind to the station.
@@ -87,6 +87,7 @@ beforeEach(() => {
   profile.completeProfile.mockResolvedValue(undefined)
   walks.fetchCurrentWalk.mockResolvedValue(null)
   contactsApi.fetchContacts.mockResolvedValue([])
+  followed.fetchOverdueWalks.mockResolvedValue([])
 })
 
 test('a new visitor can sign in with Google from the welcome screen', async () => {
@@ -334,6 +335,35 @@ test('opening the app from an alert shows that walk to the contact, and Back lea
   click('Back')
 
   expect(screen.queryByRole('heading', { name: 'Anna is safe' })).not.toBeInTheDocument()
+})
+
+test('an overdue walk on the Contacts tab opens, and Back leads to the Contacts tab again', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  contactsApi.fetchContacts.mockResolvedValue([
+    { id: 'c-anna', label: 'Anna', status: 'accepted', inviteExpiresAt: null },
+  ])
+  followed.fetchOverdueWalks.mockResolvedValue([
+    { walkId: 'walk-anna', walkerName: 'Anna', contactId: 'c-anna', overdueAt: new Date() },
+  ])
+  followed.fetchFollowedWalk.mockResolvedValue({
+    walkerName: 'Anna',
+    status: 'safe',
+    deadline: new Date(),
+    overdueAt: new Date(),
+    checkedInAt: new Date(),
+    cancelledAt: null,
+    lastLocation: null,
+  })
+  renderApp(loggedIn)
+  await screen.findByRole('heading', { name: 'Ready when you are' })
+
+  click('Contacts')
+  fireEvent.click(await screen.findByRole('button', { name: 'Check-in overdue · View walk' }))
+
+  expect(await screen.findByRole('heading', { name: 'Anna is safe' })).toBeInTheDocument()
+  expect(followed.fetchFollowedWalk).toHaveBeenCalledWith('walk-anna')
+  click('Back')
+  expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
 })
 
 test('the bottom bar switches between Places, Contacts and Account', async () => {

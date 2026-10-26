@@ -284,16 +284,23 @@ What this means for people:
 
 How a phone is signed up (SCRUM-68):
 
-1. The user taps "Allow notifications" on a card. It is on the start-walk screen, and on the
-   screen where a contact has just accepted an invite (SCRUM-60). iPhones only ask after a
+1. The user taps "Allow notifications" on a card. It is on the start-walk screen, on the
+   screen where a contact has just accepted an invite and on the Contacts tab (SCRUM-60), and on
+   the Account tab (SCRUM-105). iPhones only ask after a
    tap, which is why there is a button.
 2. The browser asks the push service for an address for this phone, and the app saves it with
    `save_push_subscription` in the `push_subscriptions` table: one row per phone.
 3. Each time the app opens with notifications on, it saves the row again, so a phone always
    belongs to the account that is signed in now.
 
-`disableNotifications()` deletes the row and stops the subscription in the browser. There is no
-button for it yet; a settings screen will use it. Deleting the account deletes the rows too.
+Turning notifications off (SCRUM-105): `disableNotifications()` deletes the row and stops the
+subscription in the browser. Either step alone stops the alerts (without the subscription the push
+service refuses, and the Edge Function then deletes the row), so it only fails when both fail, for
+example offline. It runs from "Turn off notifications" on the Account tab, and before every log
+out, while the user is still signed in: afterwards the server would refuse to delete the row, and a
+shared or borrowed phone would keep getting the alerts of the person who left. When it fails, the
+user is still logged out and the welcome screen says that notifications may still arrive. Deleting
+the account deletes the rows too.
 
 The service worker that vite-plugin-pwa writes cannot show notifications, so it loads
 `public/push-sw.js`, which can. That file also opens the app when a notification is tapped. On
@@ -453,6 +460,14 @@ a function that returns only these fields is used instead, like `get_invite` for
 The `?walk=<id>` part of the link is kept in the browser tab (`sessionStorage`) while the contact
 signs in, because signing in with Google loses it. Back closes the screen and forgets it.
 
+The Contacts tab is the second way in (SCRUM-104), for a contact who swiped the alert away. Next to
+a person whose walk is overdue it says "Check-in overdue · View walk", which opens the same screen.
+The list comes from `overdue_followed_walks` (`0015_overdue_walks_for_contacts.sql`), with the same
+rule as `followed_walk` and only the walk, the walker's name and when it became overdue. If the
+contact removed the walker from their own list, they still follow the walks they were added to, so
+such a walk gets a line of its own with the walker's name. An overdue walk stays on the tab until
+the walker checks in.
+
 "Call" and "Message" from the design are left out: the app has no phone numbers. The map only
 covers Eindhoven; a last location outside it is shown as coordinates instead.
 
@@ -509,7 +524,8 @@ Written down here because the app handles location and personal data.
   data (SCRUM-102). A contact who was added to the walk, accepted and is not paused sees the
   walker's name, the status, the due time and the check-in or cancel time. The last known location
   only while the walk is overdue, and so for at most 24 hours. Never the destination, the start
-  time or the route. See "The contact's view".
+  time or the route. The Contacts tab only learns which of those walks are overdue, and since when
+  (SCRUM-104). See "The contact's view".
 - **Push messages:** hold the user's name and a time, never a location. They pass through Apple's
   or Google's push service, encrypted on the way, so those services cannot read them. Only
   contacts who accepted and are not paused get them.
@@ -647,12 +663,13 @@ after its migration is run. Each file makes up its own users, runs inside one tr
 with `rollback`, so nothing stays behind and no push message is sent. The last result is "ALL
 CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 
-| File                         | Tests                                                                       |
-| ---------------------------- | --------------------------------------------------------------------------- |
-| `late_walks_test.sql`        | The warning, the grace period and overdue (SCRUM-73)                        |
-| `overdue_alert_test.sql`     | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
-| `contact_walk_view_test.sql` | Who may see a walk, and the location only while overdue (SCRUM-102)         |
-| `mutual_contacts_test.sql`   | Accepting links both ways; an existing link back is kept (SCRUM-60)         |
+| File                              | Tests                                                                       |
+| --------------------------------- | --------------------------------------------------------------------------- |
+| `late_walks_test.sql`             | The warning, the grace period and overdue (SCRUM-73)                        |
+| `overdue_alert_test.sql`          | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
+| `contact_walk_view_test.sql`      | Who may see a walk, and the location only while overdue (SCRUM-102)         |
+| `mutual_contacts_test.sql`        | Accepting links both ways; an existing link back is kept (SCRUM-60)         |
+| `overdue_followed_walks_test.sql` | Which overdue walks show on the Contacts tab (SCRUM-104)                    |
 
 ### This is real personal data
 

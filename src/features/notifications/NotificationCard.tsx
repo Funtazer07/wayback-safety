@@ -19,12 +19,26 @@ const explanations: Partial<Record<NotificationState, string>> = {
 }
 
 /**
- * Asks for notification permission with one tap. Used on the start-walk screen, and ready for the
- * screen where a contact accepts an invite (SCRUM-60).
+ * Asks for notification permission with one tap. Used on the start-walk screen, the Contacts tab
+ * and the screen where a contact accepts an invite.
  */
 function NotificationCard({ reason }: NotificationCardProps) {
-  const { notificationState, isLoading, error, enable } = useNotifications()
+  return <NotificationCardView reason={reason} {...useNotifications()} />
+}
 
+type NotificationCardViewProps = NotificationCardProps & ReturnType<typeof useNotifications>
+
+/**
+ * The card itself, for a screen that already has useNotifications (the Account tab). Sharing one
+ * state means the screen sees at once that notifications were turned on, without a reload.
+ */
+export function NotificationCardView({
+  reason,
+  notificationState,
+  isLoading,
+  error,
+  enable,
+}: NotificationCardViewProps) {
   // Nothing to show while checking, and nothing to do once notifications are on.
   if (!notificationState || notificationState === 'on') return null
 

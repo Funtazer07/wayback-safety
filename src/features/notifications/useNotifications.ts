@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   BrowserPushError,
   checkNotifications,
+  disableNotifications,
   enableNotifications,
   type NotificationState,
 } from './notifications.ts'
@@ -15,7 +16,7 @@ type NotificationsHookState = {
 
 const loading: NotificationsHookState = { notificationState: null, isLoading: true, error: null }
 
-/** Whether this phone can get alerts, and a way to turn them on. */
+/** Whether this phone can get alerts, and a way to turn them on and off. */
 export function useNotifications() {
   const [state, setState] = useState(loading)
 
@@ -55,5 +56,20 @@ export function useNotifications() {
     }
   }
 
-  return { ...state, enable }
+  /** Stops alerts on this phone (SCRUM-105). Afterwards the app can ask again. */
+  async function disable() {
+    setState({ ...state, isLoading: true, error: null })
+    try {
+      await disableNotifications()
+      setState({ notificationState: 'off', isLoading: false, error: null })
+    } catch {
+      setState({
+        ...state,
+        isLoading: false,
+        error: 'Could not turn off notifications. Check your connection and try again.',
+      })
+    }
+  }
+
+  return { ...state, enable, disable }
 }

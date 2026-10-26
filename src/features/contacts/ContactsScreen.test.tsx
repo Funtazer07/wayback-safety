@@ -11,6 +11,8 @@ const api = vi.hoisted(() => ({
 }))
 
 vi.mock('./contacts.ts', () => api)
+const { fetchOverdueWalks } = vi.hoisted(() => ({ fetchOverdueWalks: vi.fn() }))
+vi.mock('../followedWalk/followedWalk.ts', () => ({ fetchOverdueWalks }))
 
 const mum: Contact = { id: 'c-mum', label: 'Mum', status: 'accepted', inviteExpiresAt: null }
 const sam: Contact = {
@@ -27,15 +29,51 @@ beforeEach(() => {
   api.createInvite.mockReset()
   api.setContactPaused.mockReset()
   api.removeContact.mockReset().mockResolvedValue(undefined)
+  fetchOverdueWalks.mockReset().mockResolvedValue([])
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function renderScreen() {
-  render(<ContactsScreen userId="user-1" displayName="Anna" />)
+function renderScreen(onOpenWalk = vi.fn()) {
+  render(<ContactsScreen userId="user-1" displayName="Anna" onOpenWalk={onOpenWalk} />)
 }
+
+test('a contact whose check-in is overdue gets a way into that walk', async () => {
+  fetchOverdueWalks.mockResolvedValue([
+    { walkId: 'walk-mum', walkerName: 'Mum', contactId: 'c-mum', overdueAt: new Date() },
+  ])
+  const onOpenWalk = vi.fn()
+  renderScreen(onOpenWalk)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Check-in overdue · View walk' }))
+
+  expect(onOpenWalk).toHaveBeenCalledWith('walk-mum')
+  // Only one line, next to Mum: not also on its own.
+  expect(screen.queryByRole('list', { name: 'Other overdue walks' })).not.toBeInTheDocument()
+})
+
+test('an overdue walk of someone no longer on the list still shows, with their name', async () => {
+  fetchOverdueWalks.mockResolvedValue([
+    { walkId: 'walk-kim', walkerName: 'Kim', contactId: null, overdueAt: new Date() },
+  ])
+  const onOpenWalk = vi.fn()
+  renderScreen(onOpenWalk)
+
+  const list = await screen.findByRole('list', { name: 'Other overdue walks' })
+  expect(within(list).getByText('Kim')).toBeInTheDocument()
+  fireEvent.click(within(list).getByRole('button', { name: 'Check-in overdue · View walk' }))
+  expect(onOpenWalk).toHaveBeenCalledWith('walk-kim')
+})
+
+test('without overdue walks there is nothing about a missed check-in', async () => {
+  renderScreen()
+
+  await screen.findByRole('list', { name: 'Your trusted contacts' })
+  await vi.waitFor(() => expect(fetchOverdueWalks).toHaveBeenCalled())
+  expect(screen.queryByText(/Check-in overdue/)).not.toBeInTheDocument()
+})
 
 test('the user sees their contacts and where each invitation stands', async () => {
   renderScreen()

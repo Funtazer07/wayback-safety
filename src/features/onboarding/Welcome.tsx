@@ -4,8 +4,13 @@ import { signInWithGoogle } from '../auth/auth.ts'
 import EmailScreen from '../auth/EmailScreen.tsx'
 import './onboarding.css'
 
+type WelcomeProps = {
+  /** Something to tell the user who just logged out, for example that alerts may still arrive. */
+  notice?: string | null
+}
+
 /** Screen 1 of the onboarding v2 wireframe: welcome and sign-in on one screen. */
-function Welcome() {
+function Welcome({ notice = null }: WelcomeProps) {
   const [usesEmail, setUsesEmail] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
@@ -27,6 +32,7 @@ function Welcome() {
   return (
     <main className="screen">
       <ProgressDots step={1} total={2} />
+      {notice && <p role="status">{notice}</p>}
       {/* Placeholder until the group has a logo and hero illustration. */}
       <div className="onboarding-hero">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" />
