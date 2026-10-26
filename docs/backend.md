@@ -162,8 +162,18 @@ How someone becomes a contact:
 1. The user gives the contact a name, for example "Mum", and gets an invite link. They send it
    themselves, in WhatsApp or their own email. We send no email.
 2. The contact opens the link, signs in, sees who invited them and taps accept or decline.
-3. After accepting, the user can pause or remove the contact. The contact can remove the link
-   too, to stop looking out. Removing a contact also takes them off the walks they followed.
+3. **Accepting links both ways** (`0014_mutual_contacts.sql`): the contact looks out for the user,
+   and the user looks out for the contact, under the name the user chose in onboarding. Decided on
+   26 Oct after testing on two phones, different from SCRUM-27 and SCRUM-59 in Jira, which describe
+   one way. The accept screen says so before the tap, because the contact's own walks are shared
+   too. A link back that already existed (also a paused one) is left as it was.
+4. After that, each side can pause or remove the other. Removing one direction leaves the other.
+   Removing a contact also takes them off the walks they followed.
+
+An invite link opens in the browser, not in an app installed on the Home Screen. Accepting there
+is saved on the server. On iPhone the Home Screen app has its own storage, so after adding WayBack
+there the contact signs in again and turns on notifications under Contacts; the accept screen says
+so.
 
 The link works once and for 48 hours. The database keeps only a fingerprint (SHA-256 hash) of
 the secret in the link, so someone who reads the table cannot rebuild a working link. The
@@ -487,7 +497,9 @@ Written down here because the app handles location and personal data.
 - **Contacts:** about a contact we store only the name the user gives them and, once they accept,
   a link to their account. No phone number and no email address. The contact can read the rows
   where they are the contact, including that name. Nobody becomes a contact without accepting,
-  and either side can end it.
+  and either side can end it. Accepting makes the link two-way (decided on 26 Oct), so by
+  accepting, the contact also shares their own walks with the person who invited them; the accept
+  screen says this before the tap.
 - **Invite links:** only a fingerprint of the link is stored, it works for 48 hours, and it is
   erased when the invite is accepted.
 - **Push subscriptions:** per phone we store only the push service address and its two keys. No
@@ -640,6 +652,7 @@ CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 | `late_walks_test.sql`        | The warning, the grace period and overdue (SCRUM-73)                        |
 | `overdue_alert_test.sql`     | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
 | `contact_walk_view_test.sql` | Who may see a walk, and the location only while overdue (SCRUM-102)         |
+| `mutual_contacts_test.sql`   | Accepting links both ways; an existing link back is kept (SCRUM-60)         |
 
 ### This is real personal data
 

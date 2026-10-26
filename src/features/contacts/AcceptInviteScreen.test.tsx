@@ -22,21 +22,28 @@ beforeEach(() => {
   api.declineInvite.mockReset().mockResolvedValue(undefined)
 })
 
-test('the contact sees who invited them and what accepting means', async () => {
+test('the contact sees who invited them, and that accepting works both ways', async () => {
   render(<AcceptInviteScreen token={token} onClose={vi.fn()} />)
 
   expect(await screen.findByRole('heading', { name: 'Anna invited you' })).toBeInTheDocument()
-  expect(screen.getByText(/Nothing is shared with you before you accept/)).toBeInTheDocument()
+  expect(screen.getByText(/Anna will hear the same about your walks/)).toBeInTheDocument()
+  expect(screen.getByText(/Nothing is shared before you accept/)).toBeInTheDocument()
 })
 
-test('accepting makes them a contact and then offers notifications', async () => {
+test('accepting links them both ways and then offers notifications', async () => {
   render(<AcceptInviteScreen token={token} onClose={vi.fn()} />)
 
   const button = await screen.findByRole('button', { name: 'Accept' })
   await act(async () => fireEvent.click(button))
 
   expect(api.acceptInvite).toHaveBeenCalledWith(token)
-  expect(screen.getByRole('heading', { name: 'You now look out for Anna' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('heading', { name: 'You and Anna now look out for each other' }),
+  ).toBeInTheDocument()
+  // Opened in the browser, not the installed app: say where to continue.
+  expect(
+    screen.getByText(/sign in again and turn on notifications under Contacts/),
+  ).toBeInTheDocument()
   expect(
     screen.getByText(/Notification card: WayBack can then tell you when Anna/),
   ).toBeInTheDocument()

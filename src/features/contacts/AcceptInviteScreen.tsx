@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isInstalled } from '../../lib/install.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
 import { acceptInvite, declineInvite, fetchInvite, type InviteDetails } from './contacts.ts'
 import './contacts.css'
@@ -71,19 +72,31 @@ function AcceptInviteScreen({ token, onClose }: AcceptInviteScreenProps) {
       {step === 'question' && (
         <>
           <h1>{name} invited you</h1>
+          {/* Both ways since 26 Oct (0014_mutual_contacts.sql): said before the tap, because the
+              user's own walks are shared too. */}
           <p>
-            Accept to become a trusted contact. You will hear when {name} starts a walk, gets home,
-            or misses a check-in. Nothing is shared with you before you accept.
+            Accept to look out for each other. You will hear when {name} starts a walk, gets home,
+            or misses a check-in, and {name} will hear the same about your walks. Nothing is shared
+            before you accept.
           </p>
         </>
       )}
 
       {step === 'accepted' && (
         <>
-          <h1>You now look out for {name}</h1>
+          <h1>You and {name} now look out for each other</h1>
           <NotificationCard
             reason={`WayBack can then tell you when ${name} starts a walk, gets home, or misses a check-in.`}
           />
+          {/* An invite link opens in the browser. Added to the Home Screen, WayBack starts again
+              signed out (on iPhone it has its own storage), so say where to continue. Accepting
+              itself is already saved. */}
+          {!isInstalled() && (
+            <p className="contacts-small">
+              Your answer is saved. If you add WayBack to your Home Screen, open it from there, sign
+              in again and turn on notifications under Contacts.
+            </p>
+          )}
         </>
       )}
 

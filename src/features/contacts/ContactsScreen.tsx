@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import NotificationCard from '../notifications/NotificationCard.tsx'
 import ContactOptions from './ContactOptions.tsx'
 import { contactStatusText, initialOf } from './contactStatus.ts'
 import InviteSheet from './InviteSheet.tsx'
@@ -32,8 +33,8 @@ function ContactsScreen({ userId, displayName }: ContactsScreenProps) {
       {error && <p role="alert">{error} Check your connection and try again.</p>}
       {!isLoading && !error && contacts.length === 0 && (
         <p className="contacts-empty">
-          No contacts yet. Invite someone you trust, so they hear when you start a walk, get home or
-          miss a check-in.
+          No contacts yet. Invite someone you trust. Once they accept, you look out for each other:
+          you both hear when the other starts a walk, gets home or misses a check-in.
         </p>
       )}
 
@@ -68,6 +69,12 @@ function ContactsScreen({ userId, displayName }: ContactsScreenProps) {
             setSelectedId(null)
           }}
         />
+      )}
+
+      {/* For someone who looks out for others but never starts a walk, this is the place to turn
+          notifications on: the other card is on Start a walk. It hides itself once they are on. */}
+      {contacts.some((contact) => contact.status !== 'invited') && (
+        <NotificationCard reason="WayBack can then tell you when your contacts start a walk, get home or miss a check-in, also when your phone is locked." />
       )}
 
       <div className="screen-actions">
