@@ -5,6 +5,15 @@ import type { LngLat } from './geometry.ts'
 // when the walk ends. It holds the start, which is often where the user was: see docs/map.md.
 const storageKey = 'wayback.walkRoute'
 
+/** The route on the Home map, with what the start-walk screen shows about it (screen 04). */
+export type PlannedRoute = {
+  coordinates: LngLat[]
+  /** Walking time in seconds, from the route planner. */
+  seconds: number
+  /** Length in metres. */
+  metres: number
+}
+
 type SavedRoute = {
   walkId: string
   coordinates: LngLat[]

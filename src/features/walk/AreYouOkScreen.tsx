@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import TopBar from '../../components/TopBar.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import GraceCountdown from './GraceCountdown.tsx'
 import { EXTEND_MINUTES, namesInWords } from './grace.ts'
@@ -46,8 +47,9 @@ function AreYouOkScreen({
   }
 
   return (
-    <main className="screen walk-alert">
-      <p className="walk-small">Walking to {walk.destinationLabel}</p>
+    <main className="screen screen-tinted walk-alert">
+      {/* No back button: the walk is still running, and leaving this screen would hide it. */}
+      <TopBar title={`Walking to ${walk.destinationLabel}`} />
 
       <svg className="walk-alert-icon" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
@@ -94,7 +96,7 @@ function AreYouOkScreen({
             I’m okay · Add {EXTEND_MINUTES} minutes
           </button>
         )}
-        <p className="walk-small walk-centered">Choose an action to update your walk.</p>
+        <p className="small walk-centered">Choose an action to update your walk.</p>
       </div>
     </main>
   )

@@ -1,7 +1,47 @@
+/* The look of the prototype (Figma "Wayback-prototype", shared on 25 Oct): a soft mint page, white
+   cards with a thin border, dark green text and green buttons. Every colour is named here once, so
+   screens use the names instead of their own colours.
+
+   Light only, like the designs. Decided on 26 Oct: following the prototype comes first; a dark
+   version would need its own design. */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   font-family: system-ui, sans-serif;
   line-height: 1.5;
+
+  /* Surfaces */
+  --page: #f2f8f4;
+  --page-tint: #e8f4ec;
+  --surface: #fff;
+  --border: #dfe9e2;
+
+  /* Text. All of these keep at least 4.5:1 contrast on --page and --surface. */
+  --text: #17301f;
+  --text-muted: #55675b;
+
+  /* Green: the main action, and "safe" */
+  --green: #15803d;
+  --green-button: #16a34a;
+  --green-soft: #dcf2e3;
+  --green-text: #14532d;
+
+  /* Blue: news without action, like "started a walk" (screen 09). */
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+
+  /* Yellow: almost late, overdue. Red: cancel and SOS. */
+  --warning-soft: #fdf1d6;
+  --warning-text: #7a4a00;
+  --warning-edge: #b45309;
+  --danger: #c53030;
+  --danger-soft: #fdeaea;
+
+  --radius: 0.875rem;
+  /* The bottom bar of screen 09 (components/tabBar.css), without the phone's own bottom edge. */
+  --tab-bar-height: 4rem;
+
+  color: var(--text);
+  background: var(--page);
 }
 
 *,
@@ -12,12 +52,14 @@
 
 body {
   margin: 0;
+  background: var(--page);
 }
 
 h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 h2 {
@@ -29,6 +71,10 @@ p {
   margin: 0;
 }
 
+a {
+  color: var(--green);
+}
+
 /* One full-height phone screen: content at the top, buttons at the bottom within thumb reach. */
 .screen {
   display: flex;
@@ -37,8 +83,13 @@ p {
   min-height: 100dvh;
   max-width: 26rem;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1.25rem;
   padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+/* The greener page of the designs that show a moment, not a list (screens 08 and 12). */
+.screen-tinted {
+  background: var(--page-tint);
 }
 
 /* A form inside a screen that should push its buttons to the bottom too. */
@@ -57,17 +108,96 @@ p {
   padding-top: 1rem;
 }
 
+/* On a screen, the buttons at the bottom always stay in view, also when the rest is longer than
+   the phone and scrolls (decided on 26 Oct after testing). The content above fades out under them
+   instead of being cut off by a hard line. */
+.screen {
+  --screen-bg: var(--page);
+}
+
+.screen-tinted {
+  --screen-bg: var(--page-tint);
+}
+
+.screen .screen-actions {
+  position: sticky;
+  bottom: 0;
+  /* Above cards and the map, under the sheets. */
+  z-index: 3;
+  margin-right: -1.25rem;
+  margin-left: -1.25rem;
+  padding: 1.5rem 1.25rem max(1rem, env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--screen-bg) 1.25rem);
+}
+
+/* Buttons at the very end of a screen sit on the bottom edge, not above an empty strip. */
+.screen:has(> .screen-actions) {
+  padding-bottom: 0;
+}
+
+/* A sheet does not scroll behind its buttons, so they stay where they are. */
+.screen .sheet .screen-actions {
+  position: static;
+  margin-right: 0;
+  margin-left: 0;
+  padding: 1rem 0 0;
+  background: none;
+}
+
+/* Small grey text under a heading or a name. */
+.small {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* A white box with a thin edge, as used on every screen of the prototype. */
 .card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .card p {
-  opacity: 0.8;
+  color: var(--text-muted);
+}
+
+/* The round badge with a first letter, for a person. */
+.initial {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  color: var(--green-text);
+  background: var(--green-soft);
+  font-weight: 700;
+}
+
+/* A big round icon at the top of a screen that marks a moment ("You're home", "Are you okay?"). */
+.screen-icon {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.screen-icon svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* A panel that slides over the bottom of a screen, with the screen dimmed behind it. */
@@ -91,7 +221,7 @@ p {
   padding: 2rem 1.5rem;
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   border-radius: 1.25rem 1.25rem 0 0;
-  background: Canvas;
+  background: var(--surface);
 }
 
 .sheet h2 {
@@ -108,12 +238,12 @@ p {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 0.25rem;
-  background: color-mix(in srgb, currentColor 25%, transparent);
+  background: var(--border);
 }
 
 .progress-dots .is-current {
   width: 1.5rem;
-  background: currentColor;
+  background: var(--green-button);
 }
 
 /* Form controls. Sizes are large on purpose: the app is used outside, at night, with one hand. */
@@ -121,38 +251,69 @@ label {
   font-weight: 600;
 }
 
-input:not([type='checkbox']),
+input:not([type='checkbox']) {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+}
+
+input:not([type='checkbox']):focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+/* A plain button is the white "secondary" button of the designs ("I'm okay · Add 5 minutes"). */
 button {
   width: 100%;
   min-height: 3.25rem;
   padding: 0.5rem 1rem;
-  border: 1px solid currentColor;
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   font: inherit;
-  color: inherit;
-  background: transparent;
-}
-
-button {
   font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
   cursor: pointer;
 }
 
+button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: default;
 }
 
+/* The one main action of a screen: green, white text ("Start walk", "I'm home"). */
 .button-primary {
-  color: Canvas;
-  background: CanvasText;
+  border-color: var(--green-button);
+  color: #fff;
+  background: var(--green-button);
 }
 
+/* Stops or cancels something ("Cancel walk…", "I need help"): light red, red words. */
+.button-danger {
+  border-color: #f3c9c9;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* Words only, for a small extra action ("Change", "Not now"). */
 .button-link {
   min-height: 2.75rem;
   border: none;
+  color: var(--green);
+  background: transparent;
 }
 
 [role='alert'] {
   font-weight: 600;
+  color: var(--danger);
 }

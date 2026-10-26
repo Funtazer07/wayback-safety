@@ -1,110 +1,68 @@
-/* The "I'm home" button sits beside the destination in the walk panel, within thumb reach. */
-.walk-live .walk-panel-text {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 0.5rem;
-  width: 100%;
-}
-
-.walk-live .walk-panel-text > p {
-  grid-column: 1 / -1;
-}
-
-.walk-live .walk-panel-text > .walk-destination {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.walk-live .walk-panel-text > .check-in-actions {
-  grid-column: 2;
-  grid-row: 2;
-  width: auto;
-}
-
+/* "I'm home": the biggest button on the walk screen, full width, within thumb reach. */
 .check-in-actions {
   display: flex;
-  justify-content: flex-end;
   width: 100%;
 }
 
 .check-in-button {
-  width: auto;
-  min-width: 7rem;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.875rem;
-  border: none;
-  border-radius: 0.5rem;
+  min-height: 3.25rem;
+  border-color: var(--green-button);
   color: #fff;
-  background: #16a34a;
+  background: var(--green-button);
   font-size: 1.1875rem;
   font-weight: 700;
-  white-space: nowrap;
-}
-
-/* Greyed out while the check-in is being sent and after it, so colour is not the only sign. */
-.check-in-button:disabled {
-  opacity: 0.55;
 }
 
 .check-in-button:hover:not(:disabled) {
   filter: brightness(0.95);
 }
 
-.check-in-button:focus-visible {
-  outline: 0.1875rem solid #1f2937;
-  outline-offset: 0.1875rem;
-}
-
 /* Screen 12 (SCRUM-106): "You're home." after the check-in. */
 .walk-home-mark {
-  display: block;
-  width: 4.5rem;
-  height: 4.5rem;
-  padding: 0.75rem;
-  border-radius: 50%;
-  background: #16a34a;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  margin-top: 2rem;
+}
+
+.walk-home-heading {
+  text-align: center;
 }
 
 /* The checklist: each line has a tick and words, so colour is not the only sign. */
 .walk-home-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
   margin: 0;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  color: #14532d;
-  background: #dcfce7;
   list-style: none;
   font-weight: 600;
+}
+
+.walk-home-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.walk-home-tick {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.walk-home-told {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.walk-home-told p,
+.walk-home-contacts p {
+  color: var(--text);
 }
 
 .walk-home-small {
   display: block;
   font-size: 0.875rem;
-  opacity: 0.8;
-}
-
-@media (max-width: 24rem) {
-  .walk-live .walk-panel {
-    gap: 0.5rem;
-    padding-right: 0.5rem;
-    padding-left: 0.5rem;
-  }
-
-  .walk-live .walk-panel-text {
-    column-gap: 0.25rem;
-  }
-
-  .walk-live .check-in-button {
-    min-width: 0;
-    padding-right: 0.3125rem;
-    padding-left: 0.3125rem;
-  }
+  color: var(--text-muted);
 }

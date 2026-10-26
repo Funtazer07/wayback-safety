@@ -81,18 +81,20 @@ export type ContactWalk = {
   /** The user's own contacts row for the walker. Null when the user removed them from the list. */
   contactId: string | null
   status: FollowedWalk['status']
+  startedAt: Date
   deadline: Date
   overdueAt: Date | null
   checkedInAt: Date | null
   cancelledAt: Date | null
 }
 
-// One row from followed_walk_statuses() in supabase/migrations/0016_contact_alerts_and_walk_status.sql.
+// One row from followed_walk_statuses() in supabase/migrations/0018_walk_start_for_activity.sql.
 type ContactWalkRow = {
   walk_id: string
   walker_name: string | null
   contact_id: string | null
   status: FollowedWalk['status']
+  started_at: string
   deadline: string
   overdue_at: string | null
   checked_in_at: string | null
@@ -111,6 +113,7 @@ export async function fetchContactWalks(): Promise<ContactWalk[]> {
     walkerName: row.walker_name?.trim() || 'Your contact',
     contactId: row.contact_id,
     status: row.status,
+    startedAt: new Date(row.started_at),
     deadline: new Date(row.deadline),
     overdueAt: toDate(row.overdue_at),
     checkedInAt: toDate(row.checked_in_at),

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TabBar, { type Tab } from './components/TabBar.tsx'
 import AccountScreen from './features/account/AccountScreen.tsx'
+import ActivityScreen from './features/activity/ActivityScreen.tsx'
 import { useSession } from './features/auth/SessionContext.ts'
 import AcceptInviteScreen from './features/contacts/AcceptInviteScreen.tsx'
 import ContactsScreen from './features/contacts/ContactsScreen.tsx'
@@ -8,8 +9,13 @@ import { forgetInviteToken, takeInviteToken } from './features/contacts/invites.
 import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
 import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
-import type { LngLat } from './features/map/geometry.ts'
-import { clearWalkRoute, loadWalkRoute, saveWalkRoute } from './features/map/walkRoute.ts'
+
+import {
+  clearWalkRoute,
+  loadWalkRoute,
+  saveWalkRoute,
+  type PlannedRoute,
+} from './features/map/walkRoute.ts'
 import NameScreen from './features/onboarding/NameScreen.tsx'
 import Welcome from './features/onboarding/Welcome.tsx'
 import { useProfile } from './features/profile/useProfile.ts'
@@ -33,12 +39,14 @@ function App() {
   } = useWalk(session?.user.id)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
   // The route on the Home map. When a walk starts, it is kept with that walk for the walk screen.
-  const [plannedRoute, setPlannedRoute] = useState<LngLat[] | null>(null)
+  const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   // Someone else's walk, when the app was opened from an alert (?walk=<id>, SCRUM-74/102).
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
   // An invite to become someone's trusted contact (?invite=<secret>, SCRUM-60).
   const [inviteToken, setInviteToken] = useState(takeInviteToken)
   const [tab, setTab] = useState<Tab>('places')
+  // The Contacts tab opens on Activity (screen 09); Trusted contacts (screen 14) is one step in.
+  const [isCircleOpen, setIsCircleOpen] = useState(false)
   // Said on the welcome screen after logging out, when alerts could not be stopped (SCRUM-105).
   const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
 
@@ -89,6 +97,7 @@ function App() {
           forgetInviteToken()
           setInviteToken(null)
           setTab('contacts')
+          setIsCircleOpen(true)
         }}
       />
     )
@@ -131,9 +140,10 @@ function App() {
     return (
       <StartWalkScreen
         userId={session.user.id}
+        plannedRoute={plannedRoute}
         onStart={async (newWalk) => {
           const startedWalk = await startWalk(newWalk)
-          if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute)
+          if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute.coordinates)
         }}
         onBack={() => setIsStartingWalk(false)}
       />
@@ -151,13 +161,20 @@ function App() {
           onRouteChange={setPlannedRoute}
         />
       )}
-      {tab === 'contacts' && (
-        <ContactsScreen
-          userId={session.user.id}
-          displayName={profile.displayName}
-          onOpenWalk={setOpenedWalkId}
-        />
-      )}
+      {tab === 'contacts' &&
+        (isCircleOpen ? (
+          <ContactsScreen
+            userId={session.user.id}
+            displayName={profile.displayName}
+            onBack={() => setIsCircleOpen(false)}
+          />
+        ) : (
+          <ActivityScreen
+            displayName={profile.displayName}
+            onOpenWalk={setOpenedWalkId}
+            onOpenCircle={() => setIsCircleOpen(true)}
+          />
+        ))}
       {tab === 'account' && (
         <AccountScreen
           displayName={profile.displayName}
@@ -170,7 +187,13 @@ function App() {
           }
         />
       )}
-      <TabBar current={tab} onChange={setTab} />
+      <TabBar
+        current={tab}
+        onChange={(next) => {
+          setTab(next)
+          setIsCircleOpen(false)
+        }}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { LngLat } from '../map/geometry.ts'
+import type { PlannedRoute } from '../map/walkRoute.ts'
 import RoutePlanner from '../map/RoutePlanner.tsx'
 import { isInstalled } from '../../lib/install.ts'
 import InstallSheet from './InstallSheet.tsx'
@@ -9,7 +9,7 @@ type HomeProps = {
   displayName: string
   onStartWalk: () => void
   /** Hears which route is on the map, so the walk can show it. */
-  onRouteChange: (route: LngLat[] | null) => void
+  onRouteChange: (route: PlannedRoute | null) => void
 }
 
 /** Screen 3 of the onboarding v2 wireframe: where the onboarding ends. */
