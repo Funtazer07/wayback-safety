@@ -354,7 +354,7 @@ test('opening the app from an alert shows that walk to the contact, and Back lea
   expect(screen.queryByRole('heading', { name: 'Anna is safe' })).not.toBeInTheDocument()
 })
 
-test('an overdue walk on the Contacts tab opens, and Back leads to the Contacts tab again', async () => {
+test('an overdue walk in Activity opens, and Back leads to Activity again', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   contactsApi.fetchContacts.mockResolvedValue([
     { id: 'c-anna', label: 'Anna', status: 'accepted', inviteExpiresAt: null },
@@ -365,6 +365,7 @@ test('an overdue walk on the Contacts tab opens, and Back leads to the Contacts 
       walkerName: 'Anna',
       contactId: 'c-anna',
       status: 'overdue',
+      startedAt: new Date(),
       deadline: new Date(),
       overdueAt: new Date(),
       checkedInAt: null,
@@ -384,12 +385,12 @@ test('an overdue walk on the Contacts tab opens, and Back leads to the Contacts 
   await screen.findByRole('heading', { name: 'Ready when you are' })
 
   click('Contacts')
-  fireEvent.click(await screen.findByRole('button', { name: 'Check-in overdue · View walk' }))
+  fireEvent.click(await screen.findByRole('button', { name: /Anna hasn’t checked in/ }))
 
   expect(await screen.findByRole('heading', { name: 'Anna is safe' })).toBeInTheDocument()
   expect(followed.fetchFollowedWalk).toHaveBeenCalledWith('walk-anna')
   click('Back')
-  expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Activity' })).toBeInTheDocument()
 })
 
 test('the bottom bar switches between Places, Contacts and Account', async () => {
@@ -398,8 +399,13 @@ test('the bottom bar switches between Places, Contacts and Account', async () =>
   expect(await screen.findByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
 
   click('Contacts')
-  expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Activity' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Contacts' })).toHaveAttribute('aria-current', 'page')
+  // Trusted contacts is one step in, with Back to Activity.
+  fireEvent.click(screen.getByRole('button', { name: /Trusted contacts/ }))
+  expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
+  click('Back')
+  expect(screen.getByRole('heading', { name: 'Activity' })).toBeInTheDocument()
 
   click('Account')
   expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()

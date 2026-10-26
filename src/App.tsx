@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TabBar, { type Tab } from './components/TabBar.tsx'
 import AccountScreen from './features/account/AccountScreen.tsx'
+import ActivityScreen from './features/activity/ActivityScreen.tsx'
 import { useSession } from './features/auth/SessionContext.ts'
 import AcceptInviteScreen from './features/contacts/AcceptInviteScreen.tsx'
 import ContactsScreen from './features/contacts/ContactsScreen.tsx'
@@ -44,6 +45,8 @@ function App() {
   // An invite to become someone's trusted contact (?invite=<secret>, SCRUM-60).
   const [inviteToken, setInviteToken] = useState(takeInviteToken)
   const [tab, setTab] = useState<Tab>('places')
+  // The Contacts tab opens on Activity (screen 09); Trusted contacts (screen 14) is one step in.
+  const [isCircleOpen, setIsCircleOpen] = useState(false)
   // Said on the welcome screen after logging out, when alerts could not be stopped (SCRUM-105).
   const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
 
@@ -94,6 +97,7 @@ function App() {
           forgetInviteToken()
           setInviteToken(null)
           setTab('contacts')
+          setIsCircleOpen(true)
         }}
       />
     )
@@ -157,13 +161,20 @@ function App() {
           onRouteChange={setPlannedRoute}
         />
       )}
-      {tab === 'contacts' && (
-        <ContactsScreen
-          userId={session.user.id}
-          displayName={profile.displayName}
-          onOpenWalk={setOpenedWalkId}
-        />
-      )}
+      {tab === 'contacts' &&
+        (isCircleOpen ? (
+          <ContactsScreen
+            userId={session.user.id}
+            displayName={profile.displayName}
+            onBack={() => setIsCircleOpen(false)}
+          />
+        ) : (
+          <ActivityScreen
+            displayName={profile.displayName}
+            onOpenWalk={setOpenedWalkId}
+            onOpenCircle={() => setIsCircleOpen(true)}
+          />
+        ))}
       {tab === 'account' && (
         <AccountScreen
           displayName={profile.displayName}
@@ -176,7 +187,13 @@ function App() {
           }
         />
       )}
-      <TabBar current={tab} onChange={setTab} />
+      <TabBar
+        current={tab}
+        onChange={(next) => {
+          setTab(next)
+          setIsCircleOpen(false)
+        }}
+      />
     </div>
   )
 }

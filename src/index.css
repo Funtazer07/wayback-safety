@@ -25,6 +25,10 @@
   --green-soft: #dcf2e3;
   --green-text: #14532d;
 
+  /* Blue: news without action, like "started a walk" (screen 09). */
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+
   /* Yellow: almost late, overdue. Red: cancel and SOS. */
   --warning-soft: #fdf1d6;
   --warning-text: #7a4a00;

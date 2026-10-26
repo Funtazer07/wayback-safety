@@ -1,7 +1,8 @@
 -- Test for supabase/migrations/0016_contact_alerts_and_walk_status.sql (SCRUM-103, SCRUM-115):
 -- what the Contacts tab may know about each person.
 --
--- How to run: paste the whole file into the Supabase SQL Editor and click Run, after 0016 is run.
+-- How to run: paste the whole file into the Supabase SQL Editor and click Run, after 0018 is run
+-- (0018 adds started_at to followed_walk_statuses).
 -- One transaction that ends with ROLLBACK, so the made-up people and walks are gone afterwards. The
 -- last result says "ALL CHECKS PASSED"; a failed check stops the run with "FAIL: ...".
 --
@@ -76,7 +77,7 @@ end $$;
 
 -- ---------- SCRUM-115: the walk status per person ----------
 do $$ begin
-  assert (select status = 'active' and walker_name = 'Anna'
+  assert (select status = 'active' and walker_name = 'Anna' and started_at is not null
             and contact_id = '00000000-0000-4000-8000-000000110002'
           from public.followed_walk_statuses()
           where walk_id = '00000000-0000-4000-8000-0000001d0002'),

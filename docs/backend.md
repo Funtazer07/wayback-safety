@@ -209,11 +209,15 @@ Code: `src/features/contacts/contacts.ts` talks to the database.
 
 Built in SCRUM-60 from the prototype:
 
-- **Contacts tab** (screen 14, `ContactsScreen.tsx`): the list with "Can receive alerts" or
-  "Notifications off: cannot receive alerts" (SCRUM-103), "Invitation pending", "Invitation
-  expired" or "Updates paused". Under a person the user looks out for, their latest walk
-  (SCRUM-115, see "The contact's view"). Tapping a contact shows its options: Pause or Resume
-  updates, Remove contact (asks first), or Cancel invite for an open one.
+- **Contacts tab → Activity** (screen 09, `src/features/activity/`): what the tab opens on since
+  26 Oct, as in the prototype. "Anna's account", then one card per person who trusts the user,
+  newest first: "hasn't checked in · View walk", "started a walk", "arrived safely" or "stopped
+  the walk" (see "The contact's view"). Under the feed: "Trusted contacts ›".
+- **Trusted contacts** (screen 14, `ContactsScreen.tsx`), opened from Activity, with "‹ Your
+  circle" back to it: the list with "Can receive alerts" or "Notifications off: cannot receive
+  alerts" (SCRUM-103), "Invitation pending", "Invitation expired" or "Updates paused". Tapping a
+  contact shows its options: Pause or Resume updates, Remove contact (asks first), or Cancel
+  invite for an open one.
 - **Can this contact get an alert?** (SCRUM-103): alerts go out by Web Push only, so a contact who
   never allowed notifications gets nothing. `contact_alert_status`
   (`0016_contact_alerts_and_walk_status.sql`) answers only yes or no per contact who accepted:
@@ -319,7 +323,7 @@ the account deletes the rows too.
 The service worker that vite-plugin-pwa writes cannot show notifications, so it loads
 `public/push-sw.js`, which can. That file also opens the app when a notification is tapped, and
 tells an open app that a push arrived (`src/lib/pushMessages.ts`). A push means a walk changed, so
-the Contacts tab, the contact's walk screen and the walker's own walk screen ask the server again
+the Activity feed, the contact's walk screen and the walker's own walk screen ask the server again
 at once, instead of waiting for their next check. Added on 26 Oct after testing: "overdue" only
 showed after switching screens. Phones without notifications still rely on the regular checks. On
 `npm run dev` there is no service worker, so the card says notifications only work in a build
@@ -490,20 +494,23 @@ a function that returns only these fields is used instead, like `get_invite` for
 The `?walk=<id>` part of the link is kept in the browser tab (`sessionStorage`) while the contact
 signs in, because signing in with Google loses it. Back closes the screen and forgets it.
 
-The Contacts tab is the second way in (SCRUM-104, SCRUM-115). Under each person the user looks
-out for, it shows their latest walk: "On the way · home by 22:36", "Check-in overdue · View walk",
-"Home safe at 22:31" or "Stopped the walk at 22:20". Tapping it opens the same screen. The tab asks
-again as soon as a push arrives, every 30 seconds and when the app comes back on screen, so the
-line changes by itself.
+The Activity feed on the Contacts tab is the second way in (SCRUM-104, SCRUM-115, screen 09).
+One card per person the user looks out for, with their latest walk: "Anna hasn't checked in · View
+walk", "Anna started a walk · Check-in due at 22:26", "Anna arrived safely" or "Anna stopped the
+walk", each with its time. Tapping a card opens the same screen. The feed asks again as soon as a
+push arrives, every 30 seconds and when the app comes back on screen, so it changes by itself. The
+design's "Home · Expected arrival" and "Her …" are left out: the destination is not shared, and
+the app does not know anyone's pronouns.
 
-The walks come from `followed_walk_statuses` (`0016_contact_alerts_and_walk_status.sql`), with the
+The walks come from `followed_walk_statuses` (`0016`, with `started_at` added in
+`0018_walk_start_for_activity.sql` for "started a walk"), with the
 same rule as `followed_walk`: the walk, the walker's name, the status and its times, never a
 location. One walk per person: an overdue one first, otherwise the newest. Walks on the way and
 overdue walks always show; an ended walk for 12 hours (assumption, to confirm in SCRUM-115). It
 replaces `overdue_followed_walks` from 0015, which only knew overdue walks. If the contact removed
 the walker from their own list, they still follow the walks they were added to, so an overdue walk
-of such a person gets a line of its own with the walker's name. An overdue walk stays on the tab
-until the walker checks in.
+of such a person shows in the feed too. An overdue walk stays in the feed until the walker
+checks in.
 
 "Call" and "Message" from the design are left out: the app has no phone numbers. The map only
 covers Eindhoven; a last location outside it is shown as coordinates instead.
@@ -560,9 +567,9 @@ Written down here because the app handles location and personal data.
 - **Contacts reading a walk:** the first and only time someone other than the owner reads walk
   data (SCRUM-102). A contact who was added to the walk, accepted and is not paused sees the
   walker's name, the status, the due time and the check-in or cancel time. The last known location
-  only while the walk is overdue, and so for at most 24 hours. Never the destination, the start
-  time or the route. The Contacts tab gets the same fields as the walk screen, without the
-  location (SCRUM-104, SCRUM-115). See "The contact's view".
+  only while the walk is overdue, and so for at most 24 hours. Never the destination or the
+  route. The Activity feed gets the same fields as the walk screen plus the start time (which the
+  "is on the way home" message already tells), without the location. See "The contact's view".
 - **Can a contact get alerts:** the user learns only yes or no per contact who accepted (SCRUM-103),
   never which phone or browser. Accepting an invite already lets the other person rely on you for
   alerts, so whether you can get them is part of that.
