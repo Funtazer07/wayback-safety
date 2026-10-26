@@ -41,7 +41,7 @@ database looks like.
 |                      | and, once the user is home, the time of the check-in                                  |
 | `contacts`           | One row per trusted contact or open invite: who invited, who accepted, the name the   |
 |                      | user gave them, status, and while open, a fingerprint of the invite link              |
-| `walk_contacts`      | Which contacts follow which walk. Chosen when the walk starts                         |
+| `walk_contacts`      | Which contacts follow which walk, and when one tapped "I'm watching" (SCRUM-114)      |
 | `reports`            | Place reports and broken street lights: category, a rounded spot or the lamp, time    |
 | `push_subscriptions` | One row per phone that allowed notifications: the push address and its keys           |
 
@@ -74,6 +74,19 @@ Code: `src/features/walk/walk.ts` has `startWalk`, `updateWalkLocation`, `checkI
 `extendWalk`, `cancelWalk`, `fetchCurrentWalk` and `fetchWalkContactNames`. The screens are in the
 same folder: `StartWalkScreen` (destination and timer) and `WalkScreen` (time left and the "I'm
 home" button). While the walk screen is open, the app sends the location once a minute.
+
+The timer is a slider in steps of one minute, with − and + for a single minute and four quick
+choices (`TimerPicker.tsx`, `timerSuggestion.ts`). Decided on 26 Oct: the design's steps of 5
+minutes felt too rough. With a route planned on Home it adapts to that route, so the user does not
+have to guess and a slower walk does not set off "Are you OK?" (Studio Krom feedback):
+
+- it starts at the walking time plus 5 minutes (a 12-minute route starts at 17);
+- it cannot go below the walking time, and goes up to three times it, at least an hour;
+- the quick choices are the walking time plus 5, 10, 15 and 20 minutes.
+
+Without a route it starts at the design's 20 minutes, goes from 5 minutes to 2 hours, and the quick
+choices are 10, 15, 20 and 30. _Assumptions:_ the 5 extra minutes, three times the walking time,
+and 2 hours without a route. The server accepts 1 to 180 minutes.
 
 `fetchCurrentWalk` returns an `active` walk, and also an `overdue` one: the user has not checked in
 yet and must still be able to tap "I'm home" to tell their contacts they are safe.
@@ -479,6 +492,16 @@ Every message to a contact opens this screen, not only the alert: "is on the way
 due time without a location, "has arrived safely" and "stopped the walk" show how the walk ended.
 Before 26 Oct only the alert had a link, so tapping the others only brought the app to the front.
 
+**"I'm watching" (SCRUM-114).** While the walk is on the way, the contact's screen has a button
+"I'm watching". Tapping it calls `watch_walk` (`0019_im_watching.sql`), which saves the moment in
+`walk_contacts.watching_at`, only for a contact on that walk who accepted and is not paused, and
+only while the walk is `active`. The walker's walk screen then shows "Mum is watching your walk"
+(`fetchWalkWatchers`, asked every 30 seconds, when the app comes back on screen and when a push
+arrives). `followed_walk` also says whether this contact already tapped, so the button does not come
+back after reopening the app. From the Studio Krom feedback: choosing contacts without any sign from
+their side may not be enough for the walker to feel someone is looking out. The walker gets no push
+message for it, to keep the walk quiet; they see it on the walk screen.
+
 What a contact may see comes from one database function, `followed_walk` (`0013_contact_walk_view.sql`):
 
 - Only a contact who was added to this walk, accepted, and is not paused. Anyone else gets "This
@@ -570,6 +593,8 @@ Written down here because the app handles location and personal data.
   only while the walk is overdue, and so for at most 24 hours. Never the destination or the
   route. The Activity feed gets the same fields as the walk screen plus the start time (which the
   "is on the way home" message already tells), without the location. See "The contact's view".
+- **"I'm watching":** only the moment the contact tapped is stored, on their link to that walk, and
+  it goes with the walk. The walker sees who tapped; the contact learns nothing new (SCRUM-114).
 - **Can a contact get alerts:** the user learns only yes or no per contact who accepted (SCRUM-103),
   never which phone or browser. Accepting an invite already lets the other person rely on you for
   alerts, so whether you can get them is part of that.
@@ -718,6 +743,7 @@ CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 | `mutual_contacts_test.sql`                | Accepting links both ways; an existing link back is kept (SCRUM-60)         |
 | `overdue_followed_walks_test.sql`         | Which overdue walks show on the Contacts tab (SCRUM-104)                    |
 | `contact_alerts_and_walk_status_test.sql` | Alert yes or no, and the walk status per contact (SCRUM-103, SCRUM-115)     |
+| `im_watching_test.sql`                    | Who may tap "I'm watching", and when (SCRUM-114)                            |
 
 ### This is real personal data
 

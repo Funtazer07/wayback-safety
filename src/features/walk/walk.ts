@@ -181,3 +181,19 @@ export async function fetchWalkContacts(walkId: string): Promise<WalkContact[]> 
     .map((link) => link.contacts)
     .filter((contact): contact is WalkContact => contact !== null)
 }
+
+/**
+ * The names of the contacts who tapped "I'm watching" on this walk (SCRUM-114), first one first.
+ * Empty when nobody did.
+ */
+export async function fetchWalkWatchers(walkId: string): Promise<string[]> {
+  const { data, error } = await client()
+    .from('walk_contacts')
+    .select('watching_at, contacts(label)')
+    .eq('walk_id', walkId)
+  if (error) throw error
+  return (data as unknown as { watching_at: string | null; contacts: { label: string } | null }[])
+    .filter((link) => link.watching_at !== null && link.contacts !== null)
+    .sort((a, b) => (a.watching_at ?? '').localeCompare(b.watching_at ?? ''))
+    .map((link) => link.contacts?.label ?? '')
+}

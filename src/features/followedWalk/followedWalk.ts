@@ -14,9 +14,11 @@ export type FollowedWalk = {
   cancelledAt: Date | null
   /** Where the walker was last seen and when. Null when not overdue, or nothing was shared. */
   lastLocation: { coordinates: LngLat; savedAt: Date } | null
+  /** Whether this contact already tapped "I'm watching" on this walk (SCRUM-114). */
+  youAreWatching: boolean
 }
 
-// One row from followed_walk() in supabase/migrations/0013_contact_walk_view.sql.
+// One row from followed_walk() in supabase/migrations/0019_im_watching.sql (first in 0013).
 type FollowedWalkRow = {
   walker_name: string | null
   status: FollowedWalk['status']
@@ -27,6 +29,7 @@ type FollowedWalkRow = {
   last_lat: number | null
   last_lng: number | null
   last_location_at: string | null
+  you_are_watching: boolean
 }
 
 /** The server's answer when the walk does not exist or this user is not one of its contacts. */
@@ -56,7 +59,17 @@ function toFollowedWalk(row: FollowedWalkRow): FollowedWalk {
       row.last_lat !== null && row.last_lng !== null && row.last_location_at
         ? { coordinates: [row.last_lng, row.last_lat], savedAt: new Date(row.last_location_at) }
         : null,
+    youAreWatching: row.you_are_watching,
   }
+}
+
+/**
+ * The contact taps "I'm watching" (SCRUM-114), so the walker sees someone is looking out. Only
+ * while the walk is on the way; the server refuses otherwise.
+ */
+export async function watchWalk(walkId: string): Promise<void> {
+  const { error } = await client().rpc('watch_walk', { walk_id: walkId })
+  if (error) throw error
 }
 
 /** The walk with this id, as its contact may see it. Fails with NotSharedError when not allowed. */

@@ -2,6 +2,7 @@ import TopBar from '../../components/TopBar.tsx'
 import { formatClock } from '../walk/time.ts'
 import type { FollowedWalk } from './followedWalk.ts'
 import LastLocationMap from './LastLocationMap.tsx'
+import WatchButton from './WatchButton.tsx'
 import { useFollowedWalk } from './useFollowedWalk.ts'
 import './followedWalk.css'
 
@@ -23,7 +24,7 @@ function FollowedWalkScreen({ walkId, onClose }: FollowedWalkScreenProps) {
       <TopBar title="Contacts" onBack={onClose} />
       {isLoading && <p>Loading…</p>}
       {error && <p role="alert">{error}</p>}
-      {walk && <WalkDetails walk={walk} />}
+      {walk && <WalkDetails walkId={walkId} walk={walk} />}
     </main>
   )
 }
@@ -33,7 +34,7 @@ function atTime(time: Date | null): string {
   return time ? ` at ${formatClock(time)}` : ''
 }
 
-function WalkDetails({ walk }: { walk: FollowedWalk }) {
+function WalkDetails({ walkId, walk }: { walkId: string; walk: FollowedWalk }) {
   const name = walk.walkerName
 
   if (walk.status === 'safe') {
@@ -64,6 +65,7 @@ function WalkDetails({ walk }: { walk: FollowedWalk }) {
       <>
         <WalkerHeading name={name} title={`${name} is on the way home`} />
         <p className="followed-box">Expected home at {formatClock(walk.deadline)}.</p>
+        <WatchButton walkId={walkId} walkerName={name} isWatching={walk.youAreWatching} />
         <p className="followed-note">
           This page updates by itself when {name} gets home. The location is only shared if {name}{' '}
           misses the check-in.

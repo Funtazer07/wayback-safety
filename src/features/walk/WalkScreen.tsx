@@ -11,6 +11,8 @@ import { useNow } from './useNow.ts'
 import { useRefreshDuringGrace } from './useRefreshDuringGrace.ts'
 import type { Walk } from './walk.ts'
 import { useWalkContactNames } from './useWalkContactNames.ts'
+import { useWalkWatchers } from './useWalkWatchers.ts'
+import WatchersLine from './WatchersLine.tsx'
 import WalkTimer from './WalkTimer.tsx'
 import './walk.css'
 
@@ -50,6 +52,8 @@ function WalkScreen({
   const hasCheckedIn = walk.status === 'safe'
   // No location is read or sent once the user is home.
   const isLocationOff = useLocationUpdates(hasCheckedIn ? null : walk.id)
+  // Who tapped "I'm watching" (SCRUM-114). Not needed once the walk has ended.
+  const watchers = useWalkWatchers(hasCheckedIn ? null : walk.id)
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -107,6 +111,7 @@ function WalkScreen({
             </p>
           </div>
         </div>
+        <WatchersLine names={watchers} />
         {error && <p role="alert">{error}</p>}
         <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
       </section>

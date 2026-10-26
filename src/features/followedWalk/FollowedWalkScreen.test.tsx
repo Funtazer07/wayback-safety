@@ -1,13 +1,17 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { NotSharedError, type FollowedWalk } from './followedWalk.ts'
 import FollowedWalkScreen from './FollowedWalkScreen.tsx'
 
-const { fetchFollowedWalk } = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn() }))
+const { fetchFollowedWalk, watchWalk } = vi.hoisted(() => ({
+  fetchFollowedWalk: vi.fn(),
+  watchWalk: vi.fn(),
+}))
 
 vi.mock('./followedWalk.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./followedWalk.ts')>()),
   fetchFollowedWalk,
+  watchWalk,
 }))
 // The map needs a real browser; it has its own tests in features/map.
 vi.mock('../map/MapView.tsx', () => ({
@@ -25,10 +29,12 @@ const overdue: FollowedWalk = {
   checkedInAt: null,
   cancelledAt: null,
   lastLocation: { coordinates: [5.4791, 51.4385], savedAt: new Date('2026-10-15T22:31:00') },
+  youAreWatching: false,
 }
 
 beforeEach(() => {
   fetchFollowedWalk.mockReset()
+  watchWalk.mockReset().mockResolvedValue(undefined)
 })
 
 function renderScreen() {
@@ -117,4 +123,36 @@ test('a walk on the way updates by itself when the walker gets home', async () =
 
   expect(await screen.findByRole('heading', { name: 'Anna is safe' })).toBeInTheDocument()
   vi.useRealTimers()
+})
+
+test('a contact can say "I’m watching" while the walk is on the way', async () => {
+  fetchFollowedWalk.mockResolvedValue({ ...overdue, status: 'active', lastLocation: null })
+  renderScreen()
+
+  const button = await screen.findByRole('button', { name: 'I’m watching' })
+  await act(async () => fireEvent.click(button))
+
+  expect(watchWalk).toHaveBeenCalledWith('walk-1')
+  expect(screen.getByRole('status')).toHaveTextContent('You’re watching. Anna can see that')
+})
+
+test('a contact who is already watching does not get the button again', async () => {
+  fetchFollowedWalk.mockResolvedValue({
+    ...overdue,
+    status: 'active',
+    lastLocation: null,
+    youAreWatching: true,
+  })
+  renderScreen()
+
+  expect(await screen.findByText(/You’re watching/)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'I’m watching' })).not.toBeInTheDocument()
+})
+
+test('an overdue walk has no "I’m watching": the alert has already gone out', async () => {
+  fetchFollowedWalk.mockResolvedValue(overdue)
+  renderScreen()
+
+  await screen.findByText('Check-in overdue')
+  expect(screen.queryByRole('button', { name: 'I’m watching' })).not.toBeInTheDocument()
 })

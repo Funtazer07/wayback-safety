@@ -9,6 +9,7 @@ import { HOME } from './destination.ts'
 import DestinationSheet from './DestinationSheet.tsx'
 import { addMinutes, formatClock } from './time.ts'
 import TimerPicker from './TimerPicker.tsx'
+import { EXTRA_MINUTES, suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts'
 import { useNow } from './useNow.ts'
 import type { NewWalk } from './walk.ts'
 import './walk.css'
@@ -22,13 +23,12 @@ type StartWalkScreenProps = {
   onBack: () => void
 }
 
-// Assumption: the design shows 20 min as the starting value.
-const DEFAULT_MINUTES = 20
-
 /** Screen 04 of the prototype, "Set your check-in": the timer and who hears about the walk. */
 function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: StartWalkScreenProps) {
   const [destination, setDestination] = useState(HOME)
-  const [minutes, setMinutes] = useState(DEFAULT_MINUTES)
+  // Starts from the planned route, so the user does not have to guess (timerSuggestion.ts).
+  const routeSeconds = plannedRoute?.seconds ?? null
+  const [minutes, setMinutes] = useState(() => suggestedMinutes(routeSeconds))
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
@@ -80,10 +80,20 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
               {formatDistance(plannedRoute.metres)}
             </span>
           </p>
+          <p className="small">
+            The timer below includes {EXTRA_MINUTES} minutes extra, so a slower walk does not worry
+            anyone.
+          </p>
         </div>
       )}
 
-      <TimerPicker minutes={minutes} onChange={setMinutes} now={now} />
+      <TimerPicker
+        minutes={minutes}
+        onChange={setMinutes}
+        range={timerRange(routeSeconds)}
+        presets={timerPresets(routeSeconds)}
+        now={now}
+      />
 
       <ContactToggles
         contacts={contacts.contacts}
