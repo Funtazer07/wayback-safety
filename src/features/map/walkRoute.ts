@@ -17,11 +17,16 @@ export type PlannedRoute = {
 type SavedRoute = {
   walkId: string
   coordinates: LngLat[]
+  /** The route planner's walking time, to know the walker's pace ("Running late?", SCRUM-113). */
+  seconds?: number
 }
 
-export function saveWalkRoute(walkId: string, coordinates: LngLat[]): void {
+export function saveWalkRoute(walkId: string, coordinates: LngLat[], seconds?: number): void {
   try {
-    localStorage.setItem(storageKey, JSON.stringify({ walkId, coordinates } satisfies SavedRoute))
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({ walkId, coordinates, seconds } satisfies SavedRoute),
+    )
   } catch {
     // Storage is blocked (private mode): the walk screen then shows no route.
   }
@@ -35,6 +40,18 @@ export function loadWalkRoute(walkId: string): LngLat[] | null {
     ) as Partial<SavedRoute> | null
     if (saved?.walkId !== walkId || !Array.isArray(saved.coordinates)) return null
     return saved.coordinates.length > 1 ? saved.coordinates : null
+  } catch {
+    return null
+  }
+}
+
+/** The walking time of this walk's route in seconds, or null when it is not known. */
+export function loadWalkRouteSeconds(walkId: string): number | null {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(storageKey) ?? 'null',
+    ) as Partial<SavedRoute> | null
+    return saved?.walkId === walkId && typeof saved.seconds === 'number' ? saved.seconds : null
   } catch {
     return null
   }
