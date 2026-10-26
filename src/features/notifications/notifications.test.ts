@@ -40,7 +40,10 @@ function fakeBrowser({
   }
   vi.stubGlobal('navigator', {
     userAgent,
-    serviceWorker: { ready: Promise.resolve({ pushManager }) },
+    serviceWorker: {
+      ready: Promise.resolve({ pushManager }),
+      getRegistration: vi.fn().mockResolvedValue({ pushManager }),
+    },
   })
   // jsdom has no PushManager, so leaving it out looks like a browser without push.
   if (hasPush) vi.stubGlobal('PushManager', class {})
@@ -149,13 +152,32 @@ test('turning off deletes this phone on the server and then in the browser', asy
   expect(subscription.unsubscribe).toHaveBeenCalled()
 })
 
-test('turning off keeps the browser subscription when the server cannot delete it', async () => {
+test('turning off still works offline, because the browser subscription alone is removed', async () => {
   const subscription = fakeSubscription()
   fakeBrowser({ permission: 'granted', existing: subscription })
   eq.mockResolvedValue({ error: new Error('Network error') })
 
+  await disableNotifications()
+
+  expect(subscription.unsubscribe).toHaveBeenCalled()
+})
+
+test('turning off fails only when neither the server nor the browser could remove the phone', async () => {
+  const subscription = fakeSubscription()
+  subscription.unsubscribe.mockRejectedValue(new Error('Push service unreachable'))
+  fakeBrowser({ permission: 'granted', existing: subscription })
+  eq.mockResolvedValue({ error: new Error('Network error') })
+
   await expect(disableNotifications()).rejects.toThrow('Network error')
-  expect(subscription.unsubscribe).not.toHaveBeenCalled()
+})
+
+test('turning off does nothing, and does not wait, where there is no service worker', async () => {
+  fakeBrowser()
+  vi.mocked(navigator.serviceWorker.getRegistration).mockResolvedValue(undefined)
+
+  await disableNotifications()
+
+  expect(eq).not.toHaveBeenCalled()
 })
 
 test('a push service failure in the browser is reported as a browser problem, not saved', async () => {

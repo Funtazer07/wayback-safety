@@ -2,6 +2,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import {
   NotSharedError,
   fetchFollowedWalk,
+  fetchOverdueWalks,
   forgetOpenedWalk,
   takeOpenedWalkId,
 } from './followedWalk.ts'
@@ -72,6 +73,49 @@ test('other failures are passed on as they are', async () => {
   single.mockResolvedValue({ data: null, error })
 
   await expect(fetchFollowedWalk(walkId)).rejects.toBe(error)
+})
+
+test('the overdue walks a contact follows come with the row to show them next to', async () => {
+  rpc.mockResolvedValue({
+    data: [
+      {
+        walk_id: walkId,
+        walker_name: 'Anna',
+        contact_id: 'c-anna',
+        overdue_at: '2026-10-15T20:42:00Z',
+      },
+      {
+        walk_id: 'walk-2',
+        walker_name: null,
+        contact_id: null,
+        overdue_at: '2026-10-15T21:00:00Z',
+      },
+    ],
+    error: null,
+  })
+
+  expect(await fetchOverdueWalks()).toEqual([
+    {
+      walkId,
+      walkerName: 'Anna',
+      contactId: 'c-anna',
+      overdueAt: new Date('2026-10-15T20:42:00Z'),
+    },
+    {
+      walkId: 'walk-2',
+      walkerName: 'Your contact',
+      contactId: null,
+      overdueAt: new Date('2026-10-15T21:00:00Z'),
+    },
+  ])
+  expect(rpc).toHaveBeenCalledWith('overdue_followed_walks')
+})
+
+test('loading the overdue walks fails when the server refuses', async () => {
+  const error = new Error('Network error')
+  rpc.mockResolvedValue({ data: null, error })
+
+  await expect(fetchOverdueWalks()).rejects.toBe(error)
 })
 
 test('the walk from the alert link is read and removed from the address bar', () => {

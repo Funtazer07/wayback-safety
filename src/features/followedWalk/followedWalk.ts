@@ -71,6 +71,35 @@ export async function fetchFollowedWalk(walkId: string): Promise<FollowedWalk> {
   return toFollowedWalk(data)
 }
 
+/** A walk the user follows whose check-in is overdue, as listed on the Contacts tab (SCRUM-104). */
+export type OverdueWalk = {
+  walkId: string
+  walkerName: string
+  /** The user's own contacts row for the walker. Null when the user removed them from the list. */
+  contactId: string | null
+  overdueAt: Date
+}
+
+// One row from overdue_followed_walks() in supabase/migrations/0015_overdue_walks_for_contacts.sql.
+type OverdueWalkRow = {
+  walk_id: string
+  walker_name: string | null
+  contact_id: string | null
+  overdue_at: string
+}
+
+/** The overdue walks this user follows. The server only returns walks they may open. */
+export async function fetchOverdueWalks(): Promise<OverdueWalk[]> {
+  const { data, error } = await client().rpc('overdue_followed_walks')
+  if (error) throw error
+  return (data as OverdueWalkRow[]).map((row) => ({
+    walkId: row.walk_id,
+    walkerName: row.walker_name?.trim() || 'Your contact',
+    contactId: row.contact_id,
+    overdueAt: new Date(row.overdue_at),
+  }))
+}
+
 // The alert links to the app with ?walk=<id> (SCRUM-74). Signing in first (Google sends the user
 // away and back) loses that part of the address, so it is kept here for this tab until it is used.
 const storageKey = 'wayback.openWalk'

@@ -39,6 +39,8 @@ function App() {
   // An invite to become someone's trusted contact (?invite=<secret>, SCRUM-60).
   const [inviteToken, setInviteToken] = useState(takeInviteToken)
   const [tab, setTab] = useState<Tab>('places')
+  // Said on the welcome screen after logging out, when alerts could not be stopped (SCRUM-105).
+  const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
 
   if (!supabase) {
     return (
@@ -57,7 +59,7 @@ function App() {
     )
   }
 
-  if (!session) return <Welcome />
+  if (!session) return <Welcome notice={logOutNotice} />
 
   if (error || walkError) {
     return (
@@ -150,9 +152,24 @@ function App() {
         />
       )}
       {tab === 'contacts' && (
-        <ContactsScreen userId={session.user.id} displayName={profile.displayName} />
+        <ContactsScreen
+          userId={session.user.id}
+          displayName={profile.displayName}
+          onOpenWalk={setOpenedWalkId}
+        />
       )}
-      {tab === 'account' && <AccountScreen displayName={profile.displayName} />}
+      {tab === 'account' && (
+        <AccountScreen
+          displayName={profile.displayName}
+          onLoggingOut={(alertsStopped) =>
+            setLogOutNotice(
+              alertsStopped
+                ? null
+                : 'You are logged out, but WayBack could not turn off notifications on this phone. You can turn them off in your phone’s settings.',
+            )
+          }
+        />
+      )}
       <TabBar current={tab} onChange={setTab} />
     </div>
   )
