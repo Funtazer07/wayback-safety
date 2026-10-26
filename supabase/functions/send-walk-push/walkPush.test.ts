@@ -56,6 +56,7 @@ test('a started walk tells the contact who and when they should be home, without
   expect(message).toEqual({
     title: 'Anna is on the way home',
     body: 'Expected home at 22:36.',
+    url: '?walk=walk-1',
   })
 })
 
@@ -65,7 +66,11 @@ test('a check-in tells the contact who arrived and when', () => {
     checkedInAt: new Date('2026-10-15T20:31:00Z'),
   })
 
-  expect(message).toEqual({ title: 'Anna has arrived safely', body: 'Checked in at 22:31.' })
+  expect(message).toEqual({
+    title: 'Anna has arrived safely',
+    body: 'Checked in at 22:31.',
+    url: '?walk=walk-1',
+  })
 })
 
 test('a cancelled walk tells the contact when, and that no check-in will follow', () => {
@@ -77,6 +82,7 @@ test('a cancelled walk tells the contact when, and that no check-in will follow'
   expect(message).toEqual({
     title: 'Anna stopped the walk',
     body: 'Cancelled at 22:20. No check-in will follow.',
+    url: '?walk=walk-1',
   })
 })
 
@@ -151,8 +157,11 @@ test('the alert says so when no location was shared, instead of pointing to one'
   expect(body).not.toContain('Last known location')
 })
 
-test('tapping the alert opens the app on this walk', () => {
+test('tapping any message to a contact opens the app on this walk', () => {
   expect(messageFor('overdue', 'Anna', overdueWalk).url).toBe('?walk=walk-1')
+  expect(messageFor('started', 'Anna', walk).url).toBe('?walk=walk-1')
+  expect(messageFor('home_safe', 'Anna', overdueWalk).url).toBe('?walk=walk-1')
+  expect(messageFor('cancelled', 'Anna', walk).url).toBe('?walk=walk-1')
 })
 
 test('a check-in after the alert tells the contacts clearly that the person is safe', () => {

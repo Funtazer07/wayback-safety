@@ -29,6 +29,7 @@ vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
 const contactsApi = vi.hoisted(() => ({
   fetchContacts: vi.fn(),
+  fetchAlertStatus: vi.fn(),
   fetchInvite: vi.fn(),
   acceptInvite: vi.fn(),
   declineInvite: vi.fn(),
@@ -37,7 +38,7 @@ vi.mock('./features/contacts/contacts.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/contacts/contacts.ts')>()),
   ...contactsApi,
 }))
-const followed = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn(), fetchOverdueWalks: vi.fn() }))
+const followed = vi.hoisted(() => ({ fetchFollowedWalk: vi.fn(), fetchContactWalks: vi.fn() }))
 vi.mock('./features/followedWalk/followedWalk.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/followedWalk/followedWalk.ts')>()),
   ...followed,
@@ -87,7 +88,8 @@ beforeEach(() => {
   profile.completeProfile.mockResolvedValue(undefined)
   walks.fetchCurrentWalk.mockResolvedValue(null)
   contactsApi.fetchContacts.mockResolvedValue([])
-  followed.fetchOverdueWalks.mockResolvedValue([])
+  contactsApi.fetchAlertStatus.mockResolvedValue(new Map())
+  followed.fetchContactWalks.mockResolvedValue([])
 })
 
 test('a new visitor can sign in with Google from the welcome screen', async () => {
@@ -342,8 +344,17 @@ test('an overdue walk on the Contacts tab opens, and Back leads to the Contacts 
   contactsApi.fetchContacts.mockResolvedValue([
     { id: 'c-anna', label: 'Anna', status: 'accepted', inviteExpiresAt: null },
   ])
-  followed.fetchOverdueWalks.mockResolvedValue([
-    { walkId: 'walk-anna', walkerName: 'Anna', contactId: 'c-anna', overdueAt: new Date() },
+  followed.fetchContactWalks.mockResolvedValue([
+    {
+      walkId: 'walk-anna',
+      walkerName: 'Anna',
+      contactId: 'c-anna',
+      status: 'overdue',
+      deadline: new Date(),
+      overdueAt: new Date(),
+      checkedInAt: null,
+      cancelledAt: null,
+    },
   ])
   followed.fetchFollowedWalk.mockResolvedValue({
     walkerName: 'Anna',

@@ -71,32 +71,50 @@ export async function fetchFollowedWalk(walkId: string): Promise<FollowedWalk> {
   return toFollowedWalk(data)
 }
 
-/** A walk the user follows whose check-in is overdue, as listed on the Contacts tab (SCRUM-104). */
-export type OverdueWalk = {
+/**
+ * The latest walk of someone the user looks out for, as shown on the Contacts tab (SCRUM-115).
+ * Only the status and its times: no location, no destination.
+ */
+export type ContactWalk = {
   walkId: string
   walkerName: string
   /** The user's own contacts row for the walker. Null when the user removed them from the list. */
   contactId: string | null
-  overdueAt: Date
+  status: FollowedWalk['status']
+  deadline: Date
+  overdueAt: Date | null
+  checkedInAt: Date | null
+  cancelledAt: Date | null
 }
 
-// One row from overdue_followed_walks() in supabase/migrations/0015_overdue_walks_for_contacts.sql.
-type OverdueWalkRow = {
+// One row from followed_walk_statuses() in supabase/migrations/0016_contact_alerts_and_walk_status.sql.
+type ContactWalkRow = {
   walk_id: string
   walker_name: string | null
   contact_id: string | null
-  overdue_at: string
+  status: FollowedWalk['status']
+  deadline: string
+  overdue_at: string | null
+  checked_in_at: string | null
+  cancelled_at: string | null
 }
 
-/** The overdue walks this user follows. The server only returns walks they may open. */
-export async function fetchOverdueWalks(): Promise<OverdueWalk[]> {
-  const { data, error } = await client().rpc('overdue_followed_walks')
+/**
+ * One walk per person the user looks out for: on the way, overdue, or ended in the last 12 hours.
+ * The server only returns walks the user may open.
+ */
+export async function fetchContactWalks(): Promise<ContactWalk[]> {
+  const { data, error } = await client().rpc('followed_walk_statuses')
   if (error) throw error
-  return (data as OverdueWalkRow[]).map((row) => ({
+  return (data as ContactWalkRow[]).map((row) => ({
     walkId: row.walk_id,
     walkerName: row.walker_name?.trim() || 'Your contact',
     contactId: row.contact_id,
-    overdueAt: new Date(row.overdue_at),
+    status: row.status,
+    deadline: new Date(row.deadline),
+    overdueAt: toDate(row.overdue_at),
+    checkedInAt: toDate(row.checked_in_at),
+    cancelledAt: toDate(row.cancelled_at),
   }))
 }
 

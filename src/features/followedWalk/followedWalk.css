@@ -36,8 +36,11 @@
   margin: 0;
 }
 
-/* The map needs a fixed height inside a normal screen; on the walk screen it fills the rest. */
+/* The map needs a fixed height inside a normal screen; on the walk screen it fills the rest.
+   flex: none, because .map-area has flex: 1 (map.css): in a flex column that wins over the height,
+   and Safari on iPhone then made the map 0 px high, so only the caption showed. */
 .followed-map .map-area {
+  flex: none;
   height: 16rem;
   border-radius: 0.75rem;
 }

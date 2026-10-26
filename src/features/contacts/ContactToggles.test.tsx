@@ -47,3 +47,17 @@ test('without contacts the screen says nobody will be alerted', () => {
 
   expect(screen.getByText(/nobody is alerted if you do not check in/)).toBeInTheDocument()
 })
+
+test('a contact whose phone cannot get alerts is marked on Start a walk', () => {
+  render(
+    <ContactToggles
+      contacts={[contacts[0], { ...contacts[1], canReceiveAlerts: false }]}
+      isLoading={false}
+      selectedIds={['c-mum', 'c-alex']}
+      onChange={vi.fn()}
+    />,
+  )
+
+  expect(screen.getByRole('switch', { name: /Alex.*Notifications off/ })).toBeChecked()
+  expect(screen.getByRole('switch', { name: 'Mum' })).toBeInTheDocument()
+})

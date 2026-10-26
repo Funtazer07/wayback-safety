@@ -103,11 +103,15 @@ export function messageFor(
 ): PushMessage {
   // Every user picks a name in onboarding, but the server should not crash on an old account.
   const name = walkerName?.trim() || 'Your contact'
+  // Every message to a contact opens this walk in the app (SCRUM-102), not only the alert. Without
+  // it, tapping "is on the way home" only brought the app to the front, which looked broken.
+  const walkUrl = `?walk=${walk.id}`
   switch (event) {
     case 'started':
       return {
         title: `${name} is on the way home`,
         body: `Expected home at ${formatClock(walk.deadline)}.`,
+        url: walkUrl,
       }
     case 'home_safe':
       // After an alert the contacts may be worried or already searching: say clearly it is over.
@@ -115,11 +119,13 @@ export function messageFor(
         return {
           title: `${name} is safe`,
           body: `${name} checked in at ${formatClock(walk.checkedInAt ?? new Date())}, after the missed check-in alert. No need to look any further.`,
+          url: walkUrl,
         }
       }
       return {
         title: `${name} has arrived safely`,
         body: `Checked in at ${formatClock(walk.checkedInAt ?? new Date())}.`,
+        url: walkUrl,
       }
     case 'overdue':
       // From the design: say what happened without causing panic. Where the location came from and
@@ -132,7 +138,7 @@ export function messageFor(
             ? `Last known location from ${formatClock(walk.lastLocationAt)}, not live. Open WayBack to see it.`
             : 'No location was shared during this walk.',
         ].join(' '),
-        url: `?walk=${walk.id}`,
+        url: walkUrl,
       }
     case 'cancelled':
       // The second sentence matters: without it a contact may wait for a check-in that never comes
@@ -140,6 +146,7 @@ export function messageFor(
       return {
         title: `${name} stopped the walk`,
         body: `Cancelled at ${formatClock(walk.cancelledAt ?? new Date())}. No check-in will follow.`,
+        url: walkUrl,
       }
     case 'are_you_ok':
       // To the walker. Says what to do and what happens otherwise, without sounding like an alarm

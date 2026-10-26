@@ -15,12 +15,13 @@ const loading: FollowedWalkState = { walk: null, isLoading: true, error: null }
 const THIRTY_SECONDS = 30_000
 
 /**
- * The walk a contact opened from an alert. While it is overdue it is asked for again every 30
- * seconds and when the app comes back on screen, so a check-in shows up without reloading.
+ * The walk a contact opened. While it is on the way or overdue it is asked for again every 30
+ * seconds and when the app comes back on screen, so "overdue", "safe" or "cancelled" shows up
+ * without reloading. A walk that ended does not change any more, so then it stops asking.
  */
 export function useFollowedWalk(walkId: string): FollowedWalkState {
   const [state, setState] = useState(loading)
-  const isOverdue = state.walk?.status === 'overdue'
+  const isOngoing = state.walk?.status === 'active' || state.walk?.status === 'overdue'
 
   useEffect(() => {
     let isCurrent = true
@@ -44,7 +45,7 @@ export function useFollowedWalk(walkId: string): FollowedWalkState {
   }, [walkId])
 
   useEffect(() => {
-    if (!isOverdue) return
+    if (!isOngoing) return
 
     let isCurrent = true
     // A failed refresh keeps what is on screen; the next one tries again.
@@ -61,7 +62,7 @@ export function useFollowedWalk(walkId: string): FollowedWalkState {
       clearInterval(timer)
       document.removeEventListener('visibilitychange', refreshWhenBackOnScreen)
     }
-  }, [walkId, isOverdue])
+  }, [walkId, isOngoing])
 
   return state
 }

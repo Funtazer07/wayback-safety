@@ -203,9 +203,17 @@ Code: `src/features/contacts/contacts.ts` talks to the database.
 
 Built in SCRUM-60 from the prototype:
 
-- **Contacts tab** (screen 14, `ContactsScreen.tsx`): the list with "Invitation accepted",
-  "Invitation pending", "Invitation expired" or "Updates paused". Tapping a contact shows its
-  options: Pause or Resume updates, Remove contact (asks first), or Cancel invite for an open one.
+- **Contacts tab** (screen 14, `ContactsScreen.tsx`): the list with "Can receive alerts" or
+  "Notifications off: cannot receive alerts" (SCRUM-103), "Invitation pending", "Invitation
+  expired" or "Updates paused". Under a person the user looks out for, their latest walk
+  (SCRUM-115, see "The contact's view"). Tapping a contact shows its options: Pause or Resume
+  updates, Remove contact (asks first), or Cancel invite for an open one.
+- **Can this contact get an alert?** (SCRUM-103): alerts go out by Web Push only, so a contact who
+  never allowed notifications gets nothing. `contact_alert_status`
+  (`0016_contact_alerts_and_walk_status.sql`) answers only yes or no per contact who accepted:
+  does their account have at least one phone in `push_subscriptions`. Start a walk also marks such
+  a contact with "Notifications off: will not get an alert". If the question fails, the list shows
+  without that line.
 - **Invite by link or email** (`InviteSheet.tsx`): the user types what they call the contact, gets
   the link, and the phone's own share menu opens (WhatsApp, Mail, Messages...). Where there is no
   share menu, mostly on laptops, the link is shown with a Copy button. Decided on 25 Oct: we send no
@@ -443,7 +451,11 @@ Tapping the alert opens screen 10 of the SCRUM-72 prototype for the contact (SCR
 `src/features/followedWalk/`): whose walk it is, "Check-in overdue" with the due time, and the last
 known location on a map with the time it was saved, under the line "This is the last shared
 location, not a live position." When the walker checks in, the screen changes to "Anna is safe" by
-itself: it asks the server again every 30 seconds while the walk is overdue.
+itself: it asks the server again every 30 seconds while the walk is on the way or overdue.
+
+Every message to a contact opens this screen, not only the alert: "is on the way home" shows the
+due time without a location, "has arrived safely" and "stopped the walk" show how the walk ended.
+Before 26 Oct only the alert had a link, so tapping the others only brought the app to the front.
 
 What a contact may see comes from one database function, `followed_walk` (`0013_contact_walk_view.sql`):
 
@@ -460,13 +472,19 @@ a function that returns only these fields is used instead, like `get_invite` for
 The `?walk=<id>` part of the link is kept in the browser tab (`sessionStorage`) while the contact
 signs in, because signing in with Google loses it. Back closes the screen and forgets it.
 
-The Contacts tab is the second way in (SCRUM-104), for a contact who swiped the alert away. Next to
-a person whose walk is overdue it says "Check-in overdue · View walk", which opens the same screen.
-The list comes from `overdue_followed_walks` (`0015_overdue_walks_for_contacts.sql`), with the same
-rule as `followed_walk` and only the walk, the walker's name and when it became overdue. If the
-contact removed the walker from their own list, they still follow the walks they were added to, so
-such a walk gets a line of its own with the walker's name. An overdue walk stays on the tab until
-the walker checks in.
+The Contacts tab is the second way in (SCRUM-104, SCRUM-115). Under each person the user looks
+out for, it shows their latest walk: "On the way · home by 22:36", "Check-in overdue · View walk",
+"Home safe at 22:31" or "Stopped the walk at 22:20". Tapping it opens the same screen. The tab asks
+again every 30 seconds and when the app comes back on screen, so the line changes by itself.
+
+The walks come from `followed_walk_statuses` (`0016_contact_alerts_and_walk_status.sql`), with the
+same rule as `followed_walk`: the walk, the walker's name, the status and its times, never a
+location. One walk per person: an overdue one first, otherwise the newest. Walks on the way and
+overdue walks always show; an ended walk for 12 hours (assumption, to confirm in SCRUM-115). It
+replaces `overdue_followed_walks` from 0015, which only knew overdue walks. If the contact removed
+the walker from their own list, they still follow the walks they were added to, so an overdue walk
+of such a person gets a line of its own with the walker's name. An overdue walk stays on the tab
+until the walker checks in.
 
 "Call" and "Message" from the design are left out: the app has no phone numbers. The map only
 covers Eindhoven; a last location outside it is shown as coordinates instead.
@@ -524,8 +542,11 @@ Written down here because the app handles location and personal data.
   data (SCRUM-102). A contact who was added to the walk, accepted and is not paused sees the
   walker's name, the status, the due time and the check-in or cancel time. The last known location
   only while the walk is overdue, and so for at most 24 hours. Never the destination, the start
-  time or the route. The Contacts tab only learns which of those walks are overdue, and since when
-  (SCRUM-104). See "The contact's view".
+  time or the route. The Contacts tab gets the same fields as the walk screen, without the
+  location (SCRUM-104, SCRUM-115). See "The contact's view".
+- **Can a contact get alerts:** the user learns only yes or no per contact who accepted (SCRUM-103),
+  never which phone or browser. Accepting an invite already lets the other person rely on you for
+  alerts, so whether you can get them is part of that.
 - **Push messages:** hold the user's name and a time, never a location. They pass through Apple's
   or Google's push service, encrypted on the way, so those services cannot read them. Only
   contacts who accepted and are not paused get them.
@@ -663,13 +684,14 @@ after its migration is run. Each file makes up its own users, runs inside one tr
 with `rollback`, so nothing stays behind and no push message is sent. The last result is "ALL
 CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 
-| File                              | Tests                                                                       |
-| --------------------------------- | --------------------------------------------------------------------------- |
-| `late_walks_test.sql`             | The warning, the grace period and overdue (SCRUM-73)                        |
-| `overdue_alert_test.sql`          | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
-| `contact_walk_view_test.sql`      | Who may see a walk, and the location only while overdue (SCRUM-102)         |
-| `mutual_contacts_test.sql`        | Accepting links both ways; an existing link back is kept (SCRUM-60)         |
-| `overdue_followed_walks_test.sql` | Which overdue walks show on the Contacts tab (SCRUM-104)                    |
+| File                                      | Tests                                                                       |
+| ----------------------------------------- | --------------------------------------------------------------------------- |
+| `late_walks_test.sql`                     | The warning, the grace period and overdue (SCRUM-73)                        |
+| `overdue_alert_test.sql`                  | The alert, "is safe" afterwards, erasing the location after 24 h (SCRUM-74) |
+| `contact_walk_view_test.sql`              | Who may see a walk, and the location only while overdue (SCRUM-102)         |
+| `mutual_contacts_test.sql`                | Accepting links both ways; an existing link back is kept (SCRUM-60)         |
+| `overdue_followed_walks_test.sql`         | Which overdue walks show on the Contacts tab (SCRUM-104)                    |
+| `contact_alerts_and_walk_status_test.sql` | Alert yes or no, and the walk status per contact (SCRUM-103, SCRUM-115)     |
 
 ### This is real personal data
 
