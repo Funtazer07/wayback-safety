@@ -5,7 +5,7 @@ import AreYouOkScreen from './AreYouOkScreen.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import HomeSafeScreen from './HomeSafeScreen.tsx'
 import { walkPhase } from './grace.ts'
-import { formatClock } from './time.ts'
+import { formatClock, timerPhase } from './time.ts'
 import { useLocationUpdates } from './useLocationUpdates.ts'
 import { useNow } from './useNow.ts'
 import { useRefreshDuringGrace } from './useRefreshDuringGrace.ts'
@@ -89,23 +89,26 @@ function WalkScreen({
     <main className="walk-live">
       <WalkMap route={route} />
 
-      <section className="walk-panel" aria-label="Your walk">
-        <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
-
-        <div className="walk-panel-text">
-          <p className="walk-small">Walking to</p>
-          <p className="walk-destination">{walk.destinationLabel}</p>
-          <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
-          <p>
-            Home by <strong>{formatClock(walk.deadline)}</strong>
-          </p>
-          {error && <p role="alert">{error}</p>}
-          <p className="walk-small">
-            {isLocationOff
-              ? 'Location is off, so the app cannot save where you last were.'
-              : 'The app saves where you last were.'}
-          </p>
+      {/* The whole panel turns yellow in the last minutes, as on the "almost over" design; the
+          timer also says "Almost time", so colour is not the only sign. */}
+      <section className={`walk-panel is-${timerPhase(walk.deadline, now)}`} aria-label="Your walk">
+        <div className="walk-panel-top">
+          <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
+          <div className="walk-panel-text">
+            <p className="walk-small">Walking to</p>
+            <p className="walk-destination">{walk.destinationLabel}</p>
+            <p>
+              Home by <strong>{formatClock(walk.deadline)}</strong>
+            </p>
+            <p className="walk-small">
+              {isLocationOff
+                ? 'Location is off, so the app cannot save where you last were.'
+                : 'The app saves where you last were.'}
+            </p>
+          </div>
         </div>
+        {error && <p role="alert">{error}</p>}
+        <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
       </section>
     </main>
   )

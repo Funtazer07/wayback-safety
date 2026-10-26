@@ -171,6 +171,15 @@ See `src/App.test.tsx` for a real one.
 
 - Plain CSS. One CSS file per feature, imported in that feature's screen. Global basics are in
   `src/index.css`.
+- Follow the look of the Figma prototype (soft mint page, white cards, dark green text, green
+  buttons). Its colours are named once at the top of `src/index.css` (`--page`, `--surface`,
+  `--border`, `--text`, `--text-muted`, `--green-button`, `--warning-soft`, `--danger`...). Use
+  those names, never a new colour code in a feature's CSS. The app is light only, like the designs.
+- Ready-made pieces in `src/index.css`: `.card` (white box), `.button-primary` (green, the one
+  main action), a plain `<button>` (white), `.button-danger` (light red, for cancel), `.button-link`
+  (words only), `.initial` (letter in a circle), `.small` (grey small text), `.screen-tinted` (the
+  greener page of screens 08 and 12). The top of a screen with "‹" and a small title is
+  `src/components/TopBar.tsx`.
 - Class names in lowercase with dashes: `time-left`, `walk-screen`.
 - Design for a phone first. The app is used outside, at night, with one hand: large text, large
   buttons (at least 44 × 44 px), strong contrast.

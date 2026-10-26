@@ -54,8 +54,21 @@ const routeViaStratumseind = vi.hoisted((): [number, number][] => [
 // The Home map's stand-in has a button that chooses a route, and the walk map's stand-in says
 // which route it got.
 vi.mock('./features/map/RoutePlanner.tsx', () => ({
-  default: ({ onRouteChange }: { onRouteChange: (route: [number, number][]) => void }) => (
-    <button type="button" onClick={() => onRouteChange(routeViaStratumseind)}>
+  default: ({
+    onRouteChange,
+  }: {
+    onRouteChange: (route: {
+      coordinates: [number, number][]
+      seconds: number
+      metres: number
+    }) => void
+  }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onRouteChange({ coordinates: routeViaStratumseind, seconds: 720, metres: 900 })
+      }
+    >
       Choose the route via Stratumseind
     </button>
   ),
@@ -170,7 +183,7 @@ test('a user starts a walk home with the timer they picked', async () => {
   await screen.findByText('Hi Sam')
 
   click('Start walk')
-  expect(screen.getByRole('heading', { name: 'Start a walk' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Set your check-in' })).toBeInTheDocument()
   click('5 minutes more')
   click('Start walk')
 

@@ -5,7 +5,7 @@
   padding: 0.5rem 0.5rem 0.5rem 1rem;
   border-radius: 0.75rem;
   font-size: 0.875rem;
-  background: color-mix(in srgb, currentColor 8%, transparent);
+  background: var(--green-soft);
 }
 
 .home-banner p {
@@ -44,8 +44,8 @@
   border-radius: 50%;
   font-size: 0.875rem;
   font-weight: 600;
-  color: Canvas;
-  background: CanvasText;
+  color: #fff;
+  background: var(--green-button);
 }
 
 /* Places is exactly one phone screen tall, bottom bar included, so it never scrolls: the map in the

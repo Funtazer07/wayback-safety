@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import TopBar from '../../components/TopBar.tsx'
 import ContactToggles from '../contacts/ContactToggles.tsx'
 import { useContacts } from '../contacts/useContacts.ts'
+import { formatDistance } from '../map/formatRoute.ts'
+import type { PlannedRoute } from '../map/walkRoute.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
 import { HOME } from './destination.ts'
 import DestinationSheet from './DestinationSheet.tsx'
-import { addMinutes, formatClock, formatDuration } from './time.ts'
+import { addMinutes, formatClock } from './time.ts'
+import TimerPicker from './TimerPicker.tsx'
 import { useNow } from './useNow.ts'
 import type { NewWalk } from './walk.ts'
 import './walk.css'
@@ -12,18 +16,17 @@ import './walk.css'
 type StartWalkScreenProps = {
   /** The logged-in user, to list their trusted contacts. */
   userId: string
+  /** The route planned on Home, for the estimated arrival. Null when none was planned. */
+  plannedRoute?: PlannedRoute | null
   onStart: (newWalk: NewWalk) => Promise<void>
   onBack: () => void
 }
 
-// Assumptions: the wireframe shows 20 min with a minus and a plus button, but not the step size
-// or the limits. The server accepts 1 to 180 minutes.
+// Assumption: the design shows 20 min as the starting value.
 const DEFAULT_MINUTES = 20
-const STEP = 5
-const MAX_MINUTES = 180
 
-/** Screen 1 of the walk wireframe: check the destination and the timer, then go. */
-function StartWalkScreen({ userId, onStart, onBack }: StartWalkScreenProps) {
+/** Screen 04 of the prototype, "Set your check-in": the timer and who hears about the walk. */
+function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: StartWalkScreenProps) {
   const [destination, setDestination] = useState(HOME)
   const [minutes, setMinutes] = useState(DEFAULT_MINUTES)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -49,58 +52,38 @@ function StartWalkScreen({ userId, onStart, onBack }: StartWalkScreenProps) {
     }
   }
 
-  function handleUse(place: string) {
-    setDestination(place)
-    setIsSheetOpen(false)
-  }
-
   return (
     <main className="screen">
-      <h1>Start a walk</h1>
-      <p>Check these two things, then go.</p>
+      <TopBar title="Home" onBack={onBack} />
+      <h1>Set your check-in</h1>
 
-      <div className="walk-card walk-row">
+      <div className="card walk-row">
         <p>
-          <span className="walk-small">Going to</span>
-          <strong>{destination}</strong>
+          <span className="small">Going to</span> <strong>{destination}</strong>
         </p>
         <button type="button" className="button-link" onClick={() => setIsSheetOpen(true)}>
           Change
         </button>
       </div>
 
-      <div className="walk-card">
-        <p className="walk-small">Walk timer</p>
-        <div className="walk-row">
-          <button
-            type="button"
-            className="walk-step"
-            aria-label={`${STEP} minutes less`}
-            disabled={minutes <= STEP}
-            onClick={() => setMinutes(minutes - STEP)}
-          >
-            −
-          </button>
-          <p className="walk-timer" aria-live="polite">
-            <strong className="walk-timer-minutes">{formatDuration(minutes)}</strong>
-            <span className="walk-home-by">
-              Home by <strong>{formatClock(addMinutes(now, minutes))}</strong>
+      {/* From the route planned on Home. Without one the app cannot estimate the walk, so the
+          card is left out instead of guessing. */}
+      {plannedRoute && (
+        <div className="card walk-estimate">
+          <p className="walk-label">Estimated arrival</p>
+          <p className="walk-row">
+            <strong className="walk-estimate-time">
+              {formatClock(addMinutes(now, Math.ceil(plannedRoute.seconds / 60)))}
+            </strong>
+            <span className="small">
+              {Math.max(1, Math.round(plannedRoute.seconds / 60))} min walk ·{' '}
+              {formatDistance(plannedRoute.metres)}
             </span>
           </p>
-          <button
-            type="button"
-            className="walk-step"
-            aria-label={`${STEP} minutes more`}
-            disabled={minutes >= MAX_MINUTES}
-            onClick={() => setMinutes(minutes + STEP)}
-          >
-            +
-          </button>
         </div>
-        {/* The wireframe shows an estimated walking time here. The app cannot work one out yet
-            (that needs an address lookup and a route), so it asks the user instead. */}
-        <p className="walk-small">Set how long your walk takes. Add time if you are not sure.</p>
-      </div>
+      )}
+
+      <TimerPicker minutes={minutes} onChange={setMinutes} now={now} />
 
       <ContactToggles
         contacts={contacts.contacts}
@@ -111,7 +94,7 @@ function StartWalkScreen({ userId, onStart, onBack }: StartWalkScreenProps) {
         }
       />
 
-      {/* Not in the wireframe. Asked here because the warning when time runs out (SCRUM-73) is a
+      {/* Not in the design. Asked here because the warning when time runs out (SCRUM-73) is a
           push notification, and iPhones only ask after a tap (SCRUM-68). */}
       <NotificationCard reason="WayBack can then warn you if your timer runs out, also when your phone is locked." />
 
@@ -120,17 +103,16 @@ function StartWalkScreen({ userId, onStart, onBack }: StartWalkScreenProps) {
         <button type="button" className="button-primary" disabled={isBusy} onClick={handleStart}>
           Start walk
         </button>
-        {/* Not in the wireframe: without it there is no way back to Home. */}
-        <button type="button" className="button-link" onClick={onBack}>
-          Not now
-        </button>
-        <p className="walk-small walk-centered">Location is used only while the walk runs.</p>
+        <p className="small walk-centered">Location is used only while the walk runs.</p>
       </div>
 
       {isSheetOpen && (
         <DestinationSheet
           destination={destination}
-          onUse={handleUse}
+          onUse={(place) => {
+            setDestination(place)
+            setIsSheetOpen(false)
+          }}
           onClose={() => setIsSheetOpen(false)}
         />
       )}

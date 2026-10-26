@@ -16,6 +16,14 @@ type HomeSafeScreenProps = {
 // answers: the walk is 'safe', the location is erased (0004) and the check-in time is saved.
 const doneSteps = ['Timer stopped', 'Location sharing stopped', 'Check-in saved']
 
+function Tick() {
+  return (
+    <svg className="walk-home-tick" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
 /**
  * Screen 12 of the prototype (SCRUM-106): the walk has ended, and who was told. Replaces the small
  * message that was shown over the walk screen before.
@@ -24,19 +32,21 @@ function HomeSafeScreen({ walkId, endedAt, onDone }: HomeSafeScreenProps) {
   const update = useArrivalUpdate(walkId)
 
   return (
-    <main className="screen walk-home">
-      <svg className="walk-home-mark" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M13 33 26 46 52 17" />
-      </svg>
-      <div>
+    <main className="screen screen-tinted walk-home">
+      <div className="screen-icon walk-home-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </svg>
+      </div>
+      <div className="walk-home-heading">
         <h1>You’re home.</h1>
-        <p>Your walk ended at {formatClock(endedAt)}.</p>
+        <p className="small">Your walk ended at {formatClock(endedAt)}.</p>
       </div>
 
-      <ul className="walk-home-steps" aria-label="What the check-in did">
+      <ul className="card walk-home-steps" aria-label="What the check-in did">
         {doneSteps.map((step) => (
           <li key={step}>
-            <span aria-hidden="true">✓ </span>
+            <Tick />
             {step}
           </li>
         ))}
@@ -62,12 +72,17 @@ function ContactsTold({ update }: { update: ArrivalUpdate }) {
   if (update.told.length === 0 && update.notReached.length === 0) return null
 
   return (
-    <section className="card" aria-label="Your contacts">
+    <section className="card walk-home-contacts" aria-label="Your contacts">
       {update.told.length > 0 && (
-        <p>
-          <strong>{namesInWords(update.told)}</strong>
-          <span className="walk-home-small">Safe-arrival update sent.</span>
-        </p>
+        <div className="walk-home-told">
+          <span className="initial" aria-hidden="true">
+            {update.told[0].charAt(0).toUpperCase()}
+          </span>
+          <p>
+            <strong>{namesInWords(update.told)}</strong>
+            <span className="walk-home-small">Safe-arrival update sent.</span>
+          </p>
+        </div>
       )}
       {update.notReached.length > 0 && (
         <p className="walk-home-small">

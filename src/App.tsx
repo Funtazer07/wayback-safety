@@ -8,8 +8,13 @@ import { forgetInviteToken, takeInviteToken } from './features/contacts/invites.
 import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
 import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
-import type { LngLat } from './features/map/geometry.ts'
-import { clearWalkRoute, loadWalkRoute, saveWalkRoute } from './features/map/walkRoute.ts'
+
+import {
+  clearWalkRoute,
+  loadWalkRoute,
+  saveWalkRoute,
+  type PlannedRoute,
+} from './features/map/walkRoute.ts'
 import NameScreen from './features/onboarding/NameScreen.tsx'
 import Welcome from './features/onboarding/Welcome.tsx'
 import { useProfile } from './features/profile/useProfile.ts'
@@ -33,7 +38,7 @@ function App() {
   } = useWalk(session?.user.id)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
   // The route on the Home map. When a walk starts, it is kept with that walk for the walk screen.
-  const [plannedRoute, setPlannedRoute] = useState<LngLat[] | null>(null)
+  const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   // Someone else's walk, when the app was opened from an alert (?walk=<id>, SCRUM-74/102).
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
   // An invite to become someone's trusted contact (?invite=<secret>, SCRUM-60).
@@ -131,9 +136,10 @@ function App() {
     return (
       <StartWalkScreen
         userId={session.user.id}
+        plannedRoute={plannedRoute}
         onStart={async (newWalk) => {
           const startedWalk = await startWalk(newWalk)
-          if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute)
+          if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute.coordinates)
         }}
         onBack={() => setIsStartingWalk(false)}
       />

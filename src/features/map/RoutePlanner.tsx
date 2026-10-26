@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { isInEindhoven, type LngLat } from './geometry.ts'
+import { isInEindhoven } from './geometry.ts'
 import MapView from './MapView.tsx'
 import type { CameraMove } from './moveCamera.ts'
 import { locationMessage, plannerHint } from './plannerHint.ts'
@@ -9,12 +9,16 @@ import RouteList from './RouteList.tsx'
 import RouteSummary from './RouteSummary.tsx'
 import { usePlanner } from './usePlanner.ts'
 import { useReporting } from './useReporting.ts'
+import type { PlannedRoute } from './walkRoute.ts'
 import { useUserPosition } from './useUserPosition.ts'
 import './map.css'
 
 type RoutePlannerProps = {
-  /** Hears which route is on the map, so the walk can show it too. Null when there is none. */
-  onRouteChange: (route: LngLat[] | null) => void
+  /**
+   * Hears which route is on the map, so the walk can show it too and the start-walk screen can
+   * estimate the arrival. Null when there is none.
+   */
+  onRouteChange: (route: PlannedRoute | null) => void
 }
 
 /**
@@ -60,8 +64,18 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
   }, [newRoutes])
 
   // The route on the map is the one the walk will show, also when the user did not tap a card.
-  const shownRoute = planner.routes[planner.selectedIndex]?.coordinates ?? null
-  useEffect(() => onRouteChange(shownRoute), [shownRoute, onRouteChange])
+  const shownRoute = planner.routes[planner.selectedIndex] ?? null
+  useEffect(
+    () =>
+      onRouteChange(
+        shownRoute && {
+          coordinates: shownRoute.coordinates,
+          seconds: shownRoute.duration,
+          metres: shownRoute.length,
+        },
+      ),
+    [shownRoute, onRouteChange],
+  )
 
   function locate() {
     if (position && !isOutside) {

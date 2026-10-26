@@ -214,10 +214,21 @@ test('tells which route is on the map, so the walk can show it', async () => {
   click('Tap the station')
   await screen.findByRole('region', { name: 'Choose a route' })
   // The list can be on screen a moment before React tells the parent about the route, so wait.
-  await waitFor(() => expect(onRouteChange).toHaveBeenLastCalledWith(viaCityCentre.coordinates))
+  // With its walking time and length, for the estimated arrival on the start-walk screen.
+  await waitFor(() =>
+    expect(onRouteChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        coordinates: viaCityCentre.coordinates,
+        seconds: viaCityCentre.duration,
+        metres: expect.any(Number),
+      }),
+    ),
+  )
 
   fireEvent.click(screen.getByRole('button', { name: /Fastest/ }))
-  expect(onRouteChange).toHaveBeenLastCalledWith(quickWay.coordinates)
+  expect(onRouteChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({ coordinates: quickWay.coordinates }),
+  )
 
   click('Start over')
   expect(onRouteChange).toHaveBeenLastCalledWith(null)

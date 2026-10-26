@@ -35,7 +35,7 @@ function ContactsScreen({ userId, displayName, onOpenWalk }: ContactsScreenProps
   return (
     <main className="screen">
       <div>
-        <p className="contacts-small">Your circle</p>
+        <p className="contacts-eyebrow">Your circle</p>
         <h1>Trusted contacts</h1>
         <p className="contacts-small">Choose who hears about each walk.</p>
       </div>

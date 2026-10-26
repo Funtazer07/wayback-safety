@@ -27,9 +27,10 @@ export default defineConfig({
         scope: base,
         display: 'standalone',
         orientation: 'portrait',
-        // Placeholder colours until the design is final. Keep in sync with theme-color in index.html.
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        // The page colour of the prototype (--page in src/index.css). Keep in sync with theme-color
+        // in index.html.
+        theme_color: '#f2f8f4',
+        background_color: '#f2f8f4',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

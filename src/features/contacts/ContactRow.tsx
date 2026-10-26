@@ -39,6 +39,7 @@ function WalkButton({ walk, onClick }: { walk: ContactWalk; onClick: () => void 
   return (
     <button type="button" className={className} onClick={onClick}>
       {contactWalkText(walk)}
+      <span aria-hidden="true"> ›</span>
     </button>
   )
 }

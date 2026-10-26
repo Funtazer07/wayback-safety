@@ -1,12 +1,4 @@
-.walk-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, currentColor 8%, transparent);
-}
-
+/* Screen 04, "Set your check-in". */
 .walk-row {
   display: flex;
   flex-direction: row;
@@ -23,42 +15,120 @@
   display: block;
   font-size: 0.8125rem;
   font-weight: 400;
-  opacity: 0.75;
+  color: var(--text-muted);
 }
 
 .walk-centered {
   text-align: center;
 }
 
-.walk-step {
-  width: 3.25rem;
-  font-size: 1.5rem;
+/* "ESTIMATED ARRIVAL": small capitals above the time, as in the design. */
+.walk-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.walk-timer {
-  text-align: center;
+.walk-estimate-time {
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.walk-timer-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* "− 20 min +" on a green tint, with round white buttons. */
+.walk-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  background: var(--green-soft);
+}
+
+.walk-step {
+  width: 3rem;
+  min-height: 3rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  color: var(--green);
+  background: var(--surface);
 }
 
 .walk-timer-minutes {
-  font-size: 1.75rem;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Normal size and full contrast, with the time in bold, like "Home by" on the walk screen. As
-   small grey text it was easy to miss. */
-.walk-home-by {
-  display: block;
+/* 10 / 15 / 20 / 30 min. The chosen one is green with white text and bold, not colour alone. */
+.walk-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.walk-preset {
+  min-height: 2.75rem;
+  padding: 0.25rem;
+  border-color: transparent;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  background: var(--green-soft);
+}
+
+.walk-preset[aria-pressed='true'] {
+  border-color: var(--green-button);
+  font-weight: 700;
+  color: #fff;
+  background: var(--green-button);
+}
+
+.walk-check-in-by {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+
+.walk-check-in-by svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* The destination choices in the sheet. */
+.walk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .walk-place {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  border-color: transparent;
   text-align: left;
 }
 
 .walk-place[aria-pressed='true'] {
-  border-color: currentColor;
+  border-width: 2px;
+  border-color: var(--green-button);
 }
 
 /* The running walk: the map fills the screen, the timer panel sits under it within thumb reach. */
@@ -76,13 +146,25 @@
 
 .walk-panel {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   border-radius: 1.25rem 1.25rem 0 0;
-  background: Canvas;
-  box-shadow: 0 -0.25rem 1.5rem rgb(0 0 0 / 15%);
+  background: var(--surface);
+  box-shadow: 0 -0.25rem 1.5rem rgb(0 0 0 / 12%);
+  transition: background 0.3s;
+}
+
+.walk-panel.is-almost-up,
+.walk-panel.is-time-up {
+  background: var(--warning-soft);
+}
+
+.walk-panel-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .walk-panel-text {
@@ -106,12 +188,12 @@
 }
 
 .walk-timer-ring {
-  --phase-colour: #16a34a;
+  --phase-colour: var(--green-button);
 
   position: relative;
   flex: none;
-  width: 8.5rem;
-  height: 8.5rem;
+  width: 6.5rem;
+  height: 6.5rem;
 }
 
 .walk-timer-ring.is-almost-up {
@@ -135,7 +217,7 @@
 }
 
 .walk-timer-track {
-  stroke: color-mix(in srgb, currentColor 12%, transparent);
+  stroke: var(--border);
 }
 
 .walk-timer-progress {
@@ -156,7 +238,7 @@
 }
 
 .walk-timer-count {
-  font-size: 1.875rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1;
   /* Every digit as wide as the others, so the countdown does not wobble each second. */
@@ -168,13 +250,13 @@
   margin-top: 0.25rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  opacity: 0.75;
+  color: var(--text-muted);
 }
 
+/* Darker than the ring, so the words stay readable on the yellow panel. */
 .is-almost-up .walk-timer-label,
 .is-time-up .walk-timer-label {
-  color: var(--phase-colour);
-  opacity: 1;
+  color: var(--warning-text);
 }
 
 .is-time-up .walk-timer-count {
@@ -187,44 +269,44 @@
   }
 }
 
-/* Screen 06, "Are you okay?" (SCRUM-101): centred, calm, with the countdown in a warm yellow box. */
+/* Screen 08, "Are you okay?" (SCRUM-101): a calm green page, the countdown in a warm yellow box. */
 .walk-alert {
-  align-items: center;
   text-align: center;
 }
 
-.walk-alert .screen-actions {
-  width: 100%;
-}
-
-.walk-alert .check-in-actions,
-.walk-alert .check-in-button {
-  width: 100%;
+.walk-alert .top-bar {
+  text-align: left;
 }
 
 .walk-alert-icon {
+  align-self: center;
   width: 4.5rem;
   height: 4.5rem;
+  margin-top: 1.5rem;
   padding: 1rem;
   border-radius: 50%;
   fill: none;
-  stroke: #b45309;
+  stroke: var(--warning-edge);
   stroke-width: 1.8;
   stroke-linecap: round;
-  background: #fef3c7;
+  background: var(--surface);
+}
+
+.walk-alert > p {
+  color: var(--text-muted);
 }
 
 .walk-alert-box {
   width: 100%;
   padding: 1rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius);
   /* Dark text on light yellow keeps strong contrast; the words carry the meaning, not the colour. */
-  color: #78350f;
-  background: #fef3c7;
+  color: var(--warning-text);
+  background: var(--warning-soft);
 }
 
 .walk-alert-countdown {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
