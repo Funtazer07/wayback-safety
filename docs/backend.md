@@ -83,7 +83,7 @@ yet and must still be able to tap "I'm home" to tell their contacts they are saf
 When the deadline passes, the walk screen turns into screen 06 of the SCRUM-72 prototype
 (SCRUM-101, `AreYouOkScreen.tsx`). It works with the scheduled check on the server (SCRUM-73):
 
-- **Grace period:** "Are you okay?", who will be told ("We'll notify Mum and Alex in 04:32"), "I'm
+- **Grace period:** "Are you okay?", who will be told ("We'll notify Mum and Alex in 02:32"), "I'm
   home" and "I'm okay · Add 5 minutes". The countdown starts at `warned_at`, the moment the server
   sent the warning, because that is where the server counts from too. Until the screen knows that
   moment it counts from the deadline, which shows a little less time, never more.
@@ -99,21 +99,27 @@ prototype is SOS (SCRUM-28), not built yet.
 The overdue text says the contacts were told. That is only true once SCRUM-74 sends the alert, so
 SCRUM-101 is merged together with or after SCRUM-74.
 
-Assumptions: 5 minutes of grace (`GRACE_MINUTES` in `src/features/walk/grace.ts`, the same as on
-the server, until SCRUM-71 decides), and asking the server every 15 seconds.
+3 minutes of grace (`GRACE_MINUTES` in `src/features/walk/grace.ts`, the same as on the server),
+decided on 26 Oct. "I'm okay · Add 5 minutes" is separate (`EXTEND_MINUTES`) and stays 5 minutes,
+as in the design. Assumption: asking the server every 15 seconds.
 
 ### Checking in
 
 The "I'm home" button on the walk screen calls `check_in` (SCRUM-48). In one step the database:
 
 - sets the status to `safe`. That stops the timer: only an `active` walk can become late.
-- saves the time in `checked_in_at`, using its own clock. SCRUM-7 (Sprint 2) reads this to tell
-  the contacts. Nothing is sent to anyone yet, and the app does not say that it is.
+- saves the time in `checked_in_at`, using its own clock. The "home safe" message to the
+  contacts (SCRUM-69) and the "You're home" screen use this time.
 - erases the last known location. From then on the walk refuses new locations, and the app stops
   reading the phone's location.
 
-The app then shows "You arrived safely!". Closing that message brings the user back to Home. If
-the server cannot be reached, the walk keeps running and the user can tap the button again.
+The app then shows "You're home." (screen 12, SCRUM-106, `HomeSafeScreen.tsx`): when the walk
+ended, what the check-in did (timer stopped, location sharing stopped, check-in saved), and who was
+told. Only contacts who accepted and are not paused get the message (as in `recipientsOf`); a
+contact with notifications off (SCRUM-103) is named as not reached. The design says "delivered",
+but the app can only know the message was sent, so it says "sent". A walk without contacts has no
+contacts card. "Back to your places" brings the user back to Home. If the server cannot be
+reached, the walk keeps running and the user can tap the button again.
 
 Assumptions: a walk that is already `overdue` can still be checked in, so someone who is late can
 say they are home after all. And the last location is erased at the check-in instead of kept for a
@@ -311,7 +317,11 @@ user is still logged out and the welcome screen says that notifications may stil
 the account deletes the rows too.
 
 The service worker that vite-plugin-pwa writes cannot show notifications, so it loads
-`public/push-sw.js`, which can. That file also opens the app when a notification is tapped. On
+`public/push-sw.js`, which can. That file also opens the app when a notification is tapped, and
+tells an open app that a push arrived (`src/lib/pushMessages.ts`). A push means a walk changed, so
+the Contacts tab, the contact's walk screen and the walker's own walk screen ask the server again
+at once, instead of waiting for their next check. Added on 26 Oct after testing: "overdue" only
+showed after switching screens. Phones without notifications still rely on the regular checks. On
 `npm run dev` there is no service worker, so the card says notifications only work in a build
 (`npm run build`, then `npm run preview -- --port 5173`).
 
@@ -408,8 +418,8 @@ closed or the battery is dead. For each late walk, once per deadline:
 
 1. **Warning.** The deadline passed and the walk is still `active`: the walker gets "Are you OK?"
    on their own phone ("Your timer has run out. Open WayBack to say you are home or add time.
-   Otherwise your contacts are told in 5 minutes."). The time is saved in `warned_at`.
-2. **Overdue.** Still `active` 5 minutes after that warning: the status becomes `overdue` and the
+   Otherwise your contacts are told in 3 minutes."). The time is saved in `warned_at`.
+2. **Overdue.** Still `active` 3 minutes after that warning: the status becomes `overdue` and the
    time is saved in `overdue_at`. That change sends the alert to the walk's contacts (SCRUM-74,
    `0012_overdue_alert.sql`): who missed the check-in, and when the last location was saved. If
    the user checks in afterwards, the contacts get "Anna is safe".
@@ -420,19 +430,23 @@ closed or the battery is dead. For each late walk, once per deadline:
 Rules that keep it fair:
 
 - The grace period counts from the warning, not from the deadline. If the check runs late, the user
-  still gets the full 5 minutes after the warning.
+  still gets the full 3 minutes after the warning.
 - Checking in, cancelling or extending during the grace period stops it. After extending, the walk
   is warned again only when the new deadline passes; it can never become overdue on an old
   warning.
 - A walk is warned once per deadline and becomes overdue once. An overdue walk can still be checked
   in (`0004_check_in.sql`).
 
-Assumptions, until SCRUM-71 (research) decides:
+The grace period:
 
-- The grace period is 5 minutes, from the 05:00 on the SCRUM-72 prototype. It is in two places
-  that must match: `grace_period` in `0011_late_walks.sql` and `GRACE_MINUTES` in
-  `supabase/functions/send-walk-push/walkPush.ts`.
-- The check runs every minute, so the warning can come up to a minute after the deadline.
+- It is 3 minutes, decided by the group on 26 Oct after testing on real phones
+  (`0017_three_minute_grace.sql`). Before that it was 5 minutes, from the 05:00 on the SCRUM-72
+  prototype. It is in three places that must match: `grace_period` in
+  `0017_three_minute_grace.sql`, `GRACE_MINUTES` in `src/features/walk/grace.ts` (the countdown)
+  and `GRACE_MINUTES` in `supabase/functions/send-walk-push/walkPush.ts` (the words of "Are you
+  OK?").
+- Assumption: the check runs every minute, so the warning can come up to a minute after the
+  deadline, and the alert up to a minute after the 3 minutes.
 
 The free Supabase plan pauses a project after a week without activity. While it is paused the
 check does not run, and nobody is warned or alerted.
@@ -445,13 +459,17 @@ each run. The rules are tested by `supabase/tests/late_walks_test.sql` (see "Tes
 For the alert (SCRUM-74): deploy `send-walk-push` again (it now knows `overdue`), then run
 `0012_overdue_alert.sql`. Tested by `supabase/tests/overdue_alert_test.sql`.
 
+For the 3-minute grace period: run `0017_three_minute_grace.sql` and deploy `send-walk-push` again,
+so "Are you OK?" says 3 minutes too. Tested by `supabase/tests/late_walks_test.sql`.
+
 ### The contact's view
 
 Tapping the alert opens screen 10 of the SCRUM-72 prototype for the contact (SCRUM-102,
 `src/features/followedWalk/`): whose walk it is, "Check-in overdue" with the due time, and the last
 known location on a map with the time it was saved, under the line "This is the last shared
 location, not a live position." When the walker checks in, the screen changes to "Anna is safe" by
-itself: it asks the server again every 30 seconds while the walk is on the way or overdue.
+itself: it asks the server again as soon as a push arrives, and every 30 seconds while the walk
+is on the way or overdue.
 
 Every message to a contact opens this screen, not only the alert: "is on the way home" shows the
 due time without a location, "has arrived safely" and "stopped the walk" show how the walk ended.
@@ -475,7 +493,8 @@ signs in, because signing in with Google loses it. Back closes the screen and fo
 The Contacts tab is the second way in (SCRUM-104, SCRUM-115). Under each person the user looks
 out for, it shows their latest walk: "On the way · home by 22:36", "Check-in overdue · View walk",
 "Home safe at 22:31" or "Stopped the walk at 22:20". Tapping it opens the same screen. The tab asks
-again every 30 seconds and when the app comes back on screen, so the line changes by itself.
+again as soon as a push arrives, every 30 seconds and when the app comes back on screen, so the
+line changes by itself.
 
 The walks come from `followed_walk_statuses` (`0016_contact_alerts_and_walk_status.sql`), with the
 same rule as `followed_walk`: the walk, the walker's name, the status and its times, never a

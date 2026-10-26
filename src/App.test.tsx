@@ -9,6 +9,7 @@ const profile = vi.hoisted(() => ({ fetchProfile: vi.fn(), completeProfile: vi.f
 const walks = vi.hoisted(() => ({
   checkInWalk: vi.fn(),
   fetchCurrentWalk: vi.fn(),
+  fetchWalkContacts: vi.fn(),
   startWalk: vi.fn(),
   updateWalkLocation: vi.fn(),
 }))
@@ -87,6 +88,7 @@ beforeEach(() => {
   profile.fetchProfile.mockResolvedValue({ displayName: null })
   profile.completeProfile.mockResolvedValue(undefined)
   walks.fetchCurrentWalk.mockResolvedValue(null)
+  walks.fetchWalkContacts.mockResolvedValue([])
   contactsApi.fetchContacts.mockResolvedValue([])
   contactsApi.fetchAlertStatus.mockResolvedValue(new Map())
   followed.fetchContactWalks.mockResolvedValue([])
@@ -240,7 +242,7 @@ test('a walk that is still running is shown again when the app is reopened', asy
   expect(screen.queryByText('Hi Sam')).not.toBeInTheDocument()
 })
 
-test('a user checks in with "I’m home" and is back on Home after the confirmation', async () => {
+test('a user checks in with "I’m home" and is back on Home after the "You’re home" screen', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   const walk = walkEndingIn(14)
   walks.fetchCurrentWalk.mockResolvedValue(walk)
@@ -250,10 +252,10 @@ test('a user checks in with "I’m home" and is back on Home after the confirmat
 
   click('I’m home')
 
-  expect(await screen.findByRole('dialog', { name: 'You arrived safely!' })).toBeVisible()
+  expect(await screen.findByRole('heading', { name: 'You’re home.' })).toBeInTheDocument()
   expect(walks.checkInWalk).toHaveBeenCalledWith('walk-1')
 
-  click('OK')
+  click('Back to your places')
 
   expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
   expect(screen.queryByRole('timer')).not.toBeInTheDocument()
@@ -310,8 +312,8 @@ test('the route of a walk is erased once the user is home', async () => {
   await screen.findByRole('timer')
 
   click('I’m home')
-  await screen.findByRole('dialog', { name: 'You arrived safely!' })
-  click('OK')
+  await screen.findByRole('heading', { name: 'You’re home.' })
+  click('Back to your places')
 
   await screen.findByText('Hi Sam')
   expect(localStorage.getItem('wayback.walkRoute')).toBeNull()

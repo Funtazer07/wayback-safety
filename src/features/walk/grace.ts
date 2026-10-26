@@ -2,11 +2,14 @@ import { addMinutes } from './time.ts'
 import type { Walk } from './walk.ts'
 
 /**
- * Assumption: 5 minutes between "Are you OK?" and alerting the contacts, from the 05:00 on screen 06
- * of the SCRUM-72 prototype, until SCRUM-71 (research) decides. The server decides for real; keep it
- * the same as grace_period in supabase/migrations/0011_late_walks.sql.
+ * 3 minutes between "Are you OK?" and alerting the contacts, decided on 26 Oct (it was 5, from the
+ * 05:00 on screen 06 of the SCRUM-72 prototype). The server decides for real; keep it the same as
+ * grace_period in supabase/migrations/0017_three_minute_grace.sql.
  */
-export const GRACE_MINUTES = 5
+export const GRACE_MINUTES = 3
+
+/** "I'm okay · Add 5 minutes" on screen 06: extra walking time, not the grace period. */
+export const EXTEND_MINUTES = 5
 
 /**
  * Which screen a running walk needs.

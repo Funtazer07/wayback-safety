@@ -13,6 +13,8 @@ export type Walk = {
    * here. Null before the deadline; left out in tests and previews that do not need it.
    */
   warnedAt?: Date | null
+  /** When the user checked in (0004). Null until then; left out in tests that do not need it. */
+  checkedInAt?: Date | null
 }
 
 export type NewWalk = {
@@ -35,9 +37,10 @@ type WalkRow = {
   deadline: string
   status: Walk['status']
   warned_at: string | null
+  checked_in_at: string | null
 }
 
-const walkColumns = 'id, destination_label, started_at, deadline, status, warned_at'
+const walkColumns = 'id, destination_label, started_at, deadline, status, warned_at, checked_in_at'
 
 function client() {
   if (!supabase) throw new Error('The backend is not set up. See docs/backend.md.')
@@ -52,6 +55,7 @@ function toWalk(row: WalkRow): Walk {
     deadline: new Date(row.deadline),
     status: row.status,
     warnedAt: row.warned_at ? new Date(row.warned_at) : null,
+    checkedInAt: row.checked_in_at ? new Date(row.checked_in_at) : null,
   }
 }
 
@@ -153,4 +157,27 @@ export async function fetchWalkContactNames(walkId: string): Promise<string[]> {
   return (data as unknown as { contacts: { label: string } | null }[])
     .map((link) => link.contacts?.label)
     .filter((label): label is string => Boolean(label))
+}
+
+/** A contact who follows a walk, as the walker sees them: their id, name and status. */
+export type WalkContact = {
+  id: string
+  label: string
+  status: 'invited' | 'accepted' | 'paused'
+}
+
+/**
+ * The contacts who follow this walk, for the "You're home" screen (SCRUM-106). The screen needs
+ * their status too: a contact who was paused got no message.
+ */
+export async function fetchWalkContacts(walkId: string): Promise<WalkContact[]> {
+  const { data, error } = await client()
+    .from('walk_contacts')
+    .select('contacts(id, label, status)')
+    .eq('walk_id', walkId)
+  if (error) throw error
+  // As in fetchWalkContactNames: the linked contact, or null if it was removed in the meantime.
+  return (data as unknown as { contacts: WalkContact | null }[])
+    .map((link) => link.contacts)
+    .filter((contact): contact is WalkContact => contact !== null)
 }

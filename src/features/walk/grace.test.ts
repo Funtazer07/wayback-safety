@@ -36,11 +36,11 @@ test('a checked-in or cancelled walk has ended, also after its deadline', () => 
 test('the grace period counts from the warning, like on the server', () => {
   const warned = { ...walk, warnedAt: new Date('2026-10-06T22:25:40Z') }
 
-  expect(graceEndsAt(warned)).toEqual(new Date('2026-10-06T22:30:40Z'))
+  expect(graceEndsAt(warned)).toEqual(new Date('2026-10-06T22:28:40Z'))
 })
 
 test('before the warning arrives, the grace period counts from the deadline', () => {
-  expect(graceEndsAt(walk)).toEqual(new Date('2026-10-06T22:30:00Z'))
+  expect(graceEndsAt(walk)).toEqual(new Date('2026-10-06T22:28:00Z'))
 })
 
 test('a warning from before an extension does not count', () => {
@@ -50,7 +50,7 @@ test('a warning from before an extension does not count', () => {
     warnedAt: new Date('2026-10-06T22:25:40Z'),
   }
 
-  expect(graceEndsAt(extended)).toEqual(new Date('2026-10-06T22:40:00Z'))
+  expect(graceEndsAt(extended)).toEqual(new Date('2026-10-06T22:38:00Z'))
 })
 
 test('names read like a sentence', () => {

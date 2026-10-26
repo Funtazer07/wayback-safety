@@ -17,14 +17,27 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(message.title, {
-      body: message.body,
-      icon: 'pwa-192x192.png',
-      badge: 'pwa-64x64.png',
-      data: { url: message.url },
-    }),
+    Promise.all([
+      self.registration.showNotification(message.title, {
+        body: message.body,
+        icon: 'pwa-192x192.png',
+        badge: 'pwa-64x64.png',
+        data: { url: message.url },
+      }),
+      tellOpenApp(),
+    ]),
   )
 })
+
+// A push means something changed on the server: a walk started, ended or became overdue. An app
+// that is open on this phone hears it at once and asks the server again, instead of waiting for
+// its next check (src/lib/pushMessages.ts). Nothing from the message is passed on: the app reads
+// the news from the server itself.
+function tellOpenApp() {
+  return self.clients
+    .matchAll({ type: 'window', includeUncontrolled: true })
+    .then((windows) => windows.forEach((client) => client.postMessage({ type: 'wayback-push' })))
+}
 
 // Tapping the notification brings the app to the front, or opens it if it was closed.
 self.addEventListener('notificationclick', (event) => {
