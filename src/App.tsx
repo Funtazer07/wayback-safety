@@ -13,6 +13,7 @@ import Home from './features/home/Home.tsx'
 import {
   clearWalkRoute,
   loadWalkRoute,
+  loadWalkRouteSeconds,
   saveWalkRoute,
   type PlannedRoute,
 } from './features/map/walkRoute.ts'
@@ -34,6 +35,7 @@ function App() {
     start: startWalk,
     checkIn,
     extend: extendWalk,
+    cancel: cancelWalk,
     refresh: refreshWalk,
     finish: finishWalk,
   } = useWalk(session?.user.id)
@@ -124,8 +126,14 @@ function App() {
       <WalkScreen
         walk={walk}
         route={loadWalkRoute(walk.id)}
+        routeSeconds={loadWalkRouteSeconds(walk.id)}
         onCheckIn={checkIn}
         onExtend={extendWalk}
+        onCancel={async () => {
+          await cancelWalk()
+          // The walk is over: its route is not needed any more.
+          clearWalkRoute()
+        }}
         onRefresh={refreshWalk}
         onDone={() => {
           // The walk is over: its route is not needed any more.
@@ -143,7 +151,9 @@ function App() {
         plannedRoute={plannedRoute}
         onStart={async (newWalk) => {
           const startedWalk = await startWalk(newWalk)
-          if (plannedRoute) saveWalkRoute(startedWalk.id, plannedRoute.coordinates)
+          if (plannedRoute) {
+            saveWalkRoute(startedWalk.id, plannedRoute.coordinates, plannedRoute.seconds)
+          }
         }}
         onBack={() => setIsStartingWalk(false)}
       />

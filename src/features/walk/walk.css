@@ -255,6 +255,70 @@
   white-space: nowrap;
 }
 
+/* "Need more time? +5 +10 +15" (SCRUM-94) and on screen 13 (SCRUM-113). */
+.walk-more-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.walk-more-time-title {
+  font-weight: 700;
+}
+
+.walk-extend-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.walk-extend {
+  min-height: 2.75rem;
+  padding: 0.25rem;
+  border-color: transparent;
+  background: var(--green-soft);
+}
+
+/* The last 5 minutes, as on the "almost over" walk screen variant. Words, not only the yellow. */
+.walk-almost {
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  color: var(--warning-text);
+  background: var(--surface);
+  border: 1px solid var(--warning-edge);
+}
+
+/* "Cancel this walk?": a red cross in a pale circle, and a red confirm button. */
+.walk-cancel-sheet,
+.walk-arrived-sheet {
+  text-align: center;
+}
+
+.walk-cancel-mark {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.walk-confirm-cancel {
+  border-color: var(--danger);
+  color: #fff;
+  background: var(--danger);
+}
+
+.card .walk-late-amount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
 /* "Mum is watching your walk" (SCRUM-114): green, with an eye, in words. */
 .walk-watchers {
   display: flex;

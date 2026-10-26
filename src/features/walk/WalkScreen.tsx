@@ -13,17 +13,25 @@ import type { Walk } from './walk.ts'
 import { useWalkContactNames } from './useWalkContactNames.ts'
 import { useWalkWatchers } from './useWalkWatchers.ts'
 import WatchersLine from './WatchersLine.tsx'
+import WalkActions from './WalkActions.tsx'
 import WalkTimer from './WalkTimer.tsx'
+import ArrivedSheet from './ArrivedSheet.tsx'
+import RunningLateSheet from './RunningLateSheet.tsx'
+import { useWalkPrompts } from './useWalkPrompts.ts'
 import './walk.css'
 
 type WalkScreenProps = {
   walk: Walk
   /** The route chosen on Home for this walk, shown on the map. */
   route?: LngLat[] | null
+  /** The route planner's walking time for that route, to know the walker's pace. */
+  routeSeconds?: number | null
   /** Tells the server the user is home. Fails when the server cannot be reached. */
   onCheckIn: () => Promise<void>
   /** Gives the user more time. Fails when the server cannot be reached or refuses. */
   onExtend?: (minutes: number) => Promise<void>
+  /** Stops the walk without a check-in (SCRUM-94). Fails when the server cannot be reached. */
+  onCancel?: () => Promise<void>
   /** Asks the server for the walk again, to hear about the warning and about overdue. */
   onRefresh?: () => Promise<void>
   /** Called when the user leaves the "You're home" screen. */
@@ -39,8 +47,10 @@ const doNothing = async () => {}
 function WalkScreen({
   walk,
   route = null,
+  routeSeconds = null,
   onCheckIn,
   onExtend = doNothing,
+  onCancel = doNothing,
   onRefresh = doNothing,
   onDone,
 }: WalkScreenProps) {
@@ -51,7 +61,9 @@ function WalkScreen({
   const contactNames = useWalkContactNames(isLate ? walk.id : null)
   const hasCheckedIn = walk.status === 'safe'
   // No location is read or sent once the user is home.
-  const isLocationOff = useLocationUpdates(hasCheckedIn ? null : walk.id)
+  const { isLocationOff, fixes } = useLocationUpdates(hasCheckedIn ? null : walk.id)
+  // "Are you home?" and "Running late?", from the SCRUM-97 ideation.
+  const prompts = useWalkPrompts({ walk, route, routeSeconds, fixes, now })
   // Who tapped "I'm watching" (SCRUM-114). Not needed once the walk has ended.
   const watchers = useWalkWatchers(hasCheckedIn ? null : walk.id)
   const [isBusy, setIsBusy] = useState(false)
@@ -112,9 +124,28 @@ function WalkScreen({
           </div>
         </div>
         <WatchersLine names={watchers} />
+        {timerPhase(walk.deadline, now) === 'almost-up' && (
+          <p className="walk-almost" role="status">
+            <strong>Your walk is almost over.</strong> You have less than 5 minutes left. Do you
+            need more time?
+          </p>
+        )}
         {error && <p role="alert">{error}</p>}
         <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
+        <WalkActions onExtend={onExtend} onCancel={onCancel} />
       </section>
+
+      {prompts.isArrived && (
+        <ArrivedSheet isBusy={isBusy} onHome={handleCheckIn} onNotYet={prompts.dismissArrival} />
+      )}
+      {prompts.suggestion !== null && (
+        <RunningLateSheet
+          suggestion={prompts.suggestion}
+          deadline={walk.deadline}
+          onExtend={onExtend}
+          onDismiss={prompts.dismissLate}
+        />
+      )}
     </main>
   )
 }

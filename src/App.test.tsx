@@ -7,6 +7,7 @@ import { SessionContext } from './features/auth/SessionContext.ts'
 const auth = vi.hoisted(() => ({ signInWithOAuth: vi.fn(), signOut: vi.fn() }))
 const profile = vi.hoisted(() => ({ fetchProfile: vi.fn(), completeProfile: vi.fn() }))
 const walks = vi.hoisted(() => ({
+  cancelWalk: vi.fn(),
   checkInWalk: vi.fn(),
   fetchCurrentWalk: vi.fn(),
   fetchWalkContacts: vi.fn(),
@@ -455,4 +456,24 @@ test('a walk is started with the contacts who are switched on', async () => {
       expect.objectContaining({ contactIds: ['c-mum'] }),
     ),
   )
+})
+
+test('cancelling a walk asks first, then goes back Home and forgets the route', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  const walk = walkEndingIn(14)
+  walks.fetchCurrentWalk.mockResolvedValue(walk)
+  walks.cancelWalk.mockResolvedValue({ ...walk, status: 'cancelled' })
+  localStorage.setItem(
+    'wayback.walkRoute',
+    JSON.stringify({ walkId: 'walk-1', coordinates: routeViaStratumseind, seconds: 600 }),
+  )
+  renderApp(loggedIn)
+  await screen.findByRole('timer')
+
+  click('Cancel walk')
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm cancel' }))
+
+  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
+  expect(walks.cancelWalk).toHaveBeenCalledWith('walk-1')
+  expect(localStorage.getItem('wayback.walkRoute')).toBeNull()
 })

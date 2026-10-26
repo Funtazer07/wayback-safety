@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  cancelWalk,
   checkInWalk,
   extendWalk,
   fetchCurrentWalk,
@@ -77,10 +78,20 @@ export function useWalk(userId: string | undefined) {
     }
   }
 
+  /**
+   * Stops the walk without a check-in (SCRUM-94), for example after getting a lift. The server
+   * erases the last location and tells the contacts. The app then goes back to Home.
+   */
+  async function cancel() {
+    if (!state.walk) return
+    await cancelWalk(state.walk.id)
+    setState({ walk: null, isLoading: false, error: null })
+  }
+
   /** Forgets the walk that was checked in, so the app goes back to Home. */
   function finish() {
     setState({ walk: null, isLoading: false, error: null })
   }
 
-  return { ...state, start, checkIn, extend, refresh, finish }
+  return { ...state, start, checkIn, extend, cancel, refresh, finish }
 }

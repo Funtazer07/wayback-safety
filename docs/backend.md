@@ -140,7 +140,30 @@ while. Both are in `0004_check_in.sql` and are ours to change when SCRUM-7 is bu
 
 ### Extending and cancelling
 
-Both run on the server (SCRUM-63). The buttons on the walk screen are built in SCRUM-94.
+Both run on the server (SCRUM-63). On the walk screen (SCRUM-94, `WalkActions.tsx`): "Need more
+time? +5 / +10 / +15" under "I'm home", and "Cancel walk", which first asks "Cancel this walk?"
+and says the contacts will no longer be alerted. A cancelled walk goes back to Home and forgets its
+route. In the last 5 minutes the walk screen also says "Your walk is almost over".
+
+**"Running late?" and "Are you home?"** (SCRUM-113, SCRUM-112), chosen in the SCRUM-97 ideation:
+the reminder before the end (SCRUM-64) is the base, and while the app is open on a walk with a
+planned route, the phone also compares the distance left with the time left (`progress.ts`,
+`useWalkPrompts.ts`). Nothing of this goes to the server; the last 5 positions stay in the screen's
+memory only.
+
+- **Running late?** (screen 13): asked when the walker is moving toward home, getting closer, and
+  will arrive at least 2 minutes after the check-in time. It suggests that lateness rounded up to 5
+  minutes (at most 30) with the new check-in time, plus +5 / +10 / +15 and "Keep my time". The
+  deadline only moves when the walker confirms (client rule). Not asked when the walker stopped or
+  walks away: they may need help, so "Are you okay?" takes over as usual.
+- **Are you home?**: asked when the phone is within 50 m of the route's end. "Yes, I'm home" checks
+  in; "Not yet" is not asked again on this walk. The app never ends the walk by itself: near home
+  is not the same as safe inside.
+- _Assumptions,_ to tune after testing on the street: positions less exact than 50 m are ignored;
+  50 m counts as arrived; more than 150 m from the route counts as another way (the distance left
+  is then a straight line × 1.3); "moving" is 30 m between recent positions and 20 m closer; the
+  pace is the route planner's time, otherwise 4.7 km/h. The route's walking time is kept with the
+  route on the phone (`walkRoute.ts`).
 
 **Extending** adds minutes to the deadline. If the deadline has already passed, for example during
 the "Are you OK?" grace period, the minutes count from now instead, so the user really gets the
