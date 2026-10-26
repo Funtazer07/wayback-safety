@@ -8,6 +8,11 @@ export type Contact = {
   status: 'invited' | 'accepted' | 'paused'
   /** When an open invite stops working. Null once the invite is accepted. */
   inviteExpiresAt: Date | null
+  /**
+   * Whether this contact's phone can get an alert at all (SCRUM-103). Missing for an open invite,
+   * or when the server could not be asked.
+   */
+  canReceiveAlerts?: boolean
 }
 
 export type Invite = {
@@ -67,6 +72,17 @@ export async function fetchContacts(userId: string): Promise<Contact[]> {
     .order('created_at')
   if (error) throw error
   return data.map(toContact)
+}
+
+/**
+ * For each contact who accepted: can they receive an alert? Only yes or no per contact id, nothing
+ * about their phone (0016_contact_alerts_and_walk_status.sql).
+ */
+export async function fetchAlertStatus(): Promise<Map<string, boolean>> {
+  const { data, error } = await client().rpc('contact_alert_status')
+  if (error) throw error
+  const rows = data as { contact_id: string; can_receive_alerts: boolean }[]
+  return new Map(rows.map((row) => [row.contact_id, row.can_receive_alerts]))
 }
 
 /** Creates an invite link for a new contact. The link works once, for 48 hours. */

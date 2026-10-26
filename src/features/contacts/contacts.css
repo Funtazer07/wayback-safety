@@ -27,9 +27,16 @@
   gap: 0.375rem;
 }
 
+/* The latest walk of a contact, under their name (SCRUM-115). Opens the walk. */
+.contacts-walk {
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+  font-size: 0.9375rem;
+  text-align: left;
+}
+
 /* "Check-in overdue · View walk" (SCRUM-104). The same colours as the overdue box on the walk the
    button opens (followedWalk.css), with a thick edge; the words carry the meaning, not the colour. */
-.contacts-overdue {
+.contacts-walk.is-overdue {
   border: 2px solid #b45309;
   color: #78350f;
   background: #fef3c7;

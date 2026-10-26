@@ -3,6 +3,7 @@ import {
   acceptInvite,
   createInvite,
   declineInvite,
+  fetchAlertStatus,
   fetchContacts,
   fetchInvite,
   inviteLink,
@@ -182,4 +183,20 @@ test('removing a contact fails when the server refuses it', async () => {
   eqForDelete.mockResolvedValue({ error })
 
   await expect(removeContact('contact-1')).rejects.toBe(error)
+})
+
+test('the alert status comes back as yes or no per contact', async () => {
+  rpc.mockResolvedValue({
+    data: [
+      { contact_id: 'contact-1', can_receive_alerts: true },
+      { contact_id: 'contact-2', can_receive_alerts: false },
+    ],
+    error: null,
+  })
+
+  const status = await fetchAlertStatus()
+
+  expect(rpc).toHaveBeenCalledWith('contact_alert_status')
+  expect(status.get('contact-1')).toBe(true)
+  expect(status.get('contact-2')).toBe(false)
 })

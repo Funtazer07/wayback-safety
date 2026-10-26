@@ -60,11 +60,15 @@ function WalkDetails({ walk }: { walk: FollowedWalk }) {
   }
 
   if (walk.status === 'active') {
-    // Opened before the alert, for example from an old link: nothing is wrong yet.
+    // Opened from "is on the way home": nothing is wrong yet, and no location is shared.
     return (
       <>
         <h1>{name} is on the way home</h1>
         <p className="followed-box">Expected home at {formatClock(walk.deadline)}.</p>
+        <p className="followed-note">
+          This page updates by itself when {name} gets home. The location is only shared if {name}{' '}
+          misses the check-in.
+        </p>
       </>
     )
   }

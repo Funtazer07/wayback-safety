@@ -35,7 +35,13 @@ function ContactToggles({ contacts, isLoading, selectedIds, onChange }: ContactT
           <span className="contacts-initial" aria-hidden="true">
             {initialOf(contact.label)}
           </span>
-          <span className="contacts-toggle-name">{contact.label}</span>
+          <span className="contacts-toggle-name">
+            {contact.label}
+            {/* SCRUM-103: switched on is not enough if their phone cannot get the alert. */}
+            {contact.canReceiveAlerts === false && (
+              <span className="contacts-small">Notifications off: will not get an alert</span>
+            )}
+          </span>
           <input
             type="checkbox"
             role="switch"

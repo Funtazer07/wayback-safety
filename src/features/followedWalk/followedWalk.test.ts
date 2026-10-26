@@ -2,7 +2,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import {
   NotSharedError,
   fetchFollowedWalk,
-  fetchOverdueWalks,
+  fetchContactWalks,
   forgetOpenedWalk,
   takeOpenedWalkId,
 } from './followedWalk.ts'
@@ -75,47 +75,63 @@ test('other failures are passed on as they are', async () => {
   await expect(fetchFollowedWalk(walkId)).rejects.toBe(error)
 })
 
-test('the overdue walks a contact follows come with the row to show them next to', async () => {
+test('the latest walk of each contact comes with its status and the row to show it next to', async () => {
   rpc.mockResolvedValue({
     data: [
       {
         walk_id: walkId,
         walker_name: 'Anna',
         contact_id: 'c-anna',
-        overdue_at: '2026-10-15T20:42:00Z',
+        status: 'safe',
+        deadline: '2026-10-15T20:36:00Z',
+        overdue_at: null,
+        checked_in_at: '2026-10-15T20:31:00Z',
+        cancelled_at: null,
       },
       {
         walk_id: 'walk-2',
         walker_name: null,
         contact_id: null,
+        status: 'overdue',
+        deadline: '2026-10-15T20:50:00Z',
         overdue_at: '2026-10-15T21:00:00Z',
+        checked_in_at: null,
+        cancelled_at: null,
       },
     ],
     error: null,
   })
 
-  expect(await fetchOverdueWalks()).toEqual([
+  expect(await fetchContactWalks()).toEqual([
     {
       walkId,
       walkerName: 'Anna',
       contactId: 'c-anna',
-      overdueAt: new Date('2026-10-15T20:42:00Z'),
+      status: 'safe',
+      deadline: new Date('2026-10-15T20:36:00Z'),
+      overdueAt: null,
+      checkedInAt: new Date('2026-10-15T20:31:00Z'),
+      cancelledAt: null,
     },
     {
       walkId: 'walk-2',
       walkerName: 'Your contact',
       contactId: null,
+      status: 'overdue',
+      deadline: new Date('2026-10-15T20:50:00Z'),
       overdueAt: new Date('2026-10-15T21:00:00Z'),
+      checkedInAt: null,
+      cancelledAt: null,
     },
   ])
-  expect(rpc).toHaveBeenCalledWith('overdue_followed_walks')
+  expect(rpc).toHaveBeenCalledWith('followed_walk_statuses')
 })
 
-test('loading the overdue walks fails when the server refuses', async () => {
+test('loading the walks of contacts fails when the server refuses', async () => {
   const error = new Error('Network error')
   rpc.mockResolvedValue({ data: null, error })
 
-  await expect(fetchOverdueWalks()).rejects.toBe(error)
+  await expect(fetchContactWalks()).rejects.toBe(error)
 })
 
 test('the walk from the alert link is read and removed from the address bar', () => {

@@ -1,18 +1,20 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import type { ContactWalk } from '../followedWalk/followedWalk.ts'
 import type { Contact } from './contacts.ts'
 import ContactsScreen from './ContactsScreen.tsx'
 
 const api = vi.hoisted(() => ({
   fetchContacts: vi.fn(),
+  fetchAlertStatus: vi.fn(),
   createInvite: vi.fn(),
   setContactPaused: vi.fn(),
   removeContact: vi.fn(),
 }))
 
 vi.mock('./contacts.ts', () => api)
-const { fetchOverdueWalks } = vi.hoisted(() => ({ fetchOverdueWalks: vi.fn() }))
-vi.mock('../followedWalk/followedWalk.ts', () => ({ fetchOverdueWalks }))
+const { fetchContactWalks } = vi.hoisted(() => ({ fetchContactWalks: vi.fn() }))
+vi.mock('../followedWalk/followedWalk.ts', () => ({ fetchContactWalks }))
 
 const mum: Contact = { id: 'c-mum', label: 'Mum', status: 'accepted', inviteExpiresAt: null }
 const sam: Contact = {
@@ -24,15 +26,29 @@ const sam: Contact = {
 const link =
   'https://funtazer07.github.io/wayback-safety/?invite=0ddc2e61-c2a8-4dc4-9586-6656c2bdc63a'
 
+// Mum's walk from Stratumseind, to be home by 22:36.
+const mumsWalk: ContactWalk = {
+  walkId: 'walk-mum',
+  walkerName: 'Mum',
+  contactId: 'c-mum',
+  status: 'active',
+  deadline: new Date('2026-10-26T22:36:00'),
+  overdueAt: null,
+  checkedInAt: null,
+  cancelledAt: null,
+}
+
 beforeEach(() => {
   api.fetchContacts.mockReset().mockResolvedValue([mum, sam])
+  api.fetchAlertStatus.mockReset().mockResolvedValue(new Map())
   api.createInvite.mockReset()
   api.setContactPaused.mockReset()
   api.removeContact.mockReset().mockResolvedValue(undefined)
-  fetchOverdueWalks.mockReset().mockResolvedValue([])
+  fetchContactWalks.mockReset().mockResolvedValue([])
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -40,9 +56,59 @@ function renderScreen(onOpenWalk = vi.fn()) {
   render(<ContactsScreen userId="user-1" displayName="Anna" onOpenWalk={onOpenWalk} />)
 }
 
+test('each contact who accepted says whether an alert can reach them', async () => {
+  api.fetchContacts.mockResolvedValue([mum, { ...mum, id: 'c-alex', label: 'Alex' }])
+  api.fetchAlertStatus.mockResolvedValue(
+    new Map([
+      ['c-mum', true],
+      ['c-alex', false],
+    ]),
+  )
+  renderScreen()
+
+  expect(await screen.findByRole('button', { name: /Mum.*Can receive alerts/ })).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: /Alex.*Notifications off: cannot receive alerts/ }),
+  ).toBeInTheDocument()
+})
+
+test('the list still shows when the alert status cannot be loaded', async () => {
+  api.fetchAlertStatus.mockRejectedValue(new Error('Network error'))
+  renderScreen()
+
+  expect(
+    await screen.findByRole('button', { name: /Mum.*Invitation accepted/ }),
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
+test('a contact on the way shows when they should be home, and opens their walk', async () => {
+  fetchContactWalks.mockResolvedValue([mumsWalk])
+  const onOpenWalk = vi.fn()
+  renderScreen(onOpenWalk)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'On the way · home by 22:36' }))
+
+  expect(onOpenWalk).toHaveBeenCalledWith('walk-mum')
+})
+
+test('the walk line updates by itself when the contact gets home', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  fetchContactWalks.mockResolvedValue([mumsWalk])
+  renderScreen()
+  expect(await screen.findByRole('button', { name: /On the way/ })).toBeInTheDocument()
+
+  fetchContactWalks.mockResolvedValue([
+    { ...mumsWalk, status: 'safe', checkedInAt: new Date('2026-10-26T22:31:00') },
+  ])
+  await act(() => vi.advanceTimersByTimeAsync(30_000))
+
+  expect(screen.getByRole('button', { name: 'Home safe at 22:31' })).toBeInTheDocument()
+})
+
 test('a contact whose check-in is overdue gets a way into that walk', async () => {
-  fetchOverdueWalks.mockResolvedValue([
-    { walkId: 'walk-mum', walkerName: 'Mum', contactId: 'c-mum', overdueAt: new Date() },
+  fetchContactWalks.mockResolvedValue([
+    { ...mumsWalk, status: 'overdue', overdueAt: new Date('2026-10-26T22:42:00') },
   ])
   const onOpenWalk = vi.fn()
   renderScreen(onOpenWalk)
@@ -55,24 +121,27 @@ test('a contact whose check-in is overdue gets a way into that walk', async () =
 })
 
 test('an overdue walk of someone no longer on the list still shows, with their name', async () => {
-  fetchOverdueWalks.mockResolvedValue([
-    { walkId: 'walk-kim', walkerName: 'Kim', contactId: null, overdueAt: new Date() },
+  fetchContactWalks.mockResolvedValue([
+    { ...mumsWalk, walkId: 'walk-kim', walkerName: 'Kim', contactId: null, status: 'overdue' },
+    // A walk on the way of someone not on the list is not worth a line of its own.
+    { ...mumsWalk, walkId: 'walk-ben', walkerName: 'Ben', contactId: null },
   ])
   const onOpenWalk = vi.fn()
   renderScreen(onOpenWalk)
 
   const list = await screen.findByRole('list', { name: 'Other overdue walks' })
   expect(within(list).getByText('Kim')).toBeInTheDocument()
+  expect(within(list).queryByText('Ben')).not.toBeInTheDocument()
   fireEvent.click(within(list).getByRole('button', { name: 'Check-in overdue · View walk' }))
   expect(onOpenWalk).toHaveBeenCalledWith('walk-kim')
 })
 
-test('without overdue walks there is nothing about a missed check-in', async () => {
+test('without walks there is no walk line', async () => {
   renderScreen()
 
   await screen.findByRole('list', { name: 'Your trusted contacts' })
-  await vi.waitFor(() => expect(fetchOverdueWalks).toHaveBeenCalled())
-  expect(screen.queryByText(/Check-in overdue/)).not.toBeInTheDocument()
+  await vi.waitFor(() => expect(fetchContactWalks).toHaveBeenCalled())
+  expect(screen.queryByText(/Check-in overdue|On the way|Home safe/)).not.toBeInTheDocument()
 })
 
 test('the user sees their contacts and where each invitation stands', async () => {

@@ -95,3 +95,26 @@ test('Back closes the screen', async () => {
 
   expect(onClose).toHaveBeenCalledOnce()
 })
+
+test('a walk on the way updates by itself when the walker gets home', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  fetchFollowedWalk.mockResolvedValue({ ...overdue, status: 'active', lastLocation: null })
+  renderScreen()
+  expect(
+    await screen.findByRole('heading', { name: 'Anna is on the way home' }),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText(/The location is only shared if Anna misses the check-in/),
+  ).toBeInTheDocument()
+
+  fetchFollowedWalk.mockResolvedValue({
+    ...overdue,
+    status: 'safe',
+    checkedInAt: new Date('2026-10-15T22:30:00'),
+    lastLocation: null,
+  })
+  await vi.advanceTimersByTimeAsync(30_000)
+
+  expect(await screen.findByRole('heading', { name: 'Anna is safe' })).toBeInTheDocument()
+  vi.useRealTimers()
+})

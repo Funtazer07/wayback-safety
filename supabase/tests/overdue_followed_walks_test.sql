@@ -1,7 +1,7 @@
--- Test for supabase/migrations/0015_overdue_walks_for_contacts.sql (SCRUM-104): which overdue
--- walks show on the Contacts tab.
+-- Test for the overdue walks on the Contacts tab (SCRUM-104). Written for 0015; since 0016 the same
+-- walks come from followed_walk_statuses, so this checks the overdue walks it returns.
 --
--- How to run: paste the whole file into the Supabase SQL Editor and click Run, after 0015 is run.
+-- How to run: paste the whole file into the Supabase SQL Editor and click Run, after 0016 is run.
 -- One transaction that ends with ROLLBACK, so the made-up people and walks are gone afterwards. The
 -- last result says "ALL CHECKS PASSED"; a failed check stops the run with "FAIL: ...".
 --
@@ -57,11 +57,11 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000e0002","role":"authenticated"}', true);
 
 do $$ begin
-  assert (select count(*) from public.overdue_followed_walks()) = 1,
+  assert (select count(*) from (select * from public.followed_walk_statuses() where status = 'overdue') as overdue_walks) = 1,
     'FAIL: Sam should see exactly one overdue walk, not the one still on the way';
   assert (select walk_id = '00000000-0000-4000-8000-0000000d0f01' and walker_name = 'Anna'
             and contact_id = '00000000-0000-4000-8000-0000000f0012' and overdue_at is not null
-          from public.overdue_followed_walks()),
+          from (select * from public.followed_walk_statuses() where status = 'overdue') as overdue_walks),
     'FAIL: Sam''s overdue walk has the wrong walk, name or contact row';
 end $$;
 
@@ -69,7 +69,7 @@ end $$;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000e0003","role":"authenticated"}', true);
 
 do $$ begin
-  assert (select contact_id is null from public.overdue_followed_walks()
+  assert (select contact_id is null from (select * from public.followed_walk_statuses() where status = 'overdue') as overdue_walks
           where walk_id = '00000000-0000-4000-8000-0000000d0f01'),
     'FAIL: Pat should see the overdue walk, with no contact row of his own';
 end $$;
@@ -78,14 +78,14 @@ end $$;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000e0004","role":"authenticated"}', true);
 
 do $$ begin
-  assert (select count(*) from public.overdue_followed_walks()) = 0,
+  assert (select count(*) from (select * from public.followed_walk_statuses() where status = 'overdue') as overdue_walks) = 0,
     'FAIL: a paused contact sees an overdue walk';
 end $$;
 
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000e0005","role":"authenticated"}', true);
 
 do $$ begin
-  assert (select count(*) from public.overdue_followed_walks()) = 0,
+  assert (select count(*) from (select * from public.followed_walk_statuses() where status = 'overdue') as overdue_walks) = 0,
     'FAIL: a stranger sees an overdue walk';
 end $$;
 
@@ -96,7 +96,7 @@ select public.check_in('00000000-0000-4000-8000-0000000d0f01');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000e0002","role":"authenticated"}', true);
 
 do $$ begin
-  assert (select count(*) from public.overdue_followed_walks()) = 0,
+  assert (select count(*) from (select * from public.followed_walk_statuses() where status = 'overdue') as overdue_walks) = 0,
     'FAIL: a walk that was checked in still shows as overdue';
 end $$;
 
