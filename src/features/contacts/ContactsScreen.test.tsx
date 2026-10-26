@@ -228,3 +228,24 @@ test('without a share menu the link is shown with a Copy button', async () => {
   expect(writeText).toHaveBeenCalledWith(link)
   expect(screen.getByRole('status')).toHaveTextContent('Link copied.')
 })
+
+test('a push message updates the walk line at once, without waiting or switching screens', async () => {
+  const serviceWorker = new EventTarget()
+  vi.stubGlobal('navigator', { ...navigator, serviceWorker })
+  fetchContactWalks.mockResolvedValue([mumsWalk])
+  renderScreen()
+  expect(await screen.findByRole('button', { name: /On the way/ })).toBeInTheDocument()
+
+  fetchContactWalks.mockResolvedValue([
+    { ...mumsWalk, status: 'overdue', overdueAt: new Date('2026-10-26T22:42:00') },
+  ])
+  await act(async () => {
+    serviceWorker.dispatchEvent(
+      Object.assign(new Event('message'), { data: { type: 'wayback-push' } }),
+    )
+  })
+
+  expect(
+    await screen.findByRole('button', { name: 'Check-in overdue · View walk' }),
+  ).toBeInTheDocument()
+})

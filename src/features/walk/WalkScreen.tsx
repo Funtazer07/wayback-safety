@@ -3,7 +3,7 @@ import type { LngLat } from '../map/geometry.ts'
 import WalkMap from '../map/WalkMap.tsx'
 import AreYouOkScreen from './AreYouOkScreen.tsx'
 import CheckInButton from './CheckInButton.tsx'
-import CheckInConfirmation from './CheckInConfirmation.tsx'
+import HomeSafeScreen from './HomeSafeScreen.tsx'
 import { walkPhase } from './grace.ts'
 import { formatClock } from './time.ts'
 import { useLocationUpdates } from './useLocationUpdates.ts'
@@ -24,7 +24,7 @@ type WalkScreenProps = {
   onExtend?: (minutes: number) => Promise<void>
   /** Asks the server for the walk again, to hear about the warning and about overdue. */
   onRefresh?: () => Promise<void>
-  /** Called when the user closes the "You arrived safely!" message. */
+  /** Called when the user leaves the "You're home" screen. */
   onDone: () => void
 }
 
@@ -50,7 +50,6 @@ function WalkScreen({
   const hasCheckedIn = walk.status === 'safe'
   // No location is read or sent once the user is home.
   const isLocationOff = useLocationUpdates(hasCheckedIn ? null : walk.id)
-  const [arrivedAt, setArrivedAt] = useState<Date | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,12 +58,16 @@ function WalkScreen({
     setIsBusy(true)
     try {
       await onCheckIn()
-      // The countdown stops at the moment of the check-in instead of running on behind the message.
-      setArrivedAt(new Date())
     } catch {
       setError('Could not check you in. Check your connection and try again.')
     }
     setIsBusy(false)
+  }
+
+  // Screen 12 (SCRUM-106). The server's check-in time when it is known, so it matches what the
+  // contacts were told; otherwise this moment.
+  if (hasCheckedIn) {
+    return <HomeSafeScreen walkId={walk.id} endedAt={walk.checkedInAt ?? now} onDone={onDone} />
   }
 
   // The location keeps being sent on this screen too: when the contacts are told, where the user
@@ -87,27 +90,23 @@ function WalkScreen({
       <WalkMap route={route} />
 
       <section className="walk-panel" aria-label="Your walk">
-        <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={arrivedAt ?? now} />
+        <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
 
         <div className="walk-panel-text">
           <p className="walk-small">Walking to</p>
           <p className="walk-destination">{walk.destinationLabel}</p>
-          <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy || hasCheckedIn} />
+          <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
           <p>
             Home by <strong>{formatClock(walk.deadline)}</strong>
           </p>
           {error && <p role="alert">{error}</p>}
           <p className="walk-small">
-            {hasCheckedIn
-              ? 'Your walk has ended. The app no longer saves where you are.'
-              : isLocationOff
-                ? 'Location is off, so the app cannot save where you last were.'
-                : 'The app saves where you last were.'}
+            {isLocationOff
+              ? 'Location is off, so the app cannot save where you last were.'
+              : 'The app saves where you last were.'}
           </p>
         </div>
       </section>
-
-      <CheckInConfirmation isOpen={hasCheckedIn} onClose={onDone} />
     </main>
   )
 }

@@ -120,11 +120,11 @@ test('"Are you OK?" tells the walker what to do and when the contacts are told',
 
   expect(message.title).toBe('Are you OK?')
   expect(message.body).toContain('say you are home or add time')
-  expect(message.body).toContain('your contacts are told in 5 minutes')
+  expect(message.body).toContain('your contacts are told in 3 minutes')
 })
 
 test('"Are you OK?" is only worth delivering during the grace period', () => {
-  expect(timeToLive('are_you_ok')).toBe(5 * 60)
+  expect(timeToLive('are_you_ok')).toBe(3 * 60)
   expect(timeToLive('started')).toBe(60 * 60)
 })
 

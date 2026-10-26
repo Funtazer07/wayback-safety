@@ -48,8 +48,8 @@ test('asks "Are you okay?" when the phone is unlocked after the deadline', () =>
   lockPhoneUntil('2026-10-06T22:22:00')
 
   expect(screen.getByRole('heading', { name: 'Are you okay?' })).toBeInTheDocument()
-  // The deadline was 22:20, so 3 of the 5 minutes are left.
-  expect(screen.getByRole('timer')).toHaveAccessibleName('We’ll notify your contacts in 3 min')
+  // The deadline was 22:20, so 1 of the 3 minutes is left.
+  expect(screen.getByRole('timer')).toHaveAccessibleName('We’ll notify your contacts in 1 min')
 })
 
 test('asks the server for news while the grace period runs, not before', () => {
@@ -95,12 +95,19 @@ test('shows a message and lets the user try again when the check-in fails', asyn
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
-test('a walk that is checked in shows the confirmation and closes it with OK', () => {
+test('a walk that is checked in shows the "You’re home" screen, which leads back Home', () => {
   const onDone = vi.fn()
-  render(<WalkScreen walk={{ ...walk, status: 'safe' }} onCheckIn={vi.fn()} onDone={onDone} />)
+  render(
+    <WalkScreen
+      walk={{ ...walk, status: 'safe', checkedInAt: new Date('2026-10-06T22:16:00') }}
+      onCheckIn={vi.fn()}
+      onDone={onDone}
+    />,
+  )
 
-  expect(screen.getByRole('dialog', { name: 'You arrived safely!' })).toBeVisible()
-  fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+  expect(screen.getByRole('heading', { name: 'You’re home.' })).toBeInTheDocument()
+  expect(screen.getByText('Your walk ended at 22:16.')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Back to your places' }))
 
   expect(onDone).toHaveBeenCalledOnce()
 })
@@ -118,10 +125,10 @@ test('the location is no longer sent after the check-in', () => {
   expect(getCurrentPosition).toHaveBeenCalledTimes(1)
 })
 
-test('the countdown stops at the moment of the check-in', async () => {
+test('after the check-in the "You’re home" screen shows when the walk ended', async () => {
   let currentWalk = walk
   const onCheckIn = vi.fn(async () => {
-    currentWalk = { ...walk, status: 'safe' }
+    currentWalk = { ...walk, status: 'safe', checkedInAt: new Date('2026-10-06T22:05:00') }
   })
   const { rerender } = render(<WalkScreen walk={walk} onCheckIn={onCheckIn} onDone={vi.fn()} />)
   vi.setSystemTime(new Date('2026-10-06T22:05:00'))
@@ -130,5 +137,6 @@ test('the countdown stops at the moment of the check-in', async () => {
   rerender(<WalkScreen walk={currentWalk} onCheckIn={onCheckIn} onDone={vi.fn()} />)
   act(() => vi.advanceTimersByTime(3 * 60_000))
 
-  expect(screen.getByText('15:00')).toBeInTheDocument()
+  expect(screen.getByText('Your walk ended at 22:05.')).toBeInTheDocument()
+  expect(screen.queryByRole('timer')).not.toBeInTheDocument()
 })

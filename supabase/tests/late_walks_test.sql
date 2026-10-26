@@ -1,6 +1,7 @@
--- Test for the late-walk rules in supabase/migrations/0011_late_walks.sql (SCRUM-73).
+-- Test for the late-walk rules in supabase/migrations/0011_late_walks.sql (SCRUM-73), with the
+-- 3-minute grace period from 0017_three_minute_grace.sql.
 --
--- How to run: paste the whole file into the Supabase SQL Editor and click Run, after 0011 is run.
+-- How to run: paste the whole file into the Supabase SQL Editor and click Run, after 0017 is run.
 -- Everything happens in one transaction that ends with ROLLBACK, so the made-up user and walk are
 -- gone afterwards, and no push message is really sent (the queued web requests are rolled back
 -- too). The last result says "ALL CHECKS PASSED"; a failed check stops the run with "FAIL: ...".
@@ -54,7 +55,7 @@ do $$ begin
 end $$;
 
 -- ---------- During the grace period: still active ----------
-update public.walks set deadline = now() - interval '10 minutes', warned_at = now() - interval '4 minutes'
+update public.walks set deadline = now() - interval '10 minutes', warned_at = now() - interval '2 minutes'
 where id = '00000000-0000-4000-8000-0000000e0a1f';
 
 select public.check_late_walks();
@@ -62,7 +63,7 @@ select public.check_late_walks();
 do $$ begin
   assert (select status = 'active' from public.walks
           where id = '00000000-0000-4000-8000-0000000e0a1f'),
-    'FAIL: the walk became overdue before the 5 minutes after the warning were over';
+    'FAIL: the walk became overdue before the 3 minutes after the warning were over';
 end $$;
 
 -- ---------- Extended during the grace period: not overdue, not warned again yet ----------
@@ -90,7 +91,7 @@ do $$ begin
 end $$;
 
 -- ---------- Grace period over: overdue ----------
-update public.walks set deadline = now() - interval '10 minutes', warned_at = now() - interval '5 minutes'
+update public.walks set deadline = now() - interval '10 minutes', warned_at = now() - interval '3 minutes'
 where id = '00000000-0000-4000-8000-0000000e0a1f';
 
 select public.check_late_walks();
@@ -98,7 +99,7 @@ select public.check_late_walks();
 do $$ begin
   assert (select status = 'overdue' and overdue_at = now() from public.walks
           where id = '00000000-0000-4000-8000-0000000e0a1f'),
-    'FAIL: the walk did not become overdue 5 minutes after the warning';
+    'FAIL: the walk did not become overdue 3 minutes after the warning';
 end $$;
 
 -- ---------- Overdue only once ----------

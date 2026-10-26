@@ -36,9 +36,9 @@ test('during the grace period the user sees who is told and how long until then'
 
   expect(screen.getByRole('heading', { name: 'Are you okay?' })).toBeInTheDocument()
   expect(screen.getByText(/No contact alert has been sent yet/)).toBeInTheDocument()
-  // Counted from the warning at 22:20:30, like on the server: 3 minutes left at 22:22:30.
+  // Counted from the warning at 22:20:30, like on the server: 1 of the 3 minutes left at 22:22:30.
   expect(screen.getByText('We’ll notify Mum and Alex in')).toBeInTheDocument()
-  expect(screen.getByText('03:00')).toBeInTheDocument()
+  expect(screen.getByText('01:00')).toBeInTheDocument()
 })
 
 test('"I’m home" checks the user in', async () => {

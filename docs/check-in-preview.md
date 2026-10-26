@@ -1,6 +1,6 @@
 # Check-in preview: the walk screen without a backend
 
-The "I'm home" button and the "You arrived safely!" message are part of the real app (SCRUM-47
+The "I'm home" button and the "You're home" screen (SCRUM-106) are part of the real app (SCRUM-47
 for the design, SCRUM-48 for the build). How the check-in works is described in
 [backend.md](backend.md#checking-in).
 
@@ -21,7 +21,8 @@ What is different from the real app:
 - Nothing is written to Supabase. Tapping "I'm home" only changes the example walk on the screen.
 - No location is read automatically or sent anywhere, so the screen says that location is off.
   The "My location" control on the map only draws a location on the map.
-- Closing the message starts a new example walk, so the demo can be shown again.
+- "Back to your places" starts a new example walk, so the demo can be shown again. The screen
+  shows no contacts, because the preview has no backend to ask.
 
 The preview config swaps the location hook and the map wrapper, only in this separate build.
 

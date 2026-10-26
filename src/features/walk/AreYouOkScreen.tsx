@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import CheckInButton from './CheckInButton.tsx'
 import GraceCountdown from './GraceCountdown.tsx'
-import { GRACE_MINUTES, namesInWords } from './grace.ts'
+import { EXTEND_MINUTES, namesInWords } from './grace.ts'
 import type { Walk } from './walk.ts'
 import './walk.css'
 
@@ -86,12 +86,12 @@ function AreYouOkScreen({
             disabled={isBusy}
             onClick={() =>
               act(
-                () => onExtend(GRACE_MINUTES),
+                () => onExtend(EXTEND_MINUTES),
                 'Could not add time. Check your connection and try again.',
               )
             }
           >
-            I’m okay · Add {GRACE_MINUTES} minutes
+            I’m okay · Add {EXTEND_MINUTES} minutes
           </button>
         )}
         <p className="walk-small walk-centered">Choose an action to update your walk.</p>

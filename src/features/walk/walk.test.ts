@@ -5,6 +5,7 @@ import {
   extendWalk,
   fetchCurrentWalk,
   fetchWalkContactNames,
+  fetchWalkContacts,
   startWalk,
   updateWalkLocation,
 } from './walk.ts'
@@ -40,6 +41,7 @@ const row = {
   deadline: '2026-10-06T22:25:00+00:00',
   status: 'active',
   warned_at: null,
+  checked_in_at: null,
 }
 
 beforeEach(() => {
@@ -72,6 +74,7 @@ test('starting a walk sends the duration and returns the deadline the server set
     deadline: new Date('2026-10-06T22:25:00Z'),
     status: 'active',
     warnedAt: null,
+    checkedInAt: null,
   })
 })
 
@@ -109,12 +112,16 @@ test('a location update is sent for the given walk and returns its current statu
 })
 
 test('checking in ends the given walk and returns it as safe', async () => {
-  rpc.mockResolvedValue({ data: { ...row, status: 'safe' }, error: null })
+  rpc.mockResolvedValue({
+    data: { ...row, status: 'safe', checked_in_at: '2026-10-06T22:26:00+00:00' },
+    error: null,
+  })
 
   const walk = await checkInWalk('walk-1')
 
   expect(rpc).toHaveBeenCalledWith('check_in', { walk_id: 'walk-1' })
   expect(walk.status).toBe('safe')
+  expect(walk.checkedInAt).toEqual(new Date('2026-10-06T22:26:00Z'))
 })
 
 test('checking in fails when the server refuses it', async () => {
@@ -190,5 +197,22 @@ test('the names of the contacts who follow a walk are returned', async () => {
   })
 
   expect(await fetchWalkContactNames('walk-1')).toEqual(['Mum', 'Alex'])
+  expect(eq).toHaveBeenCalledWith('walk_id', 'walk-1')
+})
+
+test('the contacts of a walk come with their status, without removed ones', async () => {
+  eq.mockResolvedValue({
+    data: [
+      { contacts: { id: 'c-mum', label: 'Mum', status: 'accepted' } },
+      { contacts: { id: 'c-pat', label: 'Pat', status: 'paused' } },
+      { contacts: null },
+    ],
+    error: null,
+  })
+
+  expect(await fetchWalkContacts('walk-1')).toEqual([
+    { id: 'c-mum', label: 'Mum', status: 'accepted' },
+    { id: 'c-pat', label: 'Pat', status: 'paused' },
+  ])
   expect(eq).toHaveBeenCalledWith('walk_id', 'walk-1')
 })

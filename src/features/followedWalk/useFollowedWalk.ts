@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { onPushMessage } from '../../lib/pushMessages.ts'
 import { NotSharedError, fetchFollowedWalk, type FollowedWalk } from './followedWalk.ts'
 
 type FollowedWalkState = {
@@ -57,8 +58,11 @@ export function useFollowedWalk(walkId: string): FollowedWalkState {
 
     const timer = setInterval(refresh, THIRTY_SECONDS)
     document.addEventListener('visibilitychange', refreshWhenBackOnScreen)
+    // "hasn't checked in" and "is safe" arrive as push messages: show them at once.
+    const stopListening = onPushMessage(refresh)
     return () => {
       isCurrent = false
+      stopListening()
       clearInterval(timer)
       document.removeEventListener('visibilitychange', refreshWhenBackOnScreen)
     }

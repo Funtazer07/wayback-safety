@@ -76,7 +76,7 @@ moved to the table.
   [backend.md](backend.md) as well.
 - The route of a running walk is kept on the phone (`walkRoute.ts`), so the walk screen can show it
   after the app was closed. It includes the start, which is often where the user was. It is erased
-  when the user closes the "You arrived safely!" message. A walk that is never checked in keeps it
+  when the user leaves the "You're home" screen. A walk that is never checked in keeps it
   until the next walk replaces it.
 - A broken-light report holds the lamp's number, spot and street, and the time of the report.
   Other users never see who reported it, and the spot is the lamp's, not where the user was.
