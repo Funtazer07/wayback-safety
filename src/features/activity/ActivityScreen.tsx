@@ -6,23 +6,14 @@ import ActivityCard from './ActivityCard.tsx'
 import './activity.css'
 
 type ActivityScreenProps = {
-  /** The user's own name, for "Anna's account" at the top. */
   displayName: string
-  /** Opens the walk of someone the user looks out for (SCRUM-102). */
   onOpenWalk: (walkId: string) => void
-  /** Opens the Trusted contacts list (screen 14). */
   onOpenCircle: () => void
 }
 
-/**
- * Screen 09 of the prototype: what the Contacts tab opens on. The latest walk of each person who
- * trusts the user, newest first, kept up to date (useContactWalks). The Trusted contacts list is
- * one tap away.
- */
 function ActivityScreen({ displayName, onOpenWalk, onOpenCircle }: ActivityScreenProps) {
   const walks = useContactWalks()
   const feed = activityFeed(walks)
-  // Read once: "Yesterday" does not need to change while the screen is open.
   const [now] = useState(() => new Date())
 
   return (
@@ -63,8 +54,7 @@ function ActivityScreen({ displayName, onOpenWalk, onOpenCircle }: ActivityScree
         <span aria-hidden="true">›</span>
       </button>
 
-      {/* Someone who looks out for others but never walks themselves turns notifications on
-          here. The card hides itself once they are on. */}
+      {/* For contacts who never walk themselves. */}
       <NotificationCard reason="WayBack can then tell you when your contacts start a walk, get home or miss a check-in, also when your phone is locked." />
     </main>
   )

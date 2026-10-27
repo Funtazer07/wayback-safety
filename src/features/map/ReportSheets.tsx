@@ -6,7 +6,6 @@ type ReportSheetsProps = {
   reporting: ReturnType<typeof useReporting>
 }
 
-/** Whichever reporting sheet is open: the report menu, or a light that is already reported. */
 function ReportSheets({ reporting }: ReportSheetsProps) {
   if (reporting.menu) {
     return (

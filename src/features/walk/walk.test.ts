@@ -18,8 +18,6 @@ const { rpc, maybeSingle, inStatus, eq } = vi.hoisted(() => ({
   eq: vi.fn(),
 }))
 
-// fetchCurrentWalk asks walks with .in().order().limit().maybeSingle(); fetchWalkContactNames asks
-// walk_contacts with .eq().
 vi.mock('../../lib/supabase.ts', () => ({
   supabase: {
     rpc,

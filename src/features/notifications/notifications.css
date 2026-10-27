@@ -1,4 +1,3 @@
-/* The card sits between other cards on a screen, so its heading is smaller than a screen title. */
 .notifications-title {
   font-size: 1.125rem;
   line-height: 1.3;

@@ -6,7 +6,7 @@ type WalkReminderProps = {
   onReview: () => void
 }
 
-/** SCRUM-64: the same calm reminder while the app is open; push covers a locked phone. */
+/** While the app is open; a push covers a locked phone. */
 function WalkReminder({ deadline, now, onReview }: WalkReminderProps) {
   return (
     <div className="walk-reminder">

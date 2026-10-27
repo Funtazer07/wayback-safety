@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchWalkContactNames } from './walk.ts'
 
-/**
- * The names of the contacts who follow this walk, for the "Are you OK?" screen ("We'll notify Mum
- * and Alex"). Null while loading, or when they could not be loaded; pass null to load nothing.
- */
+/** Null while loading or after an error. Pass null to load nothing. */
 export function useWalkContactNames(walkId: string | null): string[] | null {
   const [names, setNames] = useState<string[] | null>(null)
 
@@ -14,7 +11,6 @@ export function useWalkContactNames(walkId: string | null): string[] | null {
     let isCurrent = true
     fetchWalkContactNames(walkId)
       .then((loaded) => isCurrent && setNames(loaded))
-      // The screen then says "your contacts" instead of their names.
       .catch(() => {})
 
     return () => {

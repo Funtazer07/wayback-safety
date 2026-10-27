@@ -4,15 +4,9 @@ import { watchWalk } from './followedWalk.ts'
 type WatchButtonProps = {
   walkId: string
   walkerName: string
-  /** Whether this contact tapped it before, for example before closing the app. */
   isWatching: boolean
 }
 
-/**
- * "I'm watching" (SCRUM-114): one tap tells the walker that someone is looking out, so they do not
- * walk with only a list of names behind them (Studio Krom feedback). It shares nothing new about
- * the walker with the contact.
- */
 function WatchButton({ walkId, walkerName, isWatching }: WatchButtonProps) {
   const [hasTapped, setHasTapped] = useState(false)
   const [isBusy, setIsBusy] = useState(false)

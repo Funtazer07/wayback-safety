@@ -8,10 +8,6 @@ type InviteSheetProps = {
   onClose: () => void
 }
 
-/**
- * "Invite by link or email" (screen 14): the user names the contact, gets a link that works for 48
- * hours, and sends it with the phone's share menu. Where there is none, a Copy button instead.
- */
 function InviteSheet({ displayName, onInvite, onClose }: InviteSheetProps) {
   const [label, setLabel] = useState('')
   const [invite, setInvite] = useState<Invite | null>(null)

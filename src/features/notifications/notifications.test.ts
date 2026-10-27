@@ -25,8 +25,6 @@ function fakeSubscription() {
   }
 }
 
-// Fakes the browser parts the code uses: the service worker with its push manager, and the
-// Notification permission.
 function fakeBrowser({
   permission = 'default',
   answer = 'granted',

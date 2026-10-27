@@ -8,20 +8,13 @@ import { useUserPosition } from './useUserPosition.ts'
 import './map.css'
 
 type WalkMapProps = {
-  /** The route chosen on Home, or null when the walk was started without one. */
   route: LngLat[] | null
 }
 
-/**
- * The map during a walk: the chosen route, the user's position, and press and hold to report a
- * broken street light. No route planner here: the walk is already on its way.
- */
 function WalkMap({ route }: WalkMapProps) {
   const { position, start } = useUserPosition()
   const [thankYou, setThankYou] = useState('')
   const reporting = useReporting((_lights, message) => setThankYou(message))
-  // The map opens showing the whole route. Without a route it centres on the user the first time
-  // instead. After that the user can look around freely, and "My location" brings them back.
   const [camera, setCamera] = useState<CameraMove | null>(() =>
     route
       ? {

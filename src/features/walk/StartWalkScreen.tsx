@@ -15,25 +15,20 @@ import type { NewWalk } from './walk.ts'
 import './walk.css'
 
 type StartWalkScreenProps = {
-  /** The logged-in user, to list their trusted contacts. */
   userId: string
-  /** The route planned on Home, for the estimated arrival. Null when none was planned. */
   plannedRoute?: PlannedRoute | null
   onStart: (newWalk: NewWalk) => Promise<void>
   onBack: () => void
 }
 
-/** Screen 04 of the prototype, "Set your check-in": the timer and who hears about the walk. */
 function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: StartWalkScreenProps) {
   const [destination, setDestination] = useState(HOME)
-  // Starts from the planned route, so the user does not have to guess (timerSuggestion.ts).
   const routeSeconds = plannedRoute?.seconds ?? null
   const [minutes, setMinutes] = useState(() => suggestedMinutes(routeSeconds))
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const now = useNow()
-  // Every contact who accepted follows the walk, as on screen 04, unless the user switches them off.
   const contacts = useContacts(userId)
   const [switchedOffIds, setSwitchedOffIds] = useState<string[]>([])
   const acceptedIds = contacts.contacts
@@ -66,8 +61,6 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
         </button>
       </div>
 
-      {/* From the route planned on Home. Without one the app cannot estimate the walk, so the
-          card is left out instead of guessing. */}
       {plannedRoute && (
         <div className="card walk-estimate">
           <p className="walk-label">Estimated arrival</p>
@@ -104,8 +97,7 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
         }
       />
 
-      {/* Not in the design. Asked here because the warning when time runs out (SCRUM-73) is a
-          push notification, and iPhones only ask after a tap (SCRUM-68). */}
+      {/* Not in the design: "Are you OK?" is a push, and iPhones only ask after a tap. */}
       <NotificationCard reason="WayBack can then warn you if your timer runs out, also when your phone is locked." />
 
       <div className="screen-actions">

@@ -12,8 +12,6 @@ const services = vi.hoisted(() => ({
   reportBrokenLight: vi.fn(),
 }))
 
-// Stand-ins for the route planner, the lamp register and the reports table, so the test never goes
-// online.
 vi.mock('./routes.ts', () => ({ fetchRoutes: services.fetchRoutes }))
 vi.mock('./brokenLights.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./brokenLights.ts')>()),
@@ -26,8 +24,7 @@ vi.mock('./lamps.ts', async (importOriginal) => ({
   findLampNear: services.findLampNear,
 }))
 
-// Stand-in for the MapLibre map, which needs a real browser. Its buttons play the taps and the
-// long press a user would do on the map.
+// MapLibre needs a real browser. The stand-in's buttons play the user's taps and long press.
 vi.mock('./MapView.tsx', () => ({
   default: (props: {
     brokenLights: unknown[]
@@ -213,8 +210,6 @@ test('tells which route is on the map, so the walk can show it', async () => {
   click('Tap Stratumseind')
   click('Tap the station')
   await screen.findByRole('region', { name: 'Choose a route' })
-  // The list can be on screen a moment before React tells the parent about the route, so wait.
-  // With its walking time and length, for the estimated arrival on the start-walk screen.
   await waitFor(() =>
     expect(onRouteChange).toHaveBeenLastCalledWith(
       expect.objectContaining({

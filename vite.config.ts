@@ -2,21 +2,18 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
-// GitHub Pages serves the app from a subfolder (/<repository>/). The deploy workflow passes that
-// path in BASE_PATH; locally the app runs at the root.
+// GitHub Pages serves the app from a subfolder, passed in by the deploy workflow.
 const base = `${process.env.BASE_PATH ?? ''}/`
 
-// https://vite.dev/config/
 export default defineConfig({
   base,
   plugins: [
     react(),
     VitePWA({
-      // A safety app should not keep running an old version: update as soon as a new one is deployed.
+      // A safety app should not keep running an old version.
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo.svg', 'apple-touch-icon-180x180.png'],
-      // The generated service worker cannot show push notifications. It loads public/push-sw.js,
-      // which can (SCRUM-68).
+      // The generated service worker cannot show push notifications; push-sw.js can.
       workbox: { importScripts: ['push-sw.js'] },
       manifest: {
         name: 'WayBack Safety',
@@ -27,8 +24,7 @@ export default defineConfig({
         scope: base,
         display: 'standalone',
         orientation: 'portrait',
-        // The page colour of the prototype (--page in src/index.css). Keep in sync with theme-color
-        // in index.html.
+        // Keep in sync with --page in index.css and theme-color in index.html.
         theme_color: '#f2f8f4',
         background_color: '#f2f8f4',
         icons: [

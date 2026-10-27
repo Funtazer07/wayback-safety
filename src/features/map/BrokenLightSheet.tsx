@@ -6,7 +6,6 @@ type BrokenLightSheetProps = {
   onClose: () => void
 }
 
-/** Opens after tapping a broken-light mark: when it was reported, and a way to take it back. */
 function BrokenLightSheet({ light, onWorksAgain, onClose }: BrokenLightSheetProps) {
   const reportedAt = new Date(light.reportedAt).toLocaleString('en-GB', {
     dateStyle: 'medium',

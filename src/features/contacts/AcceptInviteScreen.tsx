@@ -5,19 +5,12 @@ import { acceptInvite, declineInvite, fetchInvite, type InviteDetails } from './
 import './contacts.css'
 
 type AcceptInviteScreenProps = {
-  /** The secret from the invite link (?invite=). */
   token: string
-  /** Closes this screen, after an answer or when the link does not work. */
   onClose: () => void
 }
 
 type Step = 'loading' | 'question' | 'accepted' | 'failed'
 
-/**
- * What a contact sees after opening an invite link (screen 09, "Sam invited you"). Nothing is shared
- * with them until they accept. After accepting, the app asks for notifications: the system question
- * appears only after a tap, as the design's "Contact · System request" frame says.
- */
 function AcceptInviteScreen({ token, onClose }: AcceptInviteScreenProps) {
   const [step, setStep] = useState<Step>('loading')
   const [details, setDetails] = useState<InviteDetails | null>(null)
@@ -45,7 +38,6 @@ function AcceptInviteScreen({ token, onClose }: AcceptInviteScreenProps) {
       await action()
       next()
     } catch (failure) {
-      // The server's own words for the cases a user can understand.
       const message = failure instanceof Error ? failure.message : ''
       setError(
         /own invite|already look out/.test(message)
@@ -72,8 +64,6 @@ function AcceptInviteScreen({ token, onClose }: AcceptInviteScreenProps) {
       {step === 'question' && (
         <>
           <h1>{name} invited you</h1>
-          {/* Both ways since 26 Oct (0014_mutual_contacts.sql): said before the tap, because the
-              user's own walks are shared too. */}
           <p>
             Accept to look out for each other. You will hear when {name} starts a walk, gets home,
             or misses a check-in, and {name} will hear the same about your walks. Nothing is shared
@@ -88,9 +78,7 @@ function AcceptInviteScreen({ token, onClose }: AcceptInviteScreenProps) {
           <NotificationCard
             reason={`WayBack can then tell you when ${name} starts a walk, gets home, or misses a check-in.`}
           />
-          {/* An invite link opens in the browser. Added to the Home Screen, WayBack starts again
-              signed out (on iPhone it has its own storage), so say where to continue. Accepting
-              itself is already saved. */}
+          {/* On iPhone the Home Screen app has its own storage, so it starts signed out. */}
           {!isInstalled() && (
             <p className="contacts-small">
               Your answer is saved. If you add WayBack to your Home Screen, open it from there, sign

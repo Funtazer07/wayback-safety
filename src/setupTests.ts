@@ -4,8 +4,7 @@ import { afterEach } from 'vitest'
 
 afterEach(cleanup)
 
-// jsdom has no native modal dialogs, so `<dialog>.showModal()` does not exist in tests. These
-// stand-ins open and close the dialog and move the focus into it, as a browser does.
+// jsdom has no showModal(), so these stand-ins act like a browser.
 HTMLDialogElement.prototype.showModal = function () {
   this.open = true
   this.querySelector<HTMLButtonElement>('button')?.focus()

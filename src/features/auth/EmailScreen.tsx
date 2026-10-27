@@ -5,10 +5,7 @@ type EmailScreenProps = {
   onBack: () => void
 }
 
-/**
- * The fallback for people without a Google account. Not in the onboarding v2 wireframe: the
- * group added it because Google alone would lock those people out.
- */
+/** For people without a Google account. */
 function EmailScreen({ onBack }: EmailScreenProps) {
   const [isNewUser, setIsNewUser] = useState(true)
   const [email, setEmail] = useState('')
@@ -22,7 +19,6 @@ function EmailScreen({ onBack }: EmailScreenProps) {
     setError(null)
     setIsBusy(true)
     try {
-      // On success the session changes and App shows the next screen.
       if (isNewUser) {
         setMustConfirmEmail(await signUpWithPassword(email, password))
       } else {
@@ -34,7 +30,6 @@ function EmailScreen({ onBack }: EmailScreenProps) {
     setIsBusy(false)
   }
 
-  // For people who signed up with Google and ended up on this screen by mistake.
   async function handleGoogle() {
     setError(null)
     setIsBusy(true)

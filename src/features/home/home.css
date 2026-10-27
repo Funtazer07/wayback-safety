@@ -48,8 +48,7 @@
   background: var(--green-button);
 }
 
-/* Places is exactly one phone screen tall, bottom bar included, so it never scrolls: the map in the
-   middle grows or shrinks to fill what the greeting and the Start walk button leave. */
+/* Exactly one phone screen tall, so it never scrolls: the map takes the room that is left. */
 .home-screen {
   height: 100dvh;
   gap: 0.75rem;

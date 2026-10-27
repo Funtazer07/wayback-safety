@@ -8,20 +8,14 @@ import './walk.css'
 
 type AreYouOkScreenProps = {
   walk: Walk
-  /** 'grace': nobody told yet. 'overdue': the contacts have been told (SCRUM-74). */
   phase: 'grace' | 'overdue'
   now: Date
-  /** Who follows the walk. Null while loading: the screen then says "your contacts". */
+  /** Null while loading: the screen then says "your contacts". */
   contactNames: string[] | null
   onCheckIn: () => Promise<void>
   onExtend: (minutes: number) => Promise<void>
 }
 
-/**
- * Screen 06 of the SCRUM-72 prototype: the walk's time ran out. The user says they are home or adds
- * time before the contacts are told. Also shown after that (overdue), so the user can still say they
- * are safe. "I need help" from the prototype is SOS (SCRUM-28) and not built yet.
- */
 function AreYouOkScreen({
   walk,
   phase,
@@ -48,7 +42,6 @@ function AreYouOkScreen({
 
   return (
     <main className="screen screen-tinted walk-alert">
-      {/* No back button: the walk is still running, and leaving this screen would hide it. */}
       <TopBar title={`Walking to ${walk.destinationLabel}`} />
 
       <svg className="walk-alert-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -81,7 +74,7 @@ function AreYouOkScreen({
             act(onCheckIn, 'Could not check you in. Check your connection and try again.')
           }
         />
-        {/* The server only extends a walk nobody has been told about yet (SCRUM-63). */}
+        {/* The server only extends a walk nobody has been told about yet. */}
         {phase === 'grace' && (
           <button
             type="button"

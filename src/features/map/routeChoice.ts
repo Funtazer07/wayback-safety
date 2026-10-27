@@ -7,7 +7,7 @@ export function fastestIndex(routes: MeasuredRoute[]): number {
   )
 }
 
-/** The route with the most street lights per km; on a tie, the one with the shortest dark piece. */
+/** Most lights per km; on a tie, the shortest dark piece. */
 export function mostLightsIndex(routes: MeasuredRoute[]): number {
   return routes.reduce((best, route, index) => {
     const bestRoute = routes[best]
@@ -19,7 +19,6 @@ export function mostLightsIndex(routes: MeasuredRoute[]): number {
   }, 0)
 }
 
-/** The route with the most street lights comes first, so it is the one shown and suggested. */
 export function mostLightsFirst(routes: MeasuredRoute[]): MeasuredRoute[] {
   if (routes.length === 0) return routes
   const recommended = routes[mostLightsIndex(routes)]

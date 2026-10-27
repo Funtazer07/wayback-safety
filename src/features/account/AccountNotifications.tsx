@@ -1,16 +1,10 @@
 import { NotificationCardView } from '../notifications/NotificationCard.tsx'
 import { useNotifications } from '../notifications/useNotifications.ts'
 
-/**
- * Notifications on the Account tab (SCRUM-105). When they are on, a way to turn them off, for
- * example on a borrowed phone. When they are off, the usual card to turn them on. Both use the same
- * state, so allowing or turning off shows the other one at once.
- */
 function AccountNotifications() {
   const notifications = useNotifications()
   const { notificationState, isLoading, error, disable } = notifications
 
-  // Nothing to show while this phone is being checked.
   if (!notificationState) return null
 
   if (notificationState !== 'on') {

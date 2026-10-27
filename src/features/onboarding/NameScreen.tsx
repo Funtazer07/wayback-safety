@@ -6,7 +6,6 @@ type NameScreenProps = {
   onSave: (displayName: string) => Promise<void>
 }
 
-/** Screen 2 of the onboarding v2 wireframe: the only thing we ask the user for. */
 function NameScreen({ onSave }: NameScreenProps) {
   const [name, setName] = useState('')
   const [isAdult, setIsAdult] = useState(false)
@@ -39,7 +38,6 @@ function NameScreen({ onSave }: NameScreenProps) {
           placeholder="e.g. Sam"
           required
           maxLength={40}
-          // A name of only spaces would be saved as empty.
           pattern=".*\S.*"
           value={name}
           onChange={(event) => setName(event.target.value)}

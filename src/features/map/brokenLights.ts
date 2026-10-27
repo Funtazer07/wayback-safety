@@ -2,17 +2,13 @@ import { supabase } from '../../lib/supabase.ts'
 import { placeOf, type LngLat } from './geometry.ts'
 import type { Lamp } from './lamps.ts'
 
-/** A street light a user reported as broken. Every signed-in user sees it; not who reported it. */
 export type BrokenLight = {
   lampId: string
   coordinates: LngLat
   street: string
-  /** ISO date and time. */
   reportedAt: string
 }
 
-// A broken-light row of the reports table, as the database returns it. See
-// supabase/migrations/0008_reports.sql. Only the columns the app is allowed to read.
 type BrokenLightRow = {
   lamp_id: string
   lat: number
@@ -35,9 +31,8 @@ function toBrokenLight(row: BrokenLightRow): BrokenLight {
   }
 }
 
-/** All lights reported as broken by anyone, that have not expired. */
 export async function fetchBrokenLights(): Promise<BrokenLight[]> {
-  // Row level security only returns reports that have not expired.
+  // RLS leaves out expired reports.
   const { data, error } = await client()
     .from('reports')
     .select('lamp_id, lat, lng, street, created_at')
@@ -46,12 +41,11 @@ export async function fetchBrokenLights(): Promise<BrokenLight[]> {
   return data.map(toBrokenLight)
 }
 
-/** Reports this lamp as broken. Fails when someone already reported it. */
 export async function reportBrokenLight(lamp: Lamp): Promise<BrokenLight> {
   const { data, error } = await client()
     .rpc('report_broken_light', {
       lamp_id: lamp.lampId,
-      // The lamp's own spot from the register, not where the user is.
+      // The lamp's spot, not the user's.
       lat: lamp.coordinates[1],
       lng: lamp.coordinates[0],
       street: lamp.street,
@@ -66,7 +60,6 @@ export async function reportBrokenLight(lamp: Lamp): Promise<BrokenLight> {
   }
 }
 
-/** "It works again": removes the report of this lamp, for everyone. */
 export async function markLightWorking(lampId: string): Promise<void> {
   const { error } = await client().rpc('mark_light_working', { lamp_id: lampId })
   if (error) throw error

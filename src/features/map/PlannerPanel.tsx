@@ -8,7 +8,6 @@ type PlannerPanelProps = {
   onStartOver: () => void
 }
 
-/** The panel at the top of the planner: what to do next, and the map's buttons. */
 function PlannerPanel({ panelRef, hint, status, onLocate, onStartOver }: PlannerPanelProps) {
   return (
     <div ref={panelRef} className="planner-panel">

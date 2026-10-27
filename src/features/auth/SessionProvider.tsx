@@ -12,7 +12,7 @@ function SessionProvider({ children }: SessionProviderProps) {
   useEffect(() => {
     if (!supabase) return
 
-    // Fires once with the stored session (users stay logged in), then on every login and logout.
+    // Fires once with the stored session, then on every login and logout.
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setState({ session, isLoading: false })
     })

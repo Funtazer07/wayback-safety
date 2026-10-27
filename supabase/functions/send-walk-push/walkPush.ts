@@ -1,22 +1,6 @@
-// SCRUM-69: who hears about a walk, and what the push message says.
-//
-// Plain TypeScript without Deno or npm imports, so the app's tests (Vitest) can check it. The Edge
-// Function in ./index.ts does the database and sending work around it. It sits in the same folder
-// on purpose: the Supabase dashboard editor cannot import files from another folder.
+// Who hears about a walk, and what the push message says. No Deno imports, so Vitest can test it.
+// It stays next to index.ts because the Supabase dashboard editor cannot import from other folders.
 
-/**
- * What happened to a walk.
- * - started:   the walk began (SCRUM-7).
- * - home_safe: the user checked in (SCRUM-7, SCRUM-48).
- * - cancelled: the user stopped the walk without a check-in (SCRUM-12, SCRUM-63). Added here on
- *   24 Oct: SCRUM-63 and SCRUM-12 promise it, but no other subtask builds it.
- * - are_you_ok: the timer ran out without a check-in (SCRUM-73). Goes to the walker, not to the
- *   contacts.
- * - overdue: no check-in during the grace period either. The alert to the contacts, with the time
- *   of the last known location (SCRUM-74).
- * - reminder: the check-in is due within a minute (SCRUM-64). Goes to the walker.
- * - deadline_extended: the walker added time, so the contacts get the new time (SCRUM-107).
- */
 export type WalkEvent =
   | 'started'
   | 'home_safe'
@@ -36,19 +20,12 @@ const walkEvents: WalkEvent[] = [
   'deadline_extended',
 ]
 
-/**
- * 3 minutes between "Are you OK?" and alerting the contacts, decided on 26 Oct (it was 5). Keep it
- * the same as grace_period in supabase/migrations/0017_three_minute_grace.sql.
- */
+/** Must match grace_period in 0017_three_minute_grace.sql. */
 export const GRACE_MINUTES = 3
 
-/**
- * What the service worker (public/push-sw.js) shows. url is the page that opens when the
- * notification is tapped, relative to the app; without it the app opens on its start page.
- */
+/** url is relative to the app; without it, tapping opens the start page. */
 export type PushMessage = { title: string; body: string; url?: string }
 
-/** What messageFor needs to know about the walk. Times are null until they happened. */
 export type WalkFacts = {
   id: string
   deadline: Date
@@ -58,7 +35,6 @@ export type WalkFacts = {
   lastLocationAt: Date | null
 }
 
-/** A contact linked to the walk, as stored in the contacts table (0005_contacts.sql). */
 export type WalkContact = {
   contactUserId: string | null
   status: 'invited' | 'accepted' | 'paused'
@@ -68,19 +44,13 @@ export function isWalkEvent(value: unknown): value is WalkEvent {
   return walkEvents.includes(value as WalkEvent)
 }
 
-/** Who gets the message: the walker themselves, or the walk's contacts. */
 export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
   return event === 'are_you_ok' || event === 'reminder' ? 'walker' : 'contacts'
 }
 
 /**
- * How long, in seconds, the push service keeps trying to reach a phone that is off.
- * Assumption: an hour for news about a walk; after that "Anna is on the way home" only confuses.
- * Only the grace period for "Are you OK?": after it, the contacts are already being told.
- * A day for the alert: a contact whose phone was off must still get it, and the last location is
- * kept that long too (0012_overdue_alert.sql).
- * Until the new time for "arrival time updated", and at most an hour: once the new time has
- * passed, "No action is needed" may no longer be true.
+ * Seconds the push service keeps trying a phone that is off. The alert lasts a day, as long as the
+ * last location is kept. Assumption: an hour is enough for other walk news.
  */
 export function timeToLive(event: WalkEvent, deadline?: Date, now = new Date()): number {
   if (event === 'reminder') {
@@ -98,10 +68,7 @@ export function timeToLive(event: WalkEvent, deadline?: Date, now = new Date()):
   return 60 * 60
 }
 
-/**
- * The accounts that get a message: contacts who accepted and are not paused. A contact paused
- * during the walk stays linked to it, so they are filtered out here (see docs/backend.md).
- */
+/** A contact paused during the walk stays linked to it, so paused contacts are filtered here. */
 export function recipientsOf(contacts: WalkContact[]): string[] {
   const ids = contacts
     .filter((contact) => contact.status === 'accepted' && contact.contactUserId !== null)
@@ -109,7 +76,7 @@ export function recipientsOf(contacts: WalkContact[]): string[] {
   return [...new Set(ids)]
 }
 
-/** "22:36", in Eindhoven's time zone. The server runs in UTC, so the zone must be given. */
+/** The server runs in UTC, so the time zone must be given. */
 export function formatClock(time: Date): string {
   return new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
@@ -119,20 +86,15 @@ export function formatClock(time: Date): string {
 }
 
 /**
- * The message for an event. Short and calm, and never the location itself: that is shown in the
- * app (SCRUM-102), where the contact can see that it is the last known point and not live. The
- * wording follows the "Trusted contact notifications" design without "her" or "his": the app does
- * not know anyone's pronouns.
+ * Never includes the location: the app shows it, marked as last known and not live. No "her" or
+ * "his": the app does not know anyone's pronouns.
  */
 export function messageFor(
   event: WalkEvent,
   walkerName: string | null,
   walk: WalkFacts,
 ): PushMessage {
-  // Every user picks a name in onboarding, but the server should not crash on an old account.
   const name = walkerName?.trim() || 'Your contact'
-  // Every message to a contact opens this walk in the app (SCRUM-102), not only the alert. Without
-  // it, tapping "is on the way home" only brought the app to the front, which looked broken.
   const walkUrl = `?walk=${walk.id}`
   switch (event) {
     case 'started':
@@ -142,7 +104,7 @@ export function messageFor(
         url: walkUrl,
       }
     case 'home_safe':
-      // After an alert the contacts may be worried or already searching: say clearly it is over.
+      // After an alert the contacts may already be searching.
       if (walk.overdueAt) {
         return {
           title: `${name} is safe`,
@@ -156,8 +118,6 @@ export function messageFor(
         url: walkUrl,
       }
     case 'overdue':
-      // From the design: say what happened without causing panic. Where the location came from and
-      // that it is not live matters most to someone deciding where to look (SCRUM-71, SCRUM-72).
       return {
         title: `${name} hasn't checked in yet`,
         body: [
@@ -169,16 +129,12 @@ export function messageFor(
         url: walkUrl,
       }
     case 'cancelled':
-      // The second sentence matters: without it a contact may wait for a check-in that never comes
-      // and start to worry.
       return {
         title: `${name} stopped the walk`,
         body: `Cancelled at ${formatClock(walk.cancelledAt ?? new Date())}. No check-in will follow.`,
         url: walkUrl,
       }
     case 'deadline_extended':
-      // From the "Trusted contact notifications" design. "No action is needed" matters most: the
-      // contact may have been watching the old time and wondering whether to call.
       return {
         title: `${name} updated the arrival time`,
         body: `${name} needs a little more time to get home. The new expected arrival time is ${formatClock(walk.deadline)}. No action is needed.`,
@@ -191,8 +147,6 @@ export function messageFor(
         url: `?reminder=${encodeURIComponent(walk.id)}`,
       }
     case 'are_you_ok':
-      // To the walker. Says what to do and what happens otherwise, without sounding like an alarm
-      // (SCRUM-72 prototype, screen 06). Nobody has been told anything yet.
       return {
         title: 'Are you OK?',
         body: `Your timer has run out. Open WayBack to say you are home or add time. Otherwise your contacts are told in ${GRACE_MINUTES} minutes.`,
@@ -200,15 +154,12 @@ export function messageFor(
   }
 }
 
-/**
- * The push service answers 404 or 410 when a phone's subscription no longer exists (the app was
- * removed, or notifications were turned off in the phone's settings). That row can be deleted.
- */
+/** 404 or 410: the app was removed or notifications were turned off, so the row can go. */
 export function isSubscriptionGone(statusCode: number | undefined): boolean {
   return statusCode === 404 || statusCode === 410
 }
 
-/** SCRUM-64: reject queued reminders after an extension, check-in, cancellation or expiry. */
+/** A queued reminder is stale after an extension, check-in, cancellation or expiry. */
 export function isReminderCurrent(
   status: string,
   deadline: Date,

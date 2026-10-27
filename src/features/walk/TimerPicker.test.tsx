@@ -43,7 +43,7 @@ test('a quick choice sets the timer, and the chosen one is marked', () => {
   expect(onChange).toHaveBeenCalledWith(32)
 })
 
-test('the user sees when to check in, as on screen 04', () => {
+test('the user sees when to check in', () => {
   renderPicker(20)
 
   expect(screen.getByText('Check in by 22:26')).toBeInTheDocument()

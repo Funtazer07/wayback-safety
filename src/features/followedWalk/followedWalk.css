@@ -1,4 +1,3 @@
-/* Screen 10 (SCRUM-102): what a contact sees after an alert. */
 .followed {
   gap: 1rem;
 }
@@ -34,7 +33,6 @@
   background: var(--surface);
 }
 
-/* Dark text on a light tint keeps strong contrast; the words carry the meaning, not the colour. */
 .followed-box.is-overdue {
   border-color: transparent;
   color: var(--warning-text);
@@ -54,9 +52,7 @@
   margin: 0;
 }
 
-/* The map needs a fixed height inside a normal screen; on the walk screen it fills the rest.
-   flex: none, because .map-area has flex: 1 (map.css): in a flex column that wins over the height,
-   and Safari on iPhone then made the map 0 px high, so only the caption showed. */
+/* Without flex: none, Safari on iPhone made the map 0 px high. */
 .followed-map .map-area {
   flex: none;
   height: 16rem;

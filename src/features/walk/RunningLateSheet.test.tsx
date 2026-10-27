@@ -18,7 +18,7 @@ function renderSheet() {
   return { onExtend, onDismiss }
 }
 
-test('the suggestion says how much and the new check-in time, as on screen 13', () => {
+test('the suggestion says how much and the new check-in time', () => {
   renderSheet()
 
   expect(screen.getByRole('dialog', { name: 'Running late?' })).toBeInTheDocument()

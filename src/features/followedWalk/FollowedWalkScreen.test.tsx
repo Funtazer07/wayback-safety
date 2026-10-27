@@ -13,7 +13,6 @@ vi.mock('./followedWalk.ts', async (importOriginal) => ({
   fetchFollowedWalk,
   watchWalk,
 }))
-// The map needs a real browser; it has its own tests in features/map.
 vi.mock('../map/MapView.tsx', () => ({
   default: (props: {
     lastLocation?: [number, number] | null

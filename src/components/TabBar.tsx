@@ -7,7 +7,7 @@ type TabBarProps = {
   onChange: (tab: Tab) => void
 }
 
-// Simple outline icons, drawn on a 24×24 grid. Decorative: the word under each icon is the label.
+// Decorative: the word under each icon is the label.
 const icons: Record<Tab, string> = {
   places: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
   contacts:
@@ -21,11 +21,7 @@ const labels: Record<Tab, string> = {
   account: 'Account',
 }
 
-/**
- * The bar at the bottom of screen 09 (SCRUM-60, added on 25 Oct beyond the subtask's text).
- * "Map" from the design is left out until it shows something Places does not: Places already has
- * the map.
- */
+/** No Map tab: Places already has the map. */
 function TabBar({ current, onChange }: TabBarProps) {
   return (
     <nav className="tab-bar" aria-label="Main">

@@ -13,19 +13,14 @@ export const brokenLightsLayer = 'broken-lights'
 const routeColour = '#2563eb'
 const empty: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
-/** What the map draws on top of the base map. */
 export type MapData = {
-  /** Only the line of each route is drawn, so a walk can show its route without the counts. */
   routes: Pick<MeasuredRoute, 'coordinates'>[]
   selectedIndex: number
   brokenLights: BrokenLight[]
   position: UserPosition | null
 }
 
-/**
- * Adds our sources and layers. A new base map style removes everything, images included, so this
- * runs again after every style change.
- */
+/** A new base map style removes everything, so this runs after every style change. */
 export async function addOurLayers(map: MapLibreMap): Promise<void> {
   const brokenLight = await loadBrokenLightIcon()
   if (!map.hasImage('broken-light')) map.addImage('broken-light', brokenLight, { pixelRatio: 2 })
@@ -65,7 +60,6 @@ export async function addOurLayers(map: MapLibreMap): Promise<void> {
     layout: rounded,
     paint: { 'line-color': routeColour, 'line-width': 6 },
   })
-  // Invisible and wide, so a route is easy to tap with a finger.
   map.addLayer({
     id: routeHitLayer,
     type: 'line',
@@ -74,7 +68,6 @@ export async function addOurLayers(map: MapLibreMap): Promise<void> {
     paint: { 'line-color': '#000000', 'line-width': 24, 'line-opacity': 0 },
   })
 
-  // Only the lights someone reported as broken are drawn, not the whole register.
   map.addSource('broken-lights', { type: 'geojson', data: empty })
   map.addLayer({
     id: brokenLightsLayer,
@@ -116,7 +109,7 @@ export async function addOurLayers(map: MapLibreMap): Promise<void> {
   })
 }
 
-// A circle on the ground as a polygon, so it keeps its real size in metres at every zoom.
+// A polygon keeps its real size in metres at every zoom.
 function accuracyCircle([longitude, latitude]: LngLat, metres: number): LngLat[] {
   const latitudeRadius = metres / 111320
   const longitudeRadius = metres / (111320 * Math.cos((latitude * Math.PI) / 180))
@@ -133,7 +126,6 @@ function setData(map: MapLibreMap, source: string, data: FeatureCollection) {
   map.getSource<GeoJSONSource>(source)?.setData(data)
 }
 
-/** Puts the latest routes, reports and position on the map. Does nothing before the layers exist. */
 export function drawMapData(map: MapLibreMap, data: MapData): void {
   setData(map, 'routes', {
     type: 'FeatureCollection',

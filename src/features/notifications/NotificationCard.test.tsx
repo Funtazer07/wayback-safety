@@ -8,8 +8,7 @@ const { checkNotifications, enableNotifications } = vi.hoisted(() => ({
   enableNotifications: vi.fn(),
 }))
 
-// The browser parts have their own tests in notifications.test.ts. BrowserPushError stays real, so
-// the card can tell the two kinds of failure apart.
+// BrowserPushError stays real, so the card can tell the two kinds of failure apart.
 vi.mock('./notifications.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./notifications.ts')>()),
   checkNotifications,

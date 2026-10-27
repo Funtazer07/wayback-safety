@@ -1,19 +1,14 @@
-/** Whole minutes from now until the deadline, rounded up. Never below 0. */
 export function minutesUntil(deadline: Date, now: Date): number {
   const milliseconds = deadline.getTime() - now.getTime()
   return Math.max(0, Math.ceil(milliseconds / 60_000))
 }
 
-/** Whole seconds from now until the deadline, rounded up. Never below 0. */
 export function secondsUntil(deadline: Date, now: Date): number {
   const milliseconds = deadline.getTime() - now.getTime()
   return Math.max(0, Math.ceil(milliseconds / 1000))
 }
 
-/**
- * A length of time in words: "35 min", "1 h" or "1 h 35 min". From an hour up, hours and minutes
- * are quicker to read than "95 min".
- */
+/** "35 min", "1 h" or "1 h 35 min". */
 export function formatDuration(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
@@ -22,7 +17,7 @@ export function formatDuration(totalMinutes: number): string {
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`
 }
 
-/** A countdown as on a stopwatch: "12:05", or "1:02:05" from an hour up. */
+/** "12:05", or "1:02:05" from an hour up. */
 export function formatCountdown(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
@@ -34,7 +29,7 @@ export function formatCountdown(totalSeconds: number): string {
     : `${twoDigits(minutes)}:${twoDigits(seconds)}`
 }
 
-/** The part of the walk's time that is still left, from 1 at the start to 0 at the deadline. */
+/** 1 at the start, 0 at the deadline. */
 export function timeLeftShare(startedAt: Date, deadline: Date, now: Date): number {
   const total = deadline.getTime() - startedAt.getTime()
   if (total <= 0) return 0
@@ -42,7 +37,6 @@ export function timeLeftShare(startedAt: Date, deadline: Date, now: Date): numbe
   return Math.min(1, Math.max(0, left))
 }
 
-/** From this many minutes before the deadline the timer warns that time is almost up. */
 const ALMOST_UP_MINUTES = 5
 
 export type TimerPhase = 'on-time' | 'almost-up' | 'time-up'
@@ -57,12 +51,10 @@ export function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000)
 }
 
-/** The time of day as on a 24-hour clock, for example "23:40". */
 export function formatClock(date: Date): string {
   return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
 }
 
-/** SCRUM-64: one-minute reminder requested by the user; the timer colour still changes at 5. */
 export function isReminderDue(deadline: Date, now: Date): boolean {
   const remaining = deadline.getTime() - now.getTime()
   return remaining > 0 && remaining <= 60_000

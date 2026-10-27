@@ -1,11 +1,9 @@
-/* Screen 09 of the prototype: the Activity feed on the Contacts tab. */
 .activity-account {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-/* "ANNA'S ACCOUNT": small green capitals, as in the design. */
 .activity-eyebrow {
   font-size: 0.75rem;
   font-weight: 700;
@@ -23,7 +21,6 @@
   list-style: none;
 }
 
-/* A whole card is one button that opens the walk. */
 .activity-card {
   display: flex;
   flex-direction: column;
@@ -59,7 +56,6 @@
   color: var(--text-muted);
 }
 
-/* The bell in a soft circle. Its colour says the kind of update; the title says it in words. */
 .activity-bell {
   display: grid;
   flex: none;
@@ -96,7 +92,6 @@
   background: var(--page-tint);
 }
 
-/* "View walk ›" on a missed check-in, in the warm brown of the design. */
 .activity-link {
   display: flex;
   justify-content: space-between;
@@ -106,7 +101,6 @@
   color: var(--warning-text);
 }
 
-/* "Trusted contacts ›": the way to screen 14. */
 .activity-circle {
   display: flex;
   align-items: center;

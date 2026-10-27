@@ -6,7 +6,6 @@ type ProfileState = {
   error: string | null
 }
 
-/** Loads the profile of the logged-in user. `profile` is null while loading or after an error. */
 export function useProfile(userId: string | undefined) {
   const [state, setState] = useState<ProfileState>({ profile: null, error: null })
 
