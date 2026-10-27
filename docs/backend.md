@@ -544,9 +544,10 @@ Before 26 Oct only the alert had a link, so tapping the others only brought the 
 "I'm watching". Tapping it calls `watch_walk` (`0019_im_watching.sql`), which saves the moment in
 `walk_contacts.watching_at`, only for a contact on that walk who accepted and is not paused, and
 only while the walk is `active`. The walker's walk screen then shows "Mum is watching your walk"
-(`fetchWalkWatchers`, asked every 30 seconds, when the app comes back on screen and when a push
-arrives). `followed_walk` also says whether this contact already tapped, so the button does not come
-back after reopening the app. From the Studio Krom feedback: choosing contacts without any sign from
+(`fetchWalkWatchers`, asked every 5 seconds while the walk screen is open, when the app comes back
+on screen and when a push arrives). Tapping sends the walker no push, so without the quick check it
+showed only after a reload or up to 30 seconds later. `followed_walk` also says whether this
+contact already tapped, so the button does not come back after reopening the app. From the Studio Krom feedback: choosing contacts without any sign from
 their side may not be enough for the walker to feel someone is looking out. The walker gets no push
 message for it, to keep the walk quiet; they see it on the walk screen.
 

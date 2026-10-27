@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { onPushMessage } from '../../lib/pushMessages.ts'
 import { fetchWalkWatchers } from './walk.ts'
 
-// Assumption: the same as the contact's own screens.
-const THIRTY_SECONDS = 30_000
+// "I'm watching" sends the walker no push, so asking often is the only way it shows quickly.
+// Assumption: every 5 seconds while the walk screen is open is quick enough and costs little.
+const FIVE_SECONDS = 5_000
 
 /** Pass null to load nothing, for example after the walk ended. */
 export function useWalkWatchers(walkId: string | null): string[] {
@@ -21,7 +22,7 @@ export function useWalkWatchers(walkId: string | null): string[] {
     const loadWhenBackOnScreen = () => document.visibilityState === 'visible' && load()
 
     load()
-    const timer = setInterval(load, THIRTY_SECONDS)
+    const timer = setInterval(load, FIVE_SECONDS)
     document.addEventListener('visibilitychange', loadWhenBackOnScreen)
     const stopListening = onPushMessage(load)
     return () => {
