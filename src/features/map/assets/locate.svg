@@ -1,0 +1,32 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Asset 1a4e023ca0c958 &#194;&#183; Icon/location">
+<path id="Circle" d="M16.5005 11C16.5005 14.0378 14.0378 16.5005 11 16.5005C7.96216 16.5005 5.4995 14.0378 5.4995 11C5.4995 7.96216 7.96216 5.4995 11 5.4995C14.0378 5.4995 16.5005 7.96216 16.5005 11Z" fill="white" stroke-width="1.833" stroke="#18352D"/>
+<circle id="Circle_2" cx="11" cy="11" r="1.833" fill="#18352D"/>
+<g id="Editable vector" clip-path="url(#clip0_0_25)">
+<path id="Vector" d="M11 0.917V3.667" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round" stroke="#18352D"/>
+</g>
+<g id="Editable vector_2" clip-path="url(#clip1_0_25)">
+<path id="Vector_2" d="M11 18.333V21.083" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round" stroke="#18352D"/>
+</g>
+<g id="Editable vector_3" clip-path="url(#clip2_0_25)">
+<path id="Vector_3" d="M0.917 11H3.667" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round" stroke="#18352D"/>
+</g>
+<g id="Editable vector_4" clip-path="url(#clip3_0_25)">
+<path id="Vector_4" d="M18.333 11H21.083" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round" stroke="#18352D"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_25">
+<rect width="1.833" height="4.583" fill="white" transform="translate(10.0835 0.0005)"/>
+</clipPath>
+<clipPath id="clip1_0_25">
+<rect width="1.833" height="4.583" fill="white" transform="translate(10.0835 17.4165)"/>
+</clipPath>
+<clipPath id="clip2_0_25">
+<rect width="4.583" height="1.833" fill="white" transform="translate(0.0005 10.0835)"/>
+</clipPath>
+<clipPath id="clip3_0_25">
+<rect width="4.583" height="1.833" fill="white" transform="translate(17.4165 10.0835)"/>
+</clipPath>
+</defs>
+</svg>

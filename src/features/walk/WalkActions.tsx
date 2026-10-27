@@ -2,13 +2,19 @@ import { useState } from 'react'
 import CancelWalkSheet from './CancelWalkSheet.tsx'
 
 type WalkActionsProps = {
+  compact?: boolean
+  /** Adds minutes to the deadline on the server (SCRUM-63). Fails when the server refuses. */
   onExtend: (minutes: number) => Promise<void>
   onCancel: () => Promise<void>
 }
 
 export const EXTEND_CHOICES = [5, 10, 15]
 
-function WalkActions({ onExtend, onCancel }: WalkActionsProps) {
+/**
+ * "Need more time? +5 / +10 / +15" and "Cancel walk" under "I'm home" (SCRUM-94). The deadline only
+ * moves when the user taps: the app never moves it by itself (client rule, SCRUM-12).
+ */
+function WalkActions({ onExtend, onCancel, compact = false }: WalkActionsProps) {
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
@@ -24,7 +30,7 @@ function WalkActions({ onExtend, onCancel }: WalkActionsProps) {
     setIsBusy(false)
   }
 
-  return (
+  const actions = (
     <>
       <div className="walk-more-time">
         <p className="walk-more-time-title" id="walk-more-time-title">
@@ -53,14 +59,22 @@ function WalkActions({ onExtend, onCancel }: WalkActionsProps) {
       </div>
       <button
         type="button"
-        className="button-danger"
+        className={compact ? 'button-danger walk-cancel-icon' : 'button-danger'}
+        aria-label={compact ? 'Cancel walk' : undefined}
+        title={compact ? 'Cancel walk' : undefined}
         disabled={isBusy}
         onClick={() => {
           setError(null)
           setIsConfirming(true)
         }}
       >
-        Cancel walk
+        {compact ? (
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        ) : (
+          'Cancel walk'
+        )}
       </button>
       {isConfirming && (
         <CancelWalkSheet
@@ -74,6 +88,8 @@ function WalkActions({ onExtend, onCancel }: WalkActionsProps) {
       )}
     </>
   )
+
+  return compact ? <div className="walk-actions-inline">{actions}</div> : actions
 }
 
 export default WalkActions

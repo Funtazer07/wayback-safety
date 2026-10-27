@@ -471,3 +471,331 @@
   color: var(--green-text);
   font-weight: 700;
 }
+
+/* Walking panel from the user's updated Figma; other timer screens keep their existing styles. */
+.walk-navigation-panel {
+  position: relative;
+  z-index: 1;
+  gap: 0.3125rem;
+  padding-top: 0.625rem;
+  border-radius: 1.75rem 1.75rem 0 0;
+  max-height: 60dvh;
+  overflow-y: auto;
+  flex: none;
+}
+
+.walk-navigation-panel.is-almost-up,
+.walk-navigation-panel.is-time-up {
+  background: var(--surface);
+}
+
+.walk-sheet-handle {
+  width: 2.75rem;
+  height: 0.25rem;
+  flex: none;
+  margin: 0 auto 0.3125rem;
+  border-radius: 1rem;
+  background: var(--border);
+}
+
+.walk-status-timer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+}
+
+.walk-status-count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.walk-status-count strong {
+  font-size: 2.125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.walk-status-count span {
+  font-size: 1.25rem;
+}
+
+.walk-status-track {
+  height: 0.625rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--border);
+}
+
+.walk-status-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--danger);
+  transition: width 1s linear;
+}
+
+.walk-status-timer.is-almost-up .walk-status-fill,
+.walk-status-timer.is-time-up .walk-status-fill {
+  background: var(--danger);
+}
+
+.walk-navigation-panel .walk-panel-top {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.walk-navigation-panel .walk-panel-text {
+  flex: 1;
+}
+
+.walk-navigation-panel .walk-small {
+  margin-top: 0;
+  font-size: 0.75rem;
+}
+
+.walk-navigation-panel .walk-destination {
+  font-size: 1.5625rem;
+}
+
+.walk-navigation-panel .check-in-actions {
+  width: auto;
+  flex: none;
+}
+
+.walk-navigation-panel .check-in-button {
+  min-height: 2.875rem;
+  width: auto;
+  padding: 0.5rem 1rem;
+}
+
+.walk-deadline {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.walk-actions-inline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.walk-actions-inline .walk-more-time,
+.walk-actions-inline .walk-extend-row {
+  display: contents;
+}
+
+.walk-actions-inline .walk-more-time-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.walk-actions-inline > button,
+.walk-actions-inline .walk-extend {
+  min-width: 0;
+  padding: 0.375rem 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+}
+
+.walk-actions-inline [role='alert'] {
+  grid-column: 1 / -1;
+}
+
+/* Figma 117:927: 390 × 224 panel; widths adapt below the reference phone size. */
+.walk-navigation-panel {
+  min-height: 14rem;
+  padding: 0.625rem 1.25rem max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.walk-navigation-panel .walk-sheet-handle {
+  margin-bottom: 0;
+}
+
+.walk-status-count {
+  height: 2.5625rem;
+  align-items: center;
+}
+
+.walk-navigation-panel .walk-panel-top {
+  min-height: 2.875rem;
+}
+
+.walk-navigation-panel .walk-small {
+  line-height: 1.2;
+}
+
+.walk-navigation-panel .walk-destination {
+  line-height: 1.2;
+}
+
+.walk-navigation-panel .check-in-button {
+  width: 7.5625rem;
+  min-height: 2.875rem;
+  padding: 0.5rem;
+}
+
+.walk-navigation-panel .walk-deadline {
+  line-height: 1.2;
+}
+
+.walk-actions-inline > button,
+.walk-actions-inline .walk-extend {
+  min-height: 2.75rem;
+  height: 2.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walk-status-fill {
+    transition: none;
+  }
+}
+
+.walk-actions-inline .walk-extend {
+  font-size: 0.875rem;
+}
+
+.walk-actions-inline > .walk-cancel-icon {
+  justify-self: start;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--surface);
+  background: var(--danger);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.walk-navigation-panel .check-in-button {
+  height: 2.875rem;
+  line-height: 1.2;
+}
+
+/* Inter is the font used by the Figma walking panel. Scope it to this screen only. */
+@font-face {
+  font-family: 'WayBack Walk Inter';
+  src: url('./assets/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.walk-live {
+  --report-button: #ffbe79;
+  --report-symbol: #000;
+}
+
+.walk-navigation-panel {
+  --text: #18352d;
+  --text-muted: #5e746b;
+  --green-soft: #edf8f0;
+  --danger: #c73d39;
+  font-family: 'WayBack Walk Inter', sans-serif;
+}
+
+.walk-navigation-panel button {
+  font-family: inherit;
+  font-synthesis: none;
+}
+
+.walk-actions-inline > .walk-cancel-icon {
+  position: relative;
+}
+
+.walk-cancel-icon svg {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+/* Wider time actions, with the cancel circle separated at the right edge of the row. */
+.walk-actions-inline {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 2.75rem;
+  column-gap: 0.4375rem;
+  padding-right: 1.5rem;
+}
+
+.walk-actions-inline .walk-extend {
+  min-height: 2.875rem;
+  height: 2.875rem;
+  font-size: 0.9375rem;
+}
+
+.walk-actions-inline > .walk-cancel-icon {
+  justify-self: end;
+  align-self: center;
+}
+
+/* Explicit weight avoids the browser making <strong> heavier than the Figma bold. */
+.walk-status-count strong {
+  font-weight: 700;
+}
+
+/* The moving highlight and arrow show the direction of elapsed time without changing its value. */
+.walk-status-fill {
+  position: relative;
+  min-width: 0.75rem;
+  background: linear-gradient(90deg, var(--danger), var(--report-button), var(--danger));
+  background-size: 200% 100%;
+  animation: walk-progress-glow 3s linear infinite;
+}
+
+.walk-status-fill::after {
+  content: '';
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-top: 0.1rem solid var(--surface);
+  border-right: 0.1rem solid var(--surface);
+  animation: walk-progress-arrow 1.6s ease-in-out infinite;
+}
+
+@keyframes walk-progress-glow {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes walk-progress-arrow {
+  0% {
+    transform: translate(-0.1875rem, -50%) rotate(45deg);
+    opacity: 0.4;
+  }
+  75%,
+  100% {
+    transform: translate(0, -50%) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walk-status-fill,
+  .walk-status-fill::after {
+    animation: none;
+  }
+  .walk-status-fill::after {
+    transform: translateY(-50%) rotate(45deg);
+  }
+}
+
+/* A slightly stronger version of the same mint, only for the active-walk time buttons. */
+.walk-navigation-panel .walk-actions-inline .walk-extend {
+  background: color-mix(in srgb, var(--green-soft) 89%, var(--green-button));
+}
