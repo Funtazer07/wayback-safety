@@ -9,12 +9,8 @@ type PlannedRouteMapProps = {
   route: LngLat[]
 }
 
-/**
- * The route the walker planned, for a contact while the walk is on the way. It is the plan, not
- * where the walker is now: no position is shown, and the caption says so.
- */
+/** The plan, not where the walker is now: no position is shown, and the caption says so. */
 function PlannedRouteMap({ walkerName, route }: PlannedRouteMapProps) {
-  // Show the whole route once, then let the contact look around.
   const [camera] = useState<CameraMove>(() => ({
     id: Date.now(),
     kind: 'fit',
@@ -22,8 +18,7 @@ function PlannedRouteMap({ walkerName, route }: PlannedRouteMapProps) {
     padding: { top: 40, bottom: 40, left: 32, right: 32 },
   }))
 
-  // The map only covers Eindhoven (SCRUM-26). A route that leaves it would be cut off, so it is
-  // better not to show a half route.
+  // The map only covers Eindhoven; better no route than half of one.
   if (!route.every(isInEindhoven)) return null
 
   return (
@@ -36,7 +31,6 @@ function PlannedRouteMap({ walkerName, route }: PlannedRouteMapProps) {
           start={route[0]}
           destination={route.at(-1) ?? null}
           camera={camera}
-          // A contact only looks; nothing to plan or report here.
           onHold={() => {}}
           onBrokenLightTap={() => {}}
         />

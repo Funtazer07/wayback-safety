@@ -1,10 +1,8 @@
-/* The bottom bar of screen 09. It stays at the bottom of the phone, within thumb reach. */
 .tab-bar {
   position: fixed;
   right: 0;
   bottom: 0;
   left: 0;
-  /* Above the map, whose layers have z-index values of their own. */
   z-index: 5;
   display: flex;
   justify-content: center;
@@ -41,15 +39,13 @@
   stroke-linejoin: round;
 }
 
-/* The open tab: a tinted background and bold words, so it is not shown by colour alone. */
+/* Also bold, so colour is not the only sign. */
 .tab-bar-item[aria-current='page'] {
   font-weight: 700;
   color: var(--green);
   background: var(--green-soft);
 }
 
-/* Screens above the bar keep their content and their buttons out from under it. The buttons stay
-   in view just above the bar (index.css). */
 .with-tab-bar .screen {
   padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
 }

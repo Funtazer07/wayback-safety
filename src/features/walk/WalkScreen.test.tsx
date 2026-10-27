@@ -4,7 +4,6 @@ import type { Walk } from './walk.ts'
 import WalkScreen from './WalkScreen.tsx'
 
 vi.mock('../../lib/supabase.ts', () => ({ supabase: null }))
-// The map needs a real browser; it has its own tests in features/map.
 vi.mock('../map/WalkMap.tsx', () => ({ default: () => null }))
 
 const walk: Walk = {

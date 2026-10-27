@@ -10,9 +10,7 @@ type LastLocationMapProps = {
   savedAt: Date
 }
 
-/** The map on screen 10: one pin where the walker was last seen, nothing else. */
 function LastLocationMap({ coordinates, savedAt }: LastLocationMapProps) {
-  // Centre on the pin once, then let the contact look around.
   const [camera] = useState<CameraMove>(() => ({
     id: Date.now(),
     kind: 'centre',
@@ -20,7 +18,7 @@ function LastLocationMap({ coordinates, savedAt }: LastLocationMapProps) {
     zoom: 16,
   }))
 
-  // The map only covers Eindhoven (SCRUM-26), so a point outside it cannot be shown there.
+  // The map only covers Eindhoven.
   if (!isInEindhoven(coordinates)) {
     return (
       <p className="followed-note">
@@ -38,7 +36,6 @@ function LastLocationMap({ coordinates, savedAt }: LastLocationMapProps) {
           brokenLights={[]}
           lastLocation={coordinates}
           camera={camera}
-          // A contact only looks; nothing to plan or report here.
           onHold={() => {}}
           onBrokenLightTap={() => {}}
         />

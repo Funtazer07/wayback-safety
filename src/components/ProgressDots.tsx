@@ -3,7 +3,7 @@ type ProgressDotsProps = {
   total?: number
 }
 
-/** The row of dots at the top of each onboarding screen. `step` starts at 1. */
+/** `step` starts at 1. */
 function ProgressDots({ step, total = 5 }: ProgressDotsProps) {
   return (
     <div className="progress-dots" role="img" aria-label={`Step ${step} of ${total}`}>

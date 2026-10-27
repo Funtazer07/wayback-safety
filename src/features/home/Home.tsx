@@ -8,11 +8,9 @@ import './home.css'
 type HomeProps = {
   displayName: string
   onStartWalk: () => void
-  /** Hears which route is on the map, so the walk can show it. */
   onRouteChange: (route: PlannedRoute | null) => void
 }
 
-/** Screen 3 of the onboarding v2 wireframe: where the onboarding ends. */
 function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 

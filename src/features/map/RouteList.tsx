@@ -15,7 +15,6 @@ function brokenText(count: number): string {
     : `${count} lights on this route are reported broken`
 }
 
-/** The routes to choose from, one compact row each, so all of them compare at a glance. */
 function RouteList({ routes, selectedIndex, onSelect }: RouteListProps) {
   const fastest = fastestIndex(routes)
   const mostLights = mostLightsIndex(routes)
@@ -26,7 +25,7 @@ function RouteList({ routes, selectedIndex, onSelect }: RouteListProps) {
       <div className="route-list">
         {routes.map((route, index) => (
           <button
-            // The whole list is replaced after each plan, so the place in the list is a fine key.
+            // The whole list is replaced after each plan.
             key={index}
             type="button"
             className="route-card"

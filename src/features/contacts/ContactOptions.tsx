@@ -7,7 +7,6 @@ type ContactOptionsProps = {
   onRemove: () => Promise<void>
 }
 
-/** "Mum · contact options" on screen 14: pause or resume updates, and remove the contact. */
 function ContactOptions({ contact, onPause, onRemove }: ContactOptionsProps) {
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false)
   const [isBusy, setIsBusy] = useState(false)
@@ -24,7 +23,6 @@ function ContactOptions({ contact, onPause, onRemove }: ContactOptionsProps) {
     setIsBusy(false)
   }
 
-  // An open invite cannot be paused: only "cancel" makes sense for it.
   const isInvite = contact.status === 'invited'
 
   return (

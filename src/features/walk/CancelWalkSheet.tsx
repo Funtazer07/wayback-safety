@@ -5,10 +5,7 @@ type CancelWalkSheetProps = {
   onKeepWalking: () => void
 }
 
-/**
- * "Cancel this walk?" from the walk screen variants of the prototype. Asked first, because after a
- * cancel nobody is alerted any more if the user does not get home.
- */
+/** Asked first: after a cancel, nobody is alerted if the user does not get home. */
 function CancelWalkSheet({ isBusy, error, onConfirm, onKeepWalking }: CancelWalkSheetProps) {
   return (
     <div className="sheet-backdrop" onClick={onKeepWalking}>

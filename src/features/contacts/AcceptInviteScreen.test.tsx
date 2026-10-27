@@ -9,7 +9,6 @@ const api = vi.hoisted(() => ({
 }))
 
 vi.mock('./contacts.ts', () => api)
-// The notification card has its own tests in features/notifications.
 vi.mock('../notifications/NotificationCard.tsx', () => ({
   default: ({ reason }: { reason: string }) => <p>Notification card: {reason}</p>,
 }))

@@ -8,10 +8,7 @@ function markerElement(className: string, label: string, html = ''): HTMLElement
   return element
 }
 
-/**
- * Where a walker was last seen (SCRUM-102): an amber pin, so it does not look like a destination.
- * The label says it is the last known place, not where they are now.
- */
+/** Amber, so it does not look like a destination. */
 export function lastLocationMarker(): maplibregl.Marker {
   const pin = `
     <svg viewBox="0 0 36 44" aria-hidden="true">
@@ -25,12 +22,10 @@ export function lastLocationMarker(): maplibregl.Marker {
   })
 }
 
-/** The start the user tapped: a white dot with a dark edge. */
 export function startMarker(): maplibregl.Marker {
   return new maplibregl.Marker({ element: markerElement('map-start', 'Start') })
 }
 
-/** The destination: a red pin whose point marks the spot. */
 export function destinationMarker(): maplibregl.Marker {
   const pin = `
     <svg viewBox="0 0 36 44" aria-hidden="true">
@@ -44,7 +39,6 @@ export function destinationMarker(): maplibregl.Marker {
   })
 }
 
-/** A red ring around the street light the user is about to report, to check it is the right one. */
 export function foundLampMarker(): maplibregl.Marker {
   return new maplibregl.Marker({
     element: markerElement('map-found-lamp', 'The street light you are reporting'),

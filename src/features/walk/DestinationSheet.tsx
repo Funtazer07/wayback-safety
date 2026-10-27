@@ -7,7 +7,6 @@ type DestinationSheetProps = {
   onClose: () => void
 }
 
-/** Screen 1b of the walk wireframe: pick the saved place or type an address. */
 function DestinationSheet({ destination, onUse, onClose }: DestinationSheetProps) {
   const [address, setAddress] = useState(destination === HOME ? '' : destination)
   const isHomeSelected = address.trim() === ''

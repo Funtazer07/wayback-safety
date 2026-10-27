@@ -8,7 +8,6 @@ const auth = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
 }))
 
-// A stand-in for the real backend, so the tests never talk to Supabase.
 vi.mock('../../lib/supabase.ts', () => ({ supabase: { auth } }))
 
 beforeEach(() => {

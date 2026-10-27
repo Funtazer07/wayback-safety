@@ -6,14 +6,11 @@ import './checkIn.css'
 
 type HomeSafeScreenProps = {
   walkId: string
-  /** When the user checked in. */
   endedAt: Date
-  /** Back to Home ("your places"). */
   onDone: () => void
 }
 
-// The three things the check-in did, from screen 12. Each one is true the moment the server
-// answers: the walk is 'safe', the location is erased (0004) and the check-in time is saved.
+// All three are true the moment the server answers the check-in.
 const doneSteps = ['Timer stopped', 'Location sharing stopped', 'Check-in saved']
 
 function Tick() {
@@ -24,10 +21,6 @@ function Tick() {
   )
 }
 
-/**
- * Screen 12 of the prototype (SCRUM-106): the walk has ended, and who was told. Replaces the small
- * message that was shown over the walk screen before.
- */
 function HomeSafeScreen({ walkId, endedAt, onDone }: HomeSafeScreenProps) {
   const update = useArrivalUpdate(walkId)
 
@@ -63,11 +56,7 @@ function HomeSafeScreen({ walkId, endedAt, onDone }: HomeSafeScreenProps) {
   )
 }
 
-/**
- * "Mum & Alex · Safe-arrival update sent". The design says "delivered", but the app cannot know
- * that a phone showed the message, only that it was sent, so it says "sent". Left out when the
- * walk had no contacts.
- */
+/** Says "sent", not "delivered": the app cannot know that a phone showed the message. */
 function ContactsTold({ update }: { update: ArrivalUpdate }) {
   if (update.told.length === 0 && update.notReached.length === 0) return null
 

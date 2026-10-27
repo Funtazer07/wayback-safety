@@ -3,10 +3,7 @@ import { fetchAlertStatus } from '../contacts/contacts.ts'
 import { arrivalUpdate, type ArrivalUpdate } from './arrival.ts'
 import { fetchWalkContacts } from './walk.ts'
 
-/**
- * Who heard that the user got home (SCRUM-106). Null while loading, or when the contacts could
- * not be loaded; the screen then leaves the contacts card out instead of guessing.
- */
+/** Null while loading or after an error; the screen then leaves the card out. */
 export function useArrivalUpdate(walkId: string): ArrivalUpdate | null {
   const [update, setUpdate] = useState<ArrivalUpdate | null>(null)
 
@@ -14,7 +11,7 @@ export function useArrivalUpdate(walkId: string): ArrivalUpdate | null {
     let isCurrent = true
     Promise.all([
       fetchWalkContacts(walkId),
-      // Extra information: without it everyone who accepted counts as told.
+      // Without it, everyone who accepted counts as told.
       fetchAlertStatus().catch(() => new Map<string, boolean>()),
     ])
       .then(

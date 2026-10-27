@@ -4,18 +4,11 @@ import type { TimerRange } from './timerSuggestion.ts'
 type TimerPickerProps = {
   minutes: number
   onChange: (minutes: number) => void
-  /** How far the slider goes; adapts to the planned route (timerSuggestion.ts). */
   range: TimerRange
-  /** The quick choices under the slider, in minutes. */
   presets: number[]
   now: Date
 }
 
-/**
- * "Choose your timer" on screen 04: the minutes in big text, a slider in steps of one minute with
- * − and + for a single minute, the quick choices, and "Check in by 22:26". The design has − and +
- * only; the slider was added on 26 Oct because steps of 5 minutes felt too rough.
- */
 function TimerPicker({ minutes, onChange, range, presets, now }: TimerPickerProps) {
   const checkInBy = formatClock(addMinutes(now, minutes))
 
@@ -50,13 +43,11 @@ function TimerPicker({ minutes, onChange, range, presets, now }: TimerPickerProp
           type="range"
           className="walk-slider"
           aria-label="Walk timer in minutes"
-          // Read out as "17 minutes, check in by 22:23" instead of only a number.
           aria-valuetext={`${formatDuration(minutes)}, check in by ${checkInBy}`}
           min={range.min}
           max={range.max}
           step={1}
           value={minutes}
-          // Filled up to the thumb, so the chosen amount is visible at a glance.
           style={{
             ['--fill' as string]: `${((minutes - range.min) / Math.max(1, range.max - range.min)) * 100}%`,
           }}

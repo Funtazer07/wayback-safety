@@ -2,19 +2,12 @@ import { useState } from 'react'
 import CancelWalkSheet from './CancelWalkSheet.tsx'
 
 type WalkActionsProps = {
-  /** Adds minutes to the deadline on the server (SCRUM-63). Fails when the server refuses. */
   onExtend: (minutes: number) => Promise<void>
-  /** Stops the walk on the server. Fails when the server refuses. */
   onCancel: () => Promise<void>
 }
 
-// The three amounts of the walk screen variants and screen 13.
 export const EXTEND_CHOICES = [5, 10, 15]
 
-/**
- * "Need more time? +5 / +10 / +15" and "Cancel walk" under "I'm home" (SCRUM-94). The deadline only
- * moves when the user taps: the app never moves it by itself (client rule, SCRUM-12).
- */
 function WalkActions({ onExtend, onCancel }: WalkActionsProps) {
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)

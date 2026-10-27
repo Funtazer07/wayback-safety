@@ -7,10 +7,6 @@ import {
 } from './brokenLights.ts'
 import type { Lamp } from './lamps.ts'
 
-/**
- * The street lights reported as broken, by anyone. Adding or removing one saves it on the server
- * and returns the new list; it throws when the server refuses.
- */
 export function useBrokenLights() {
   const [brokenLights, setBrokenLights] = useState<BrokenLight[]>([])
 
@@ -18,8 +14,7 @@ export function useBrokenLights() {
     let isCurrent = true
     fetchBrokenLights()
       .then((lights) => isCurrent && setBrokenLights(lights))
-      // The map and the routes still work without the reports, so a failed load is not shown as an
-      // error. The routes then count every light as working.
+      // The map works without the reports, so a failed load is not an error.
       .catch(() => {})
     return () => {
       isCurrent = false

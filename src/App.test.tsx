@@ -27,7 +27,6 @@ function walkEndingIn(minutes: number) {
   }
 }
 
-// Stand-ins for the real backend, so the tests never talk to Supabase.
 vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
@@ -47,15 +46,11 @@ vi.mock('./features/followedWalk/followedWalk.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/followedWalk/followedWalk.ts')>()),
   ...followed,
 }))
-// The map needs a real browser; it has its own tests in features/map.
-// A route chosen on Home, from Stratumseind to the station.
 const routeViaStratumseind = vi.hoisted((): [number, number][] => [
   [5.4791, 51.4385],
   [5.4794, 51.4409],
   [5.4797, 51.4433],
 ])
-// The Home map's stand-in has a button that chooses a route, and the walk map's stand-in says
-// which route it got.
 vi.mock('./features/map/RoutePlanner.tsx', () => ({
   default: ({
     onRouteChange,

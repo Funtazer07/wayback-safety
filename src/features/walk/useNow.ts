@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react'
 
-/**
- * The current time, refreshed every second, so a countdown on screen keeps moving. A locked phone
- * pauses that refresh, so the time is also read again the moment the app is back on screen.
- * Without it the user would see the old number for a moment after unlocking.
- */
+/** Also refreshes when the app is back on screen: a locked phone pauses the timer. */
 export function useNow(): Date {
   const [now, setNow] = useState(() => new Date())
 

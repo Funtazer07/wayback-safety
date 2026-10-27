@@ -5,13 +5,10 @@ function client() {
   return supabase
 }
 
-// Where Google (or the link in a confirmation email) sends the user back to. Includes the
-// subfolder on GitHub Pages.
 function appUrl() {
   return new URL(import.meta.env.BASE_URL, window.location.origin).href
 }
 
-/** Leaves the app for the Google sign-in page. The user comes back logged in. */
 export async function signInWithGoogle() {
   const { error } = await client().auth.signInWithOAuth({
     provider: 'google',
@@ -20,7 +17,7 @@ export async function signInWithGoogle() {
   if (error) throw error
 }
 
-/** Returns true when the user still has to confirm their email address before being logged in. */
+/** True when the user still has to confirm their email address. */
 export async function signUpWithPassword(email: string, password: string) {
   const { data, error } = await client().auth.signUp({
     email,

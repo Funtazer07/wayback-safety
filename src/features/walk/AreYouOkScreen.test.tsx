@@ -91,6 +91,5 @@ test('once overdue the user is told the contacts know, and can still say they ar
   expect(screen.getByRole('heading', { name: 'We told Mum and Alex' })).toBeInTheDocument()
   expect(screen.getByText(/Tap I’m home to let them know you are safe/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'I’m home' })).toBeEnabled()
-  // The server does not extend an overdue walk (SCRUM-63).
   expect(screen.queryByRole('button', { name: /Add 5 minutes/ })).not.toBeInTheDocument()
 })

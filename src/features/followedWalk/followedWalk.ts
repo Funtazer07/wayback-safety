@@ -1,11 +1,7 @@
 import { supabase } from '../../lib/supabase.ts'
 import type { LngLat } from '../map/geometry.ts'
 
-/**
- * A walk seen by one of its contacts (SCRUM-102). Only what the server shares with a contact:
- * no destination name, the planned route only while the walk is on the way, and the location only
- * while the walk is overdue.
- */
+/** The server shares the route only while on the way, and the location only while overdue. */
 export type FollowedWalk = {
   walkerName: string
   status: 'active' | 'safe' | 'overdue' | 'cancelled'
@@ -13,15 +9,11 @@ export type FollowedWalk = {
   overdueAt: Date | null
   checkedInAt: Date | null
   cancelledAt: Date | null
-  /** Where the walker was last seen and when. Null when not overdue, or nothing was shared. */
   lastLocation: { coordinates: LngLat; savedAt: Date } | null
-  /** Whether this contact already tapped "I'm watching" on this walk (SCRUM-114). */
   youAreWatching: boolean
-  /** The route the walker planned, while the walk is on the way. Null without one. Not live. */
   route: LngLat[] | null
 }
 
-// One row from followed_walk() in supabase/migrations/0023_shared_walk_route.sql (first in 0013).
 type FollowedWalkRow = {
   walker_name: string | null
   status: FollowedWalk['status']
@@ -36,7 +28,6 @@ type FollowedWalkRow = {
   route: LngLat[] | null
 }
 
-/** The server's answer when the walk does not exist or this user is not one of its contacts. */
 export class NotSharedError extends Error {
   constructor() {
     super('This walk is not shared with you')
@@ -68,16 +59,11 @@ function toFollowedWalk(row: FollowedWalkRow): FollowedWalk {
   }
 }
 
-/**
- * The contact taps "I'm watching" (SCRUM-114), so the walker sees someone is looking out. Only
- * while the walk is on the way; the server refuses otherwise.
- */
 export async function watchWalk(walkId: string): Promise<void> {
   const { error } = await client().rpc('watch_walk', { walk_id: walkId })
   if (error) throw error
 }
 
-/** The walk with this id, as its contact may see it. Fails with NotSharedError when not allowed. */
 export async function fetchFollowedWalk(walkId: string): Promise<FollowedWalk> {
   const { data, error } = await client()
     .rpc('followed_walk', { walk_id: walkId })
@@ -89,14 +75,10 @@ export async function fetchFollowedWalk(walkId: string): Promise<FollowedWalk> {
   return toFollowedWalk(data)
 }
 
-/**
- * The latest walk of someone the user looks out for, as shown on the Contacts tab (SCRUM-115).
- * Only the status and its times: no location, no destination.
- */
 export type ContactWalk = {
   walkId: string
   walkerName: string
-  /** The user's own contacts row for the walker. Null when the user removed them from the list. */
+  /** Null when the user removed the walker from their list. */
   contactId: string | null
   status: FollowedWalk['status']
   startedAt: Date
@@ -106,7 +88,6 @@ export type ContactWalk = {
   cancelledAt: Date | null
 }
 
-// One row from followed_walk_statuses() in supabase/migrations/0018_walk_start_for_activity.sql.
 type ContactWalkRow = {
   walk_id: string
   walker_name: string | null
@@ -119,10 +100,7 @@ type ContactWalkRow = {
   cancelled_at: string | null
 }
 
-/**
- * One walk per person the user looks out for: on the way, overdue, or ended in the last 12 hours.
- * The server only returns walks the user may open.
- */
+/** One walk per person: on the way, overdue, or ended in the last 12 hours. */
 export async function fetchContactWalks(): Promise<ContactWalk[]> {
   const { data, error } = await client().rpc('followed_walk_statuses')
   if (error) throw error
@@ -139,15 +117,11 @@ export async function fetchContactWalks(): Promise<ContactWalk[]> {
   }))
 }
 
-// The alert links to the app with ?walk=<id> (SCRUM-74). Signing in first (Google sends the user
-// away and back) loses that part of the address, so it is kept here for this tab until it is used.
+// Google sign-in drops ?walk=<id> from the address, so it is kept here until it is used.
 const storageKey = 'wayback.openWalk'
 const walkIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/**
- * The walk the app was opened for, from ?walk=<id> or from before signing in. Removes ?walk= from
- * the address bar, so a reload does not open it again by surprise. Null when there is none.
- */
+/** Removes ?walk= from the address bar, so a reload does not open it again. */
 export function takeOpenedWalkId(): string | null {
   const url = new URL(window.location.href)
   const fromUrl = url.searchParams.get('walk')
@@ -166,11 +140,9 @@ export function takeOpenedWalkId(): string | null {
   } catch {
     // Storage blocked: only the address bar counts.
   }
-  // Anything else in the address is ignored instead of being sent to the server.
   return walkId && walkIdPattern.test(walkId) ? walkId : null
 }
 
-/** The contact closed the walk: do not open it again. */
 export function forgetOpenedWalk(): void {
   try {
     sessionStorage.removeItem(storageKey)

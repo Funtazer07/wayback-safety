@@ -1,9 +1,5 @@
 import { namesInWords } from './grace.ts'
 
-/**
- * "Mum is watching your walk" on the walk screen (SCRUM-114): the contacts who tapped "I'm
- * watching". Shows nothing until someone did, so a walk without it does not look wrong.
- */
 function WatchersLine({ names }: { names: string[] }) {
   if (names.length === 0) return null
 

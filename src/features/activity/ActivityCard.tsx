@@ -6,10 +6,6 @@ type ActivityCardProps = {
   onOpen: () => void
 }
 
-/**
- * One update in the feed (screen 09): a bell, who and what, the time, and the details. The whole
- * card opens the walk; an overdue one also says "View walk", as in the design.
- */
 function ActivityCard({ update, now, onOpen }: ActivityCardProps) {
   return (
     <li>

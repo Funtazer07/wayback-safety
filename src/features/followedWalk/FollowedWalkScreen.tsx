@@ -9,14 +9,10 @@ import './followedWalk.css'
 
 type FollowedWalkScreenProps = {
   walkId: string
-  /** Closes this screen and goes back to Home. */
   onClose: () => void
 }
 
-/**
- * Screen 10 of the SCRUM-72 prototype: what a contact sees after tapping the alert (SCRUM-74).
- * "Call" and "Message" from the design are left out: the app has no phone numbers (SCRUM-102).
- */
+/** No Call or Message buttons: the app has no phone numbers. */
 function FollowedWalkScreen({ walkId, onClose }: FollowedWalkScreenProps) {
   const { walk, isLoading, error } = useFollowedWalk(walkId)
 
@@ -30,7 +26,6 @@ function FollowedWalkScreen({ walkId, onClose }: FollowedWalkScreenProps) {
   )
 }
 
-// " at 22:44", or nothing. The database always saves these times, so nothing is a safety net only.
 function atTime(time: Date | null): string {
   return time ? ` at ${formatClock(time)}` : ''
 }
@@ -61,8 +56,6 @@ function WalkDetails({ walkId, walk }: { walkId: string; walk: FollowedWalk }) {
   }
 
   if (walk.status === 'active') {
-    // Opened from "is on the way home": nothing is wrong yet, and no location is shared. The planned
-    // route is, when the walker started with one.
     return (
       <>
         <WalkerHeading name={name} title={`${name} is on the way home`} />
@@ -105,7 +98,6 @@ function WalkDetails({ walkId, walk }: { walkId: string; walk: FollowedWalk }) {
   )
 }
 
-/** The walker's initial in a circle next to the heading, as on screen 10. */
 function WalkerHeading({ name, title }: { name: string; title: string }) {
   return (
     <div className="followed-heading">

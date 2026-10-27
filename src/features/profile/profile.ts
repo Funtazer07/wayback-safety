@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase.ts'
 
 export type Profile = {
-  /** First name or nickname. null until the user has filled in the "What should we call you?" screen. */
+  /** null until onboarding is done. */
   displayName: string | null
 }
 
@@ -20,7 +20,7 @@ export async function fetchProfile(userId: string): Promise<Profile> {
   return { displayName: data.display_name }
 }
 
-/** Saves the name and records that the user confirmed being 16 or older. */
+/** Also records that the user confirmed being 16 or older. */
 export async function completeProfile(userId: string, displayName: string) {
   const { error } = await client()
     .from('profiles')

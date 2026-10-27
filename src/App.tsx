@@ -41,16 +41,11 @@ function App() {
     finish: finishWalk,
   } = useWalk(session?.user.id)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
-  // The route on the Home map. When a walk starts, it is kept with that walk for the walk screen.
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
-  // Someone else's walk, when the app was opened from an alert (?walk=<id>, SCRUM-74/102).
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
-  // An invite to become someone's trusted contact (?invite=<secret>, SCRUM-60).
   const [inviteToken, setInviteToken] = useState(takeInviteToken)
   const [tab, setTab] = useState<Tab>('places')
-  // The Contacts tab opens on Activity (screen 09); Trusted contacts (screen 14) is one step in.
   const [isCircleOpen, setIsCircleOpen] = useState(false)
-  // Said on the welcome screen after logging out, when alerts could not be stopped (SCRUM-105).
   const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
 
   if (!supabase) {
@@ -88,10 +83,8 @@ function App() {
     )
   }
 
-  // A profile without a name means the user has not finished the onboarding yet.
   if (!profile.displayName) return <NameScreen onSave={saveName} />
 
-  // Someone opened an invite link: answering it comes first, then the contacts list.
   if (inviteToken) {
     return (
       <AcceptInviteScreen
@@ -106,8 +99,7 @@ function App() {
     )
   }
 
-  // A contact who tapped an alert sees that walk first, also if they are on a walk themselves:
-  // someone may need them now. Back leads to their own screens.
+  // Before the user's own walk: someone may need them now.
   if (openedWalkId) {
     return (
       <FollowedWalkScreen
@@ -120,8 +112,6 @@ function App() {
     )
   }
 
-  // A walk that is running always wins, also after the app was closed and opened again. A walk
-  // that was just checked in stays on screen until the user closes the confirmation.
   if (walk) {
     return (
       <WalkScreen
@@ -132,12 +122,10 @@ function App() {
         onExtend={extendWalk}
         onCancel={async () => {
           await cancelWalk()
-          // The walk is over: its route is not needed any more.
           clearWalkRoute()
         }}
         onRefresh={refreshWalk}
         onDone={() => {
-          // The walk is over: its route is not needed any more.
           clearWalkRoute()
           finishWalk()
         }}
@@ -154,8 +142,7 @@ function App() {
           const startedWalk = await startWalk(newWalk)
           if (plannedRoute) {
             saveWalkRoute(startedWalk.id, plannedRoute.coordinates, plannedRoute.seconds)
-            // The contacts see the route on their screen. The walk itself has started, so a
-            // failure here only means the contacts see the due time without a map.
+            // On failure the contacts just see no map.
             shareWalkRoute(startedWalk.id, plannedRoute.coordinates).catch(() => {})
           }
         }}
@@ -164,8 +151,6 @@ function App() {
     )
   }
 
-  // The three tabs of screen 09. A walk, its start screen and the screens above take the whole
-  // phone, without the bar.
   return (
     <div className="with-tab-bar">
       {tab === 'places' && (

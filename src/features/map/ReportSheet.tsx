@@ -22,10 +22,6 @@ function lampText(menu: ReportMenu): string {
   }
 }
 
-/**
- * Opens after pressing and holding the map: what is wrong at this spot? For now there is one
- * choice, a broken street light. More kinds of report come with the reports work (SCRUM-8).
- */
 function ReportSheet({ menu, onReport, onCancel }: ReportSheetProps) {
   return (
     <section className="map-sheet" role="dialog" aria-labelledby="report-title">

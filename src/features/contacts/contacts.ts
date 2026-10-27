@@ -2,34 +2,25 @@ import { supabase } from '../../lib/supabase.ts'
 
 export type Contact = {
   id: string
-  /** What the user calls this contact, for example "Mum". */
   label: string
-  /** invited: the link is sent but nobody accepted it yet. paused: in the list, but follows no walks. */
+  /** paused: still in the list, but follows no walks. */
   status: 'invited' | 'accepted' | 'paused'
-  /** When an open invite stops working. Null once the invite is accepted. */
   inviteExpiresAt: Date | null
-  /**
-   * Whether this contact's phone can get an alert at all (SCRUM-103). Missing for an open invite,
-   * or when the server could not be asked.
-   */
+  /** Missing for an open invite, or when the server could not be asked. */
   canReceiveAlerts?: boolean
 }
 
 export type Invite = {
   contactId: string
-  /** The link the user sends to the contact, for example in WhatsApp. */
   link: string
   expiresAt: Date
 }
 
 export type InviteDetails = {
-  /** The name of the user who sent the invite, as they chose it in onboarding. */
   inviterName: string
   expiresAt: Date
 }
 
-// A row of the contacts table, as the database returns it. See supabase/migrations/0005_contacts.sql.
-// Only the columns the app uses are listed.
 type ContactRow = {
   id: string
   label: string
@@ -51,20 +42,14 @@ function toContact(row: ContactRow): Contact {
   }
 }
 
-/**
- * The link that opens the app with this invite. Built from BASE_URL because the live site runs in a
- * subfolder. Reading the invite from the link when the app opens is built in SCRUM-60.
- */
 export function inviteLink(token: string): string {
   const url = new URL(import.meta.env.BASE_URL, window.location.origin)
   url.searchParams.set('invite', token)
   return url.toString()
 }
 
-/** The user's contacts and open invites, oldest first. */
 export async function fetchContacts(userId: string): Promise<Contact[]> {
-  // Row level security returns rows where the user is either side. The filter keeps only the
-  // user's own contacts, not the people this user looks out for.
+  // RLS also returns rows where the user is the contact; keep only the user's own list.
   const { data, error } = await client()
     .from('contacts')
     .select('id, label, status, invite_expires_at')
@@ -74,10 +59,6 @@ export async function fetchContacts(userId: string): Promise<Contact[]> {
   return data.map(toContact)
 }
 
-/**
- * For each contact who accepted: can they receive an alert? Only yes or no per contact id, nothing
- * about their phone (0016_contact_alerts_and_walk_status.sql).
- */
 export async function fetchAlertStatus(): Promise<Map<string, boolean>> {
   const { data, error } = await client().rpc('contact_alert_status')
   if (error) throw error
@@ -85,7 +66,7 @@ export async function fetchAlertStatus(): Promise<Map<string, boolean>> {
   return new Map(rows.map((row) => [row.contact_id, row.can_receive_alerts]))
 }
 
-/** Creates an invite link for a new contact. The link works once, for 48 hours. */
+/** The link works once, for 48 hours. */
 export async function createInvite(label: string): Promise<Invite> {
   const { data, error } = await client().rpc('create_invite', { label }).single<{
     contact_id: string
@@ -100,7 +81,6 @@ export async function createInvite(label: string): Promise<Invite> {
   }
 }
 
-/** Who sent the invite in this link. Fails when the link is unknown, used or expired. */
 export async function fetchInvite(token: string): Promise<InviteDetails> {
   const { data, error } = await client()
     .rpc('get_invite', { token })
@@ -109,19 +89,16 @@ export async function fetchInvite(token: string): Promise<InviteDetails> {
   return { inviterName: data.inviter_name, expiresAt: new Date(data.expires_at) }
 }
 
-/** The logged-in user accepts the invite and starts looking out for the person who sent it. */
 export async function acceptInvite(token: string): Promise<void> {
   const { error } = await client().rpc('accept_invite', { token })
   if (error) throw error
 }
 
-/** The logged-in user says no to the invite. It is deleted, so the sender sees it is gone. */
 export async function declineInvite(token: string): Promise<void> {
   const { error } = await client().rpc('decline_invite', { token })
   if (error) throw error
 }
 
-/** Pauses a contact, or lets them follow walks again. Only for contacts who accepted. */
 export async function setContactPaused(contactId: string, isPaused: boolean): Promise<Contact> {
   const { data, error } = await client().rpc('set_contact_paused', {
     contact_id: contactId,
@@ -131,10 +108,7 @@ export async function setContactPaused(contactId: string, isPaused: boolean): Pr
   return toContact(data)
 }
 
-/**
- * Removes a contact or cancels an open invite. The contact can use this too, to stop looking out
- * for someone. The contact is also taken off the walks they followed.
- */
+/** Also used by the contact to stop looking out for someone. */
 export async function removeContact(contactId: string): Promise<void> {
   const { error } = await client().from('contacts').delete().eq('id', contactId)
   if (error) throw error

@@ -3,15 +3,13 @@ import { initialOf } from './contactStatus.ts'
 import './contacts.css'
 
 type ContactTogglesProps = {
-  /** The user's contacts. Only accepted ones can follow a walk; the others are not listed. */
+  /** Only accepted contacts are listed. */
   contacts: Contact[]
   isLoading: boolean
-  /** The ids of the contacts who will follow this walk. */
   selectedIds: string[]
   onChange: (selectedIds: string[]) => void
 }
 
-/** "Notify these trusted contacts" on screen 04: a switch per contact who accepted. */
 function ContactToggles({ contacts, isLoading, selectedIds, onChange }: ContactTogglesProps) {
   const followers = contacts.filter((contact) => contact.status === 'accepted')
 
@@ -24,7 +22,6 @@ function ContactToggles({ contacts, isLoading, selectedIds, onChange }: ContactT
       <legend>Notify these trusted contacts</legend>
       {isLoading && <p className="contacts-small">Loading your contacts…</p>}
       {!isLoading && followers.length === 0 && (
-        // Honest about what happens: without contacts nobody is alerted when time runs out.
         <p className="contacts-small">
           No trusted contacts yet, so nobody is alerted if you do not check in. Invite someone under
           Contacts.
@@ -37,7 +34,6 @@ function ContactToggles({ contacts, isLoading, selectedIds, onChange }: ContactT
           </span>
           <span className="contacts-toggle-name">
             {contact.label}
-            {/* SCRUM-103: switched on is not enough if their phone cannot get the alert. */}
             {contact.canReceiveAlerts === false && (
               <span className="contacts-small">Notifications off: will not get an alert</span>
             )}

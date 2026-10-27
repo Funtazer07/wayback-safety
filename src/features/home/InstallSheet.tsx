@@ -10,10 +10,8 @@ const iphoneSteps = [
   'Tap "Add" in the top right corner.',
 ]
 
-// The wireframe only says "Menu, then Install app" for Android; the wording of these steps is ours.
 const androidSteps = ['Tap the menu (three dots) in your browser.', 'Choose "Install app".']
 
-/** Screen 3b of the onboarding v2 wireframe. Shows only the steps for this phone. */
 function InstallSheet({ onClose }: InstallSheetProps) {
   const steps = isIphone() ? iphoneSteps : androidSteps
 

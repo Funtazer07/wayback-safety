@@ -110,7 +110,7 @@ Things the existing code does that are easy to miss:
 
 - One new numbered file in `supabase/migrations/` per change (`0004_...sql`). Never edit a file
   that is already there: those have been run on the real database.
-- Follow `0003_walks.sql`: a header comment with the Jira key and the reasoning, `check`
+- Follow `0003_walks.sql`: a short header comment with the reasoning, `check`
   constraints on every column that can be wrong, and a comment on each non-obvious line.
 - Every new table gets row level security and a policy that limits rows to their owner. The API
   key is public, so RLS is the only protection.
@@ -138,8 +138,10 @@ Things the existing code does that are easy to miss:
 
 ## Writing style
 
-- Comments explain why, in plain words, and name the Jira key of work that is still to come
-  (`The check-in button comes here. It is designed and built in SCRUM-47.`).
+- Few comments. Write one only when the code cannot say it: a non-obvious why, a workaround, an
+  `Assumption:`. Keep it to one or two short lines. Do not repeat what a name or type already says.
+- No Jira keys, Figma screen numbers or dates in code comments. Those belong in branch names,
+  commits and pull requests.
 - Docs use short sentences and no jargon without an explanation. When behaviour changes, update the
   doc that describes it in the same change.
 - No `console.log`, no commented-out code, no `any` without a comment saying why.

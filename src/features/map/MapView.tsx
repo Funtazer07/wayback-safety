@@ -24,9 +24,7 @@ type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
   Pick<MapData, 'brokenLights' | 'position'> & {
     start?: LngLat | null
     destination?: LngLat | null
-    /** The street light about to be reported, marked with a ring. */
     foundLamp?: LngLat | null
-    /** Where a walker was last seen, for a contact after a missed check-in (SCRUM-102). */
     lastLocation?: LngLat | null
     camera?: CameraMove | null
     onTap?: (point: LngLat) => void
@@ -35,7 +33,6 @@ type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
     onBrokenLightTap: (lampId: string) => void
   }
 
-/** The MapLibre map. React hands it the data; this component puts it on the map. */
 function MapView(props: MapViewProps) {
   const { start, destination, foundLamp, lastLocation, camera } = props
   const containerRef = useRef<HTMLDivElement>(null)
@@ -53,8 +50,7 @@ function MapView(props: MapViewProps) {
     brokenLights: props.brokenLights,
     position: props.position,
   }
-  // MapLibre keeps the handlers from when the map was made. Through these refs they see the
-  // latest props and data.
+  // MapLibre keeps its first handlers, so they read the latest props through a ref.
   const latest = useRef(props)
   const dataRef = useRef(data)
   useEffect(() => {
@@ -99,7 +95,6 @@ function MapView(props: MapViewProps) {
       const otherRoute = hits.find((hit) => hit.layer.id === routeHitLayer)
       if (brokenLight) latest.current.onBrokenLightTap(String(brokenLight.properties.lampId))
       else if (otherRoute) latest.current.onSelectRoute?.(Number(otherRoute.properties.index))
-      // A tap on the chosen route does nothing, so a slip of the finger plans no new walk.
       else if (hits.length === 0) latest.current.onTap?.([event.lngLat.lng, event.lngLat.lat])
     })
 

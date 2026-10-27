@@ -14,17 +14,9 @@ import { useUserPosition } from './useUserPosition.ts'
 import './map.css'
 
 type RoutePlannerProps = {
-  /**
-   * Hears which route is on the map, so the walk can show it too and the start-walk screen can
-   * estimate the arrival. Null when there is none.
-   */
   onRouteChange: (route: PlannedRoute | null) => void
 }
 
-/**
- * The map on Home: tap where you want to go, compare routes by their street lights, and press and
- * hold to report a broken light.
- */
 function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
   const location = useUserPosition()
   const planner = usePlanner(location.position)
@@ -36,7 +28,6 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
   const { position } = location
   const isOutside = position !== null && !isInEindhoven(position.coordinates)
 
-  // Fly to the user the first time their position is known, unless a walk is being planned.
   const hasCentred = useRef(false)
   useEffect(() => {
     if (!position || isOutside || hasCentred.current || planner.destination) return
@@ -44,8 +35,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
     setCamera({ id: Date.now(), kind: 'centre', centre: position.coordinates, zoom: 16 })
   }, [position, isOutside, planner.destination])
 
-  // Zoom out to all new routes, keeping the room the panels take free. Only a new plan moves the
-  // map, not choosing another route or planning again after a report.
+  // Only a new plan moves the map, not choosing another route.
   const { newRoutes } = planner
   useEffect(() => {
     if (!newRoutes) return
@@ -54,7 +44,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
       kind: 'fit',
       coordinates: newRoutes.flatMap((route) => route.coordinates),
       padding: {
-        // Extra room on top: the destination pin sticks out above the spot it marks.
+        // The destination pin sticks out above its spot.
         top: (panelRef.current?.offsetHeight ?? 0) + 56,
         bottom: (bottomRef.current?.offsetHeight ?? 0) + 24,
         left: 32,
@@ -63,7 +53,6 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
     })
   }, [newRoutes])
 
-  // The route on the map is the one the walk will show, also when the user did not tap a card.
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
   useEffect(
     () =>
@@ -106,7 +95,6 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
         destination={planner.destination}
         foundLamp={reporting.menu?.state === 'found' ? reporting.menu.lamp.coordinates : null}
         camera={camera}
-        // With a sheet open, a tap on the map closes it instead of planning a walk.
         onTap={(point) =>
           reporting.isSheetOpen
             ? reporting.closeAll()
