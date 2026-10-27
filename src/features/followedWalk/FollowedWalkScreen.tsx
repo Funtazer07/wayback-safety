@@ -2,6 +2,7 @@ import TopBar from '../../components/TopBar.tsx'
 import { formatClock } from '../walk/time.ts'
 import type { FollowedWalk } from './followedWalk.ts'
 import LastLocationMap from './LastLocationMap.tsx'
+import PlannedRouteMap from './PlannedRouteMap.tsx'
 import WatchButton from './WatchButton.tsx'
 import { useFollowedWalk } from './useFollowedWalk.ts'
 import './followedWalk.css'
@@ -60,11 +61,13 @@ function WalkDetails({ walkId, walk }: { walkId: string; walk: FollowedWalk }) {
   }
 
   if (walk.status === 'active') {
-    // Opened from "is on the way home": nothing is wrong yet, and no location is shared.
+    // Opened from "is on the way home": nothing is wrong yet, and no location is shared. The planned
+    // route is, when the walker started with one.
     return (
       <>
         <WalkerHeading name={name} title={`${name} is on the way home`} />
         <p className="followed-box">Expected home at {formatClock(walk.deadline)}.</p>
+        {walk.route && <PlannedRouteMap walkerName={name} route={walk.route} />}
         <WatchButton walkId={walkId} walkerName={name} isWatching={walk.youAreWatching} />
         <p className="followed-note">
           This page updates by itself when {name} gets home. The location is only shared if {name}{' '}

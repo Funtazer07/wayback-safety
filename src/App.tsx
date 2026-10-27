@@ -22,6 +22,7 @@ import Welcome from './features/onboarding/Welcome.tsx'
 import { useProfile } from './features/profile/useProfile.ts'
 import StartWalkScreen from './features/walk/StartWalkScreen.tsx'
 import { useWalk } from './features/walk/useWalk.ts'
+import { shareWalkRoute } from './features/walk/walk.ts'
 import WalkScreen from './features/walk/WalkScreen.tsx'
 import { supabase } from './lib/supabase.ts'
 
@@ -153,6 +154,9 @@ function App() {
           const startedWalk = await startWalk(newWalk)
           if (plannedRoute) {
             saveWalkRoute(startedWalk.id, plannedRoute.coordinates, plannedRoute.seconds)
+            // The contacts see the route on their screen. The walk itself has started, so a
+            // failure here only means the contacts see the due time without a map.
+            shareWalkRoute(startedWalk.id, plannedRoute.coordinates).catch(() => {})
           }
         }}
         onBack={() => setIsStartingWalk(false)}

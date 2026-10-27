@@ -5,7 +5,8 @@
 // so it also works when the phone is locked or the app was closed right after the tap. Those
 // messages go to the walk's contacts. The scheduled check for late walks (SCRUM-73,
 // 0011_late_walks.sql) calls it too, for the "Are you OK?" warning to the walker, and the walk
-// becoming overdue sends the alert to the contacts (SCRUM-74, 0012_overdue_alert.sql).
+// becoming overdue sends the alert to the contacts (SCRUM-74, 0012_overdue_alert.sql). Adding time
+// to a walk sends the new arrival time to the contacts (SCRUM-107, 0022_arrival_time_updated.sql).
 //
 // Deployed by hand in the Supabase dashboard; steps in docs/backend.md, "Sending push". Vitest does
 // not run this file. The rules it uses (who gets a message, what it says) are in
@@ -86,6 +87,12 @@ async function sendWalkPush(request: Request): Promise<Response> {
     return Response.json({ sent: 0, failed: 0, removed: 0 })
   }
 
+  // SCRUM-107: the walker checked in or cancelled right after adding time. That message is the one
+  // that counts; a new arrival time on top of it would only confuse.
+  if (event === 'deadline_extended' && walk.status !== 'active') {
+    return Response.json({ sent: 0, failed: 0, removed: 0 })
+  }
+
   // SCRUM-64: the cron job may have queued this before an extension or check-in.
   if (
     event === 'reminder' &&
@@ -123,7 +130,8 @@ async function sendWalkPush(request: Request): Promise<Response> {
   // Do not keep a reminder in the push service after the deadline. The deadline may have
   // passed while subscriptions were loaded, so skip it when there is no useful lifetime left.
   const ttl = timeToLive(event, new Date(walk.deadline))
-  if (event === 'reminder' && ttl === 0) return Response.json({ sent: 0, failed: 0, removed: 0 })
+  if ((event === 'reminder' || event === 'deadline_extended') && ttl === 0)
+    return Response.json({ sent: 0, failed: 0, removed: 0 })
 
   const results = await Promise.allSettled(
     phones.map((phone) =>
