@@ -22,9 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "src",
-    "supabase/functions/send-walk-push/walkPush*.ts",
-    "supabase/functions/send-walk-push/reminder.test.ts"
-  ]
+  "include": ["src", "supabase/functions/send-walk-push/walkPush*.ts"]
 }

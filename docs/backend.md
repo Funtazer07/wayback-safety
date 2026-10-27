@@ -811,6 +811,7 @@ subscriptions. Its message contains the check-in time and no location. Extension
 cancellation are rechecked by the Edge Function before sending. App roles cannot run the queue
 or scheduler functions.
 
-Redeploy `send-walk-push` with the `reminder` event before applying 0020. The one-minute timing update needs 0021 and the updated 60-second Edge Function window. It uses the existing
-Vault and VAPID secrets; no new provider or credential is required. Full setup, timing rationale,
-queue failure behaviour, prototype and phone-test steps are in [timer-reminder.md](timer-reminder.md).
+Redeploy `send-walk-push` with the `reminder` event before running 0020, and the 60-second
+version before 0021. Both migrations are already run on the shared project. It uses the existing
+Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
+queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).

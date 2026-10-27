@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 import {
   audienceOf,
   formatClock,
+  isReminderCurrent,
   isSubscriptionGone,
   isWalkEvent,
   messageFor,
@@ -194,4 +195,22 @@ test('a reminder expires at the deadline, never five minutes after sending', () 
   expect(timeToLive('reminder', walk.deadline, new Date('2026-10-15T20:34:00Z'))).toBe(60)
   expect(timeToLive('reminder', walk.deadline, walk.deadline)).toBe(0)
   expect(timeToLive('reminder')).toBe(0)
+})
+
+test('a queued reminder is sent only in the last minute of the same active deadline', () => {
+  const now = new Date('2026-10-15T20:35:30Z')
+  const queued = walk.deadline.toISOString()
+  expect(isReminderCurrent('active', walk.deadline, queued, now)).toBe(true)
+  expect(isReminderCurrent('active', new Date('2026-10-15T20:46:00Z'), queued, now)).toBe(false)
+  expect(isReminderCurrent('active', walk.deadline, queued, walk.deadline)).toBe(false)
+  expect(isReminderCurrent('active', walk.deadline, queued, new Date('2026-10-15T20:34:59Z'))).toBe(
+    false,
+  )
+  expect(isReminderCurrent('active', walk.deadline, 'invalid', now)).toBe(false)
+  expect(isReminderCurrent('active', walk.deadline, undefined, now)).toBe(false)
+})
+
+test.each(['safe', 'cancelled', 'overdue'])('a %s walk receives no reminder', (status) => {
+  const now = new Date('2026-10-15T20:35:30Z')
+  expect(isReminderCurrent(status, walk.deadline, walk.deadline.toISOString(), now)).toBe(false)
 })
