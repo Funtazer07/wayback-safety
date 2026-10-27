@@ -5,7 +5,7 @@ import AreYouOkScreen from './AreYouOkScreen.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import HomeSafeScreen from './HomeSafeScreen.tsx'
 import { walkPhase } from './grace.ts'
-import { formatClock, timerPhase } from './time.ts'
+import { formatClock, timerPhase, isReminderDue } from './time.ts'
 import { useLocationUpdates } from './useLocationUpdates.ts'
 import { useNow } from './useNow.ts'
 import { useRefreshDuringGrace } from './useRefreshDuringGrace.ts'
@@ -18,6 +18,7 @@ import WalkTimer from './WalkTimer.tsx'
 import ArrivedSheet from './ArrivedSheet.tsx'
 import RunningLateSheet from './RunningLateSheet.tsx'
 import { useWalkPrompts } from './useWalkPrompts.ts'
+import WalkReminder from './WalkReminder.tsx'
 import './walk.css'
 
 type WalkScreenProps = {
@@ -54,6 +55,11 @@ function WalkScreen({
   onRefresh = doNothing,
   onDone,
 }: WalkScreenProps) {
+  const [isReviewingTime, setIsReviewingTime] = useState(() => {
+    // The existing push service worker navigates here when a reminder is tapped. This is only
+    // a request to review; no deadline is changed without the walker's confirmation.
+    return new URLSearchParams(window.location.search).get('reminder') === walk.id
+  })
   const now = useNow()
   const phase = walkPhase(walk, now)
   const isLate = phase === 'grace' || phase === 'overdue'
@@ -124,11 +130,18 @@ function WalkScreen({
           </div>
         </div>
         <WatchersLine names={watchers} />
-        {timerPhase(walk.deadline, now) === 'almost-up' && (
+        {timerPhase(walk.deadline, now) === 'almost-up' && !isReminderDue(walk.deadline, now) && (
           <p className="walk-almost" role="status">
             <strong>Your walk is almost over.</strong> You have less than 5 minutes left. Do you
             need more time?
           </p>
+        )}
+        {isReminderDue(walk.deadline, now) && (
+          <WalkReminder
+            deadline={walk.deadline}
+            now={now}
+            onReview={() => setIsReviewingTime(true)}
+          />
         )}
         {error && <p role="alert">{error}</p>}
         <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
@@ -138,12 +151,18 @@ function WalkScreen({
       {prompts.isArrived && (
         <ArrivedSheet isBusy={isBusy} onHome={handleCheckIn} onNotYet={prompts.dismissArrival} />
       )}
-      {prompts.suggestion !== null && (
+      {!prompts.isArrived && (prompts.suggestion !== null || isReviewingTime) && (
         <RunningLateSheet
-          suggestion={prompts.suggestion}
+          suggestion={prompts.suggestion ?? 10}
           deadline={walk.deadline}
           onExtend={onExtend}
-          onDismiss={prompts.dismissLate}
+          onDismiss={() => {
+            prompts.dismissLate()
+            setIsReviewingTime(false)
+            const url = new URL(window.location.href)
+            url.searchParams.delete('reminder')
+            window.history.replaceState(null, '', url)
+          }}
         />
       )}
     </main>

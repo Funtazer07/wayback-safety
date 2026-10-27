@@ -61,3 +61,9 @@ export function addMinutes(date: Date, minutes: number): Date {
 export function formatClock(date: Date): string {
   return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
 }
+
+/** SCRUM-64: one-minute reminder requested by the user; the timer colour still changes at 5. */
+export function isReminderDue(deadline: Date, now: Date): boolean {
+  const remaining = deadline.getTime() - now.getTime()
+  return remaining > 0 && remaining <= 60_000
+}
