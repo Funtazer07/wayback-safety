@@ -12,6 +12,7 @@ const walks = vi.hoisted(() => ({
   fetchCurrentWalk: vi.fn(),
   fetchWalkContacts: vi.fn(),
   fetchWalkWatchers: vi.fn(),
+  shareWalkRoute: vi.fn(),
   startWalk: vi.fn(),
   updateWalkLocation: vi.fn(),
 }))
@@ -295,6 +296,23 @@ test('the route chosen on Home is on the walk map after the walk starts', async 
 
   expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
   expect(walks.startWalk).toHaveBeenCalledWith(expect.objectContaining({ minutes: 30 }))
+  // The contacts see the same route on their screen.
+  expect(walks.shareWalkRoute).toHaveBeenCalledWith('walk-1', routeViaStratumseind)
+})
+
+test('a walk still starts when sharing the route with the contacts fails', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockResolvedValue(walkEndingIn(20))
+  walks.shareWalkRoute.mockRejectedValue(new Error('network'))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Choose the route via Stratumseind')
+  click('Start walk')
+  click('Start walk')
+
+  expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
 test('a walk started without a route shows no route', async () => {
@@ -307,6 +325,7 @@ test('a walk started without a route shows no route', async () => {
   click('Start walk')
 
   expect(await screen.findByText('Map shows no route')).toBeInTheDocument()
+  expect(walks.shareWalkRoute).not.toHaveBeenCalled()
 })
 
 test('the route is still on the walk map when the app is opened again during the walk', async () => {

@@ -214,3 +214,28 @@ test.each(['safe', 'cancelled', 'overdue'])('a %s walk receives no reminder', (s
   const now = new Date('2026-10-15T20:35:30Z')
   expect(isReminderCurrent(status, walk.deadline, walk.deadline.toISOString(), now)).toBe(false)
 })
+
+test('added time tells the contacts the new arrival time and that nothing needs doing', () => {
+  // The deadline after +10 minutes: 22:46 Eindhoven time.
+  const message = messageFor('deadline_extended', 'Anna', {
+    ...walk,
+    deadline: new Date('2026-10-15T20:46:00Z'),
+  })
+
+  expect(audienceOf('deadline_extended')).toBe('contacts')
+  expect(message).toEqual({
+    title: 'Anna updated the arrival time',
+    body: 'Anna needs a little more time to get home. The new expected arrival time is 22:46. No action is needed.',
+    url: '?walk=walk-1',
+  })
+})
+
+test('"arrival time updated" is only delivered until the new time, and at most an hour', () => {
+  expect(timeToLive('deadline_extended', walk.deadline, new Date('2026-10-15T20:26:00Z'))).toBe(
+    10 * 60,
+  )
+  expect(timeToLive('deadline_extended', walk.deadline, new Date('2026-10-15T18:00:00Z'))).toBe(
+    60 * 60,
+  )
+  expect(timeToLive('deadline_extended', walk.deadline, walk.deadline)).toBe(0)
+})

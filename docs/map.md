@@ -78,6 +78,9 @@ moved to the table.
   after the app was closed. It includes the start, which is often where the user was. It is erased
   when the user leaves the "You're home" screen. A walk that is never checked in keeps it
   until the next walk replaces it.
+- The same route, without the walking time, is also sent to the server when the walk starts, so the
+  walk's contacts see it while the walk is on the way (`share_walk_route`, see "The contact's view"
+  in [backend.md](backend.md)). The server erases it when the walk ends or becomes overdue.
 - A broken-light report holds the lamp's number, spot and street, and the time of the report.
   Other users never see who reported it, and the spot is the lamp's, not where the user was.
 

@@ -26,6 +26,7 @@ const row = {
   last_lng: 5.4791,
   last_location_at: '2026-10-15T20:31:00Z',
   you_are_watching: false,
+  route: null,
 }
 
 beforeEach(() => {
@@ -50,7 +51,18 @@ test('a contact gets the walk with the last location and when it was saved', asy
     cancelledAt: null,
     lastLocation: { coordinates: [5.4791, 51.4385], savedAt: new Date('2026-10-15T20:31:00Z') },
     youAreWatching: false,
+    route: null,
   })
+})
+
+test('a walk on the way comes with the route the walker planned', async () => {
+  const route = [
+    [5.4791, 51.4385],
+    [5.482, 51.4402],
+  ]
+  single.mockResolvedValue({ data: { ...row, status: 'active', route }, error: null })
+
+  expect((await fetchFollowedWalk(walkId)).route).toEqual(route)
 })
 
 test('a walk without a shared location has none', async () => {

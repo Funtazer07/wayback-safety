@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase.ts'
+import type { LngLat } from '../map/geometry.ts'
 
 export type Walk = {
   id: string
@@ -70,6 +71,18 @@ export async function startWalk(newWalk: NewWalk): Promise<Walk> {
   })
   if (error) throw error
   return toWalk(data)
+}
+
+/**
+ * Shares the planned route of the user's walk with its contacts, so they see which way the walker
+ * is coming. The server keeps it only while the walk is on the way (0023_shared_walk_route.sql).
+ */
+export async function shareWalkRoute(walkId: string, coordinates: LngLat[]): Promise<void> {
+  const { error } = await client().rpc('share_walk_route', {
+    walk_id: walkId,
+    route: coordinates,
+  })
+  if (error) throw error
 }
 
 /**

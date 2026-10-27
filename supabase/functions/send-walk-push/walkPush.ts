@@ -14,9 +14,17 @@
  *   contacts.
  * - overdue: no check-in during the grace period either. The alert to the contacts, with the time
  *   of the last known location (SCRUM-74).
+ * - reminder: the check-in is due within a minute (SCRUM-64). Goes to the walker.
+ * - deadline_extended: the walker added time, so the contacts get the new time (SCRUM-107).
  */
 export type WalkEvent =
-  'started' | 'home_safe' | 'cancelled' | 'are_you_ok' | 'overdue' | 'reminder'
+  | 'started'
+  | 'home_safe'
+  | 'cancelled'
+  | 'are_you_ok'
+  | 'overdue'
+  | 'reminder'
+  | 'deadline_extended'
 
 const walkEvents: WalkEvent[] = [
   'started',
@@ -25,6 +33,7 @@ const walkEvents: WalkEvent[] = [
   'are_you_ok',
   'overdue',
   'reminder',
+  'deadline_extended',
 ]
 
 /**
@@ -70,12 +79,19 @@ export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
  * Only the grace period for "Are you OK?": after it, the contacts are already being told.
  * A day for the alert: a contact whose phone was off must still get it, and the last location is
  * kept that long too (0012_overdue_alert.sql).
+ * Until the new time for "arrival time updated", and at most an hour: once the new time has
+ * passed, "No action is needed" may no longer be true.
  */
 export function timeToLive(event: WalkEvent, deadline?: Date, now = new Date()): number {
   if (event === 'reminder') {
     return deadline
       ? Math.max(0, Math.min(60, Math.floor((deadline.getTime() - now.getTime()) / 1000)))
       : 0
+  }
+  if (event === 'deadline_extended') {
+    return deadline
+      ? Math.max(0, Math.min(60 * 60, Math.floor((deadline.getTime() - now.getTime()) / 1000)))
+      : 60 * 60
   }
   if (event === 'are_you_ok') return GRACE_MINUTES * 60
   if (event === 'overdue') return 24 * 60 * 60
@@ -158,6 +174,14 @@ export function messageFor(
       return {
         title: `${name} stopped the walk`,
         body: `Cancelled at ${formatClock(walk.cancelledAt ?? new Date())}. No check-in will follow.`,
+        url: walkUrl,
+      }
+    case 'deadline_extended':
+      // From the "Trusted contact notifications" design. "No action is needed" matters most: the
+      // contact may have been watching the old time and wondering whether to call.
+      return {
+        title: `${name} updated the arrival time`,
+        body: `${name} needs a little more time to get home. The new expected arrival time is ${formatClock(walk.deadline)}. No action is needed.`,
         url: walkUrl,
       }
     case 'reminder':

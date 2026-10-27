@@ -3,7 +3,8 @@ import type { LngLat } from '../map/geometry.ts'
 
 /**
  * A walk seen by one of its contacts (SCRUM-102). Only what the server shares with a contact:
- * no destination, no route, and the location only while the walk is overdue.
+ * no destination name, the planned route only while the walk is on the way, and the location only
+ * while the walk is overdue.
  */
 export type FollowedWalk = {
   walkerName: string
@@ -16,9 +17,11 @@ export type FollowedWalk = {
   lastLocation: { coordinates: LngLat; savedAt: Date } | null
   /** Whether this contact already tapped "I'm watching" on this walk (SCRUM-114). */
   youAreWatching: boolean
+  /** The route the walker planned, while the walk is on the way. Null without one. Not live. */
+  route: LngLat[] | null
 }
 
-// One row from followed_walk() in supabase/migrations/0019_im_watching.sql (first in 0013).
+// One row from followed_walk() in supabase/migrations/0023_shared_walk_route.sql (first in 0013).
 type FollowedWalkRow = {
   walker_name: string | null
   status: FollowedWalk['status']
@@ -30,6 +33,7 @@ type FollowedWalkRow = {
   last_lng: number | null
   last_location_at: string | null
   you_are_watching: boolean
+  route: LngLat[] | null
 }
 
 /** The server's answer when the walk does not exist or this user is not one of its contacts. */
@@ -60,6 +64,7 @@ function toFollowedWalk(row: FollowedWalkRow): FollowedWalk {
         ? { coordinates: [row.last_lng, row.last_lat], savedAt: new Date(row.last_location_at) }
         : null,
     youAreWatching: row.you_are_watching,
+    route: row.route,
   }
 }
 
