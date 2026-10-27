@@ -794,3 +794,24 @@ it, and do not paste rows into the group chat.
 | "Could not check you in" on every tap          | `0004_check_in.sql` was not run yet (step 2), or there is no connection   |
 | "Check your email" after signing up with email | "Confirm email" is still on (step 5)                                      |
 | A query returns no rows but data exists        | The table's RLS policy does not allow it                                  |
+
+### Pre-deadline reminders (SCRUM-64)
+
+Migration `0020_walk_reminders.sql` adds `walks.reminder_deadline` and a
+`check-walk-reminders` database job. Migration `0021_one_minute_walk_reminder.sql` changes it to
+check every 10 seconds and remind in the final minute, as requested on 27 October 2026. Normally
+50–60 seconds remain when queued, plus network delivery time. The timer colour still changes
+at five minutes.
+This does not change the 3-minute grace period after the deadline.
+
+The new column is a queue marker for the current deadline, not a delivery receipt. It contains
+only a timestamp and follows the walk's existing ownership and retention rules. No new location,
+route or contact data is collected. The reminder goes to the walker through the existing push
+subscriptions. Its message contains the check-in time and no location. Extensions, check-ins and
+cancellation are rechecked by the Edge Function before sending. App roles cannot run the queue
+or scheduler functions.
+
+Redeploy `send-walk-push` with the `reminder` event before running 0020, and the 60-second
+version before 0021. Both migrations are already run on the shared project. It uses the existing
+Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
+queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).

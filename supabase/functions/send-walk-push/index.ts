@@ -20,6 +20,7 @@ import {
   audienceOf,
   isSubscriptionGone,
   isWalkEvent,
+  isReminderCurrent,
   messageFor,
   recipientsOf,
   timeToLive,
@@ -67,7 +68,7 @@ async function sendWalkPush(request: Request): Promise<Response> {
     return new Response('Forbidden', { status: 403 })
   }
 
-  const { walk_id: walkId, event } = await request.json()
+  const { walk_id: walkId, event, deadline: queuedDeadline } = await request.json()
   if (typeof walkId !== 'string' || !isWalkEvent(event)) {
     return new Response('Expected { walk_id, event }', { status: 400 })
   }
@@ -82,6 +83,14 @@ async function sendWalkPush(request: Request): Promise<Response> {
 
   // The walker checked in or cancelled just before this message went out: no warning needed.
   if (event === 'are_you_ok' && walk.status !== 'active') {
+    return Response.json({ sent: 0, failed: 0, removed: 0 })
+  }
+
+  // SCRUM-64: the cron job may have queued this before an extension or check-in.
+  if (
+    event === 'reminder' &&
+    !isReminderCurrent(walk.status, new Date(walk.deadline), queuedDeadline, new Date())
+  ) {
     return Response.json({ sent: 0, failed: 0, removed: 0 })
   }
 
@@ -111,12 +120,17 @@ async function sendWalkPush(request: Request): Promise<Response> {
     lastLocationAt: toDate(walk.last_location_at),
   })
 
+  // Do not keep a reminder in the push service after the deadline. The deadline may have
+  // passed while subscriptions were loaded, so skip it when there is no useful lifetime left.
+  const ttl = timeToLive(event, new Date(walk.deadline))
+  if (event === 'reminder' && ttl === 0) return Response.json({ sent: 0, failed: 0, removed: 0 })
+
   const results = await Promise.allSettled(
     phones.map((phone) =>
       webpush.sendNotification(
         { endpoint: phone.endpoint, keys: { p256dh: phone.p256dh, auth: phone.auth } },
         JSON.stringify(message),
-        { TTL: timeToLive(event) },
+        { TTL: ttl },
       ),
     ),
   )

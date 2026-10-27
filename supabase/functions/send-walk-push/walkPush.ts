@@ -15,9 +15,17 @@
  * - overdue: no check-in during the grace period either. The alert to the contacts, with the time
  *   of the last known location (SCRUM-74).
  */
-export type WalkEvent = 'started' | 'home_safe' | 'cancelled' | 'are_you_ok' | 'overdue'
+export type WalkEvent =
+  'started' | 'home_safe' | 'cancelled' | 'are_you_ok' | 'overdue' | 'reminder'
 
-const walkEvents: WalkEvent[] = ['started', 'home_safe', 'cancelled', 'are_you_ok', 'overdue']
+const walkEvents: WalkEvent[] = [
+  'started',
+  'home_safe',
+  'cancelled',
+  'are_you_ok',
+  'overdue',
+  'reminder',
+]
 
 /**
  * 3 minutes between "Are you OK?" and alerting the contacts, decided on 26 Oct (it was 5). Keep it
@@ -53,7 +61,7 @@ export function isWalkEvent(value: unknown): value is WalkEvent {
 
 /** Who gets the message: the walker themselves, or the walk's contacts. */
 export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
-  return event === 'are_you_ok' ? 'walker' : 'contacts'
+  return event === 'are_you_ok' || event === 'reminder' ? 'walker' : 'contacts'
 }
 
 /**
@@ -63,7 +71,12 @@ export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
  * A day for the alert: a contact whose phone was off must still get it, and the last location is
  * kept that long too (0012_overdue_alert.sql).
  */
-export function timeToLive(event: WalkEvent): number {
+export function timeToLive(event: WalkEvent, deadline?: Date, now = new Date()): number {
+  if (event === 'reminder') {
+    return deadline
+      ? Math.max(0, Math.min(60, Math.floor((deadline.getTime() - now.getTime()) / 1000)))
+      : 0
+  }
   if (event === 'are_you_ok') return GRACE_MINUTES * 60
   if (event === 'overdue') return 24 * 60 * 60
   return 60 * 60
@@ -147,6 +160,12 @@ export function messageFor(
         body: `Cancelled at ${formatClock(walk.cancelledAt ?? new Date())}. No check-in will follow.`,
         url: walkUrl,
       }
+    case 'reminder':
+      return {
+        title: 'Need more time?',
+        body: `Your check-in is due at ${formatClock(walk.deadline)}. Open WayBack to add time or say you’re home.`,
+        url: `?reminder=${encodeURIComponent(walk.id)}`,
+      }
     case 'are_you_ok':
       // To the walker. Says what to do and what happens otherwise, without sounding like an alarm
       // (SCRUM-72 prototype, screen 06). Nobody has been told anything yet.
@@ -163,4 +182,21 @@ export function messageFor(
  */
 export function isSubscriptionGone(statusCode: number | undefined): boolean {
   return statusCode === 404 || statusCode === 410
+}
+
+/** SCRUM-64: reject queued reminders after an extension, check-in, cancellation or expiry. */
+export function isReminderCurrent(
+  status: string,
+  deadline: Date,
+  queuedDeadline: unknown,
+  now: Date,
+): boolean {
+  const remaining = deadline.getTime() - now.getTime()
+  return (
+    status === 'active' &&
+    typeof queuedDeadline === 'string' &&
+    new Date(queuedDeadline).getTime() === deadline.getTime() &&
+    remaining > 0 &&
+    remaining <= 60_000
+  )
 }

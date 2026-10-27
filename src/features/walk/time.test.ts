@@ -70,3 +70,13 @@ test('shows a timer from an hour up in hours and minutes', () => {
 test('leaves the minutes out on a whole hour', () => {
   expect(formatDuration(120)).toBe('2 h')
 })
+
+// The pre-deadline push is separate from the timer's five-minute colour warning.
+test('the reminder starts at one minute and ends exactly at the deadline', async () => {
+  const { isReminderDue } = await import('./time.ts')
+  const deadline = new Date('2026-10-27T22:00:00Z')
+  expect(isReminderDue(deadline, new Date('2026-10-27T21:58:59.999Z'))).toBe(false)
+  expect(isReminderDue(deadline, new Date('2026-10-27T21:59:00Z'))).toBe(true)
+  expect(isReminderDue(deadline, new Date('2026-10-27T21:59:59Z'))).toBe(true)
+  expect(isReminderDue(deadline, deadline)).toBe(false)
+})

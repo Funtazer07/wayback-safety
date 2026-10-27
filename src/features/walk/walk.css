@@ -469,3 +469,20 @@
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
+
+/* SCRUM-64: reminder in the existing timer panel, using the prototype's mint actions. */
+.walk-reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--warning-edge);
+  border-radius: var(--radius);
+  color: var(--warning-text);
+  background: var(--surface);
+}
+
+.walk-reminder .walk-extend {
+  color: var(--green-text);
+  font-weight: 700;
+}
