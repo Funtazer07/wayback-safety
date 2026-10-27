@@ -33,15 +33,19 @@ function RouteList({ routes, selectedIndex, onSelect }: RouteListProps) {
             aria-pressed={index === selectedIndex}
             onClick={() => onSelect(index)}
           >
-            <span className="route-top">
-              <span className="route-time">{formatMinutes(route.duration)}</span>
-              <span className="route-muted">{formatDistance(route.length)}</span>
+            <span className="route-line">
+              <span className="route-top">
+                <span className="route-time">{formatMinutes(route.duration)}</span>
+                <span className="route-muted">{formatDistance(route.length)}</span>
+              </span>
+              <RouteBadges isMostLights={index === mostLights} isFastest={index === fastest} />
             </span>
-            <RouteBadges isMostLights={index === mostLights} isFastest={index === fastest} />
-            <span className="route-lights">
-              {route.lampCount} lights, {Math.round(route.lampsPerKm)} per km
+            <span className="route-line">
+              <span className="route-lights">
+                {route.lampCount} lights, {Math.round(route.lampsPerKm)} per km
+              </span>
+              {index === selectedIndex && <span className="route-shown">On the map</span>}
             </span>
-            {index === selectedIndex && <span className="route-shown">On the map</span>}
             <span className="route-muted route-gap">
               Longest gap between lights: {formatDistance(route.longestDark)}
             </span>
