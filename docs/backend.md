@@ -204,7 +204,8 @@ How someone becomes a contact:
 
 1. The user gives the contact a name, for example "Mum", and gets an invite link. They send it
    themselves, in WhatsApp or their own email. We send no email.
-2. The contact opens the link, signs in, sees who invited them and taps accept or decline.
+2. The contact opens the link and sees who invited them, already on the sign-in screen. They sign
+   in and tap accept or decline.
 3. **Accepting links both ways** (`0014_mutual_contacts.sql`): the contact looks out for the user,
    and the user looks out for the contact, under the name the user chose in onboarding. Decided on
    26 Oct after testing on two phones, different from SCRUM-27 and SCRUM-59 in Jira, which describe
@@ -214,9 +215,26 @@ How someone becomes a contact:
    Removing a contact also takes them off the walks they followed.
 
 An invite link opens in the browser, not in an app installed on the Home Screen. Accepting there
-is saved on the server. On iPhone the Home Screen app has its own storage, so after adding WayBack
-there the contact signs in again and turns on notifications under Contacts; the accept screen says
-so.
+is saved on the server. On iPhone the Home Screen app has its own storage, apart from Safari, so it
+starts signed out: the contact has to sign in a second time there. The app cannot avoid that, so
+the accept screen says it up front as numbered steps under "What's next" (`AcceptedNextSteps.tsx`).
+On Android the installed app shares the browser's storage, so the steps leave the second sign-in
+out.
+
+**Found in the invite test with 3 pairs (SCRUM-61):** the link landed on a bare sign-in page, the
+second sign-in in the Home Screen app came as a surprise, and once in the app nothing showed that
+the invite had worked. Fixed with:
+
+- **The inviter on the sign-in screen**: "Anna invited you. Sign in or create an account to
+  accept." `get_invite` may now be called before signing in (`0024_invite_before_sign_in.sql`,
+  tested by `supabase/tests/invite_before_sign_in_test.sql`). A signed-out visitor learns only
+  the inviter's name, and only with a working link. Accepting still needs an account.
+- **The steps after accepting**, as above.
+- **A card on Home** for both sides (`NewContactsCard.tsx`): "You and Anna now look out for each
+  other", with See contacts and Close, and "Turn on notifications" when they are off. It shows
+  contacts who accepted in the last 2 days (_assumption_, like the 48 hours of a link). Closing it
+  is remembered on that phone only (`localStorage`), so the Home Screen app on iPhone shows it too
+  after it was closed in Safari.
 
 The link works once and for 48 hours. The database keeps only a fingerprint (SHA-256 hash) of
 the secret in the link, so someone who reads the table cannot rebuild a working link. The
@@ -232,13 +250,13 @@ contacts itself.
 The app cannot write to `contacts` or `walk_contacts` directly. It calls these functions, or
 deletes a contact row, which both sides are allowed to do:
 
-| Function             | What it does                                                    |
-| -------------------- | --------------------------------------------------------------- |
-| `create_invite`      | Creates an invite and returns the secret for the link, once     |
-| `get_invite`         | Tells the person who opened the link who sent it                |
-| `accept_invite`      | Links the logged-in user as the contact. The link stops working |
-| `decline_invite`     | Deletes the invite                                              |
-| `set_contact_paused` | Pauses a contact, or lets them follow walks again               |
+| Function             | What it does                                                             |
+| -------------------- | ------------------------------------------------------------------------ |
+| `create_invite`      | Creates an invite and returns the secret for the link, once              |
+| `get_invite`         | Tells the person who opened the link who sent it, also before signing in |
+| `accept_invite`      | Links the logged-in user as the contact. The link stops working          |
+| `decline_invite`     | Deletes the invite                                                       |
+| `set_contact_paused` | Pauses a contact, or lets them follow walks again                        |
 
 Code: `src/features/contacts/contacts.ts` talks to the database.
 
@@ -637,7 +655,8 @@ Written down here because the app handles location and personal data.
   accepting, the contact also shares their own walks with the person who invited them; the accept
   screen says this before the tap.
 - **Invite links:** only a fingerprint of the link is stored, it works for 48 hours, and it is
-  erased when the invite is accepted.
+  erased when the invite is accepted. Anyone who has a working link can see the inviter's display
+  name before signing in, and nothing else.
 - **Push subscriptions:** per phone we store only the push service address and its two keys. No
   device name, browser or IP address. The row is deleted when notifications are turned off on that
   phone, and with the account.

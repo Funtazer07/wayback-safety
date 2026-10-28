@@ -154,3 +154,37 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+.contacts-next-steps {
+  text-align: left;
+}
+
+.contacts-next-steps h2 {
+  font-size: 1.125rem;
+}
+
+.card.contacts-next-steps li {
+  color: var(--text);
+}
+
+.contacts-new {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.contacts-new h2 {
+  font-size: 1.125rem;
+}
+
+.card.contacts-new p {
+  color: var(--text);
+}
+
+.contacts-new-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.contacts-new-actions button {
+  flex: 1;
+}
