@@ -2,16 +2,19 @@ import { useState } from 'react'
 import type { PlannedRoute } from '../map/walkRoute.ts'
 import RoutePlanner from '../map/RoutePlanner.tsx'
 import { isInstalled } from '../../lib/install.ts'
+import NewContactsCard from '../contacts/NewContactsCard.tsx'
 import InstallSheet from './InstallSheet.tsx'
 import './home.css'
 
 type HomeProps = {
+  userId: string
   displayName: string
   onStartWalk: () => void
   onRouteChange: (route: PlannedRoute | null) => void
+  onOpenContacts: () => void
 }
 
-function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
+function Home({ userId, displayName, onStartWalk, onRouteChange, onOpenContacts }: HomeProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   return (
@@ -20,6 +23,8 @@ function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
         <p>Hi {displayName}</p>
         <h1>Ready when you are</h1>
       </div>
+
+      <NewContactsCard userId={userId} onOpenContacts={onOpenContacts} />
 
       {!isInstalled() && (
         <div className="home-banner">

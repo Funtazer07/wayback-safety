@@ -6,6 +6,7 @@ import { useSession } from './features/auth/SessionContext.ts'
 import AcceptInviteScreen from './features/contacts/AcceptInviteScreen.tsx'
 import ContactsScreen from './features/contacts/ContactsScreen.tsx'
 import { forgetInviteToken, takeInviteToken } from './features/contacts/invites.ts'
+import { useInviterName } from './features/contacts/useInviterName.ts'
 import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
 import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
@@ -44,6 +45,7 @@ function App() {
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
   const [inviteToken, setInviteToken] = useState(takeInviteToken)
+  const inviterName = useInviterName(isLoading || session ? null : inviteToken)
   const [tab, setTab] = useState<Tab>('places')
   const [isCircleOpen, setIsCircleOpen] = useState(false)
   const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
@@ -65,7 +67,7 @@ function App() {
     )
   }
 
-  if (!session) return <Welcome notice={logOutNotice} />
+  if (!session) return <Welcome notice={logOutNotice} inviterName={inviterName} />
 
   if (error || walkError) {
     return (
@@ -155,9 +157,14 @@ function App() {
     <div className="with-tab-bar">
       {tab === 'places' && (
         <Home
+          userId={session.user.id}
           displayName={profile.displayName}
           onStartWalk={() => setIsStartingWalk(true)}
           onRouteChange={setPlannedRoute}
+          onOpenContacts={() => {
+            setTab('contacts')
+            setIsCircleOpen(true)
+          }}
         />
       )}
       {tab === 'contacts' &&

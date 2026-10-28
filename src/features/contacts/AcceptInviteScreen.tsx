@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { isInstalled } from '../../lib/install.ts'
+import { isInstalled, isIphone } from '../../lib/install.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
+import AcceptedNextSteps from './AcceptedNextSteps.tsx'
 import { acceptInvite, declineInvite, fetchInvite, type InviteDetails } from './contacts.ts'
 import './contacts.css'
 
@@ -75,16 +76,14 @@ function AcceptInviteScreen({ token, onClose }: AcceptInviteScreenProps) {
       {step === 'accepted' && (
         <>
           <h1>You and {name} now look out for each other</h1>
-          <NotificationCard
-            reason={`WayBack can then tell you when ${name} starts a walk, gets home, or misses a check-in.`}
-          />
-          {/* On iPhone the Home Screen app has its own storage, so it starts signed out. */}
-          {!isInstalled() && (
-            <p className="contacts-small">
-              Your answer is saved. If you add WayBack to your Home Screen, open it from there, sign
-              in again and turn on notifications under Contacts.
-            </p>
+          <p>Your answer is saved. {name} sees it in the app too.</p>
+          {/* On iPhone notifications only work in the Home Screen app, which the steps cover. */}
+          {!(isIphone() && !isInstalled()) && (
+            <NotificationCard
+              reason={`WayBack can then tell you when ${name} starts a walk, gets home, or misses a check-in.`}
+            />
           )}
+          {!isInstalled() && <AcceptedNextSteps inviterName={name} />}
         </>
       )}
 

@@ -451,6 +451,16 @@ test('opening an invite link asks the contact to accept, then shows their contac
   expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
 })
 
+test('an invite link opened before signing in says who sent it on the welcome screen', async () => {
+  window.history.replaceState(null, '', '/?invite=0ddc2e61-c2a8-4dc4-9586-6656c2bdc63a')
+  contactsApi.fetchInvite.mockResolvedValue({ inviterName: 'Anna', expiresAt: new Date() })
+  renderApp(null)
+
+  expect(await screen.findByRole('heading', { name: 'Anna invited you' })).toBeInTheDocument()
+  expect(screen.getByText(/Sign in or create an account to accept/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument()
+})
+
 test('a walk is started with the contacts who are switched on', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Anna' })
   contactsApi.fetchContacts.mockResolvedValue([
