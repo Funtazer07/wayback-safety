@@ -3,6 +3,11 @@
   color-scheme: light;
   font-family: system-ui, sans-serif;
   line-height: 1.5;
+  /* Phones sometimes make text bigger on their own (Safari when the phone is turned sideways).
+     That breaks the layout, so it is switched off. The text size the user chose in the phone's
+     settings still works, and the layout makes room for it. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 
   --page: #f2f8f4;
   --page-tint: #e8f4ec;
@@ -288,4 +293,36 @@ button:disabled {
 [role='alert'] {
   font-weight: 600;
   color: var(--danger);
+}
+
+/* Numbered steps, used by the install sheet and after accepting an invite. */
+.numbered-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.numbered-steps li {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr;
+  align-items: center;
+  column-gap: 0.75rem;
+  counter-increment: step;
+}
+
+.numbered-steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--green-button);
 }

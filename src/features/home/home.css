@@ -1,5 +1,7 @@
+/* The button moves to its own line when the text and the button do not fit side by side. */
 .home-banner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.5rem 0.5rem 1rem;
@@ -9,7 +11,7 @@
 }
 
 .home-banner p {
-  flex: 1;
+  flex: 1 1 10rem;
 }
 
 .home-banner button {
@@ -48,9 +50,12 @@
   background: var(--green-button);
 }
 
-/* Exactly one phone screen tall, so it never scrolls: the map takes the room that is left. */
+/* Places is one phone screen tall, bottom bar included, so normally it does not scroll: the map in
+   the middle grows or shrinks to fill what the greeting and the Start walk button leave. Only when
+   the panels on the map do not fit (large text set on the phone, a very small screen) the page gets
+   longer, instead of the panels sliding over each other. */
 .home-screen {
-  height: 100dvh;
+  min-height: 100dvh;
   gap: 0.75rem;
   padding-top: 1.25rem;
 }

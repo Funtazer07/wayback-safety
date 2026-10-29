@@ -201,13 +201,16 @@
 .walk-live {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* One screen tall; longer only when large text on the phone makes it not fit, so nothing has to
+     slide over something else. */
+  min-height: 100dvh;
   max-width: 40rem;
   margin: 0 auto;
 }
 
+/* At least as tall as a report sheet on it, so the sheet is never cut off. */
 .walk-live .map-area {
-  min-height: 0;
+  min-height: min-content;
 }
 
 .walk-panel {

@@ -6,9 +6,11 @@ import './onboarding.css'
 
 type WelcomeProps = {
   notice?: string | null
+  /** Set when the app was opened from an invite link. */
+  inviterName?: string | null
 }
 
-function Welcome({ notice = null }: WelcomeProps) {
+function Welcome({ notice = null, inviterName = null }: WelcomeProps) {
   const [usesEmail, setUsesEmail] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
@@ -30,6 +32,15 @@ function Welcome({ notice = null }: WelcomeProps) {
     <main className="screen">
       <ProgressDots step={1} total={2} />
       {notice && <p role="status">{notice}</p>}
+      {inviterName && (
+        <section className="card onboarding-invite" aria-labelledby="onboarding-invite-title">
+          <h2 id="onboarding-invite-title">{inviterName} invited you</h2>
+          <p>
+            Sign in or create an account to accept. You will look out for each other on walks home.
+            Nothing is shared before you accept.
+          </p>
+        </section>
+      )}
       {/* Placeholder until the group has a logo and hero illustration. */}
       <div className="onboarding-hero">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" />

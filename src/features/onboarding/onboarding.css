@@ -31,3 +31,16 @@
   text-align: center;
   color: var(--text-muted);
 }
+
+.onboarding-invite {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.onboarding-invite h2 {
+  font-size: 1.125rem;
+}
+
+.card.onboarding-invite p {
+  color: var(--text);
+}
