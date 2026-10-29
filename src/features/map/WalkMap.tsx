@@ -5,13 +5,22 @@ import type { CameraMove } from './moveCamera.ts'
 import ReportSheets from './ReportSheets.tsx'
 import { useReporting } from './useReporting.ts'
 import { useUserPosition } from './useUserPosition.ts'
+import locateIcon from './assets/locate.svg'
+import reportOutline from './assets/report-outline.svg'
+import reportFill from './assets/report-fill.svg'
 import './map.css'
 
 type WalkMapProps = {
+  arrivalLabel?: string
+  /** The route chosen on Home, or null when the walk was started without one. */
   route: LngLat[] | null
 }
 
-function WalkMap({ route }: WalkMapProps) {
+/**
+ * The map during a walk: the chosen route, the user's position, and press and hold to report a
+ * broken street light. No route planner here: the walk is already on its way.
+ */
+function WalkMap({ route, arrivalLabel }: WalkMapProps) {
   const { position, start } = useUserPosition()
   const [thankYou, setThankYou] = useState('')
   const reporting = useReporting((_lights, message) => setThankYou(message))
@@ -36,7 +45,7 @@ function WalkMap({ route }: WalkMapProps) {
   }, [position])
 
   return (
-    <div className="map-area">
+    <div className="map-area walk-map">
       <MapView
         position={position}
         brokenLights={reporting.brokenLights}
@@ -59,16 +68,45 @@ function WalkMap({ route }: WalkMapProps) {
           {thankYou}
         </p>
       )}
-      {position && !reporting.isSheetOpen && (
-        <button
-          type="button"
-          className="map-locate"
-          onClick={() =>
-            setCamera({ id: Date.now(), kind: 'centre', centre: position.coordinates, zoom: 17 })
-          }
-        >
-          My location
-        </button>
+      {!reporting.isSheetOpen && (
+        <div className="walk-map-controls">
+          <button
+            type="button"
+            className="walk-map-control"
+            aria-label="My location"
+            title="My location"
+            onClick={() => {
+              if (position) {
+                setCamera({
+                  id: Date.now(),
+                  kind: 'centre',
+                  centre: position.coordinates,
+                  zoom: 17,
+                })
+              } else {
+                start()
+              }
+            }}
+          >
+            <img src={locateIcon} alt="" width="22" height="22" />
+          </button>
+          <button
+            type="button"
+            className="walk-map-control walk-report-placeholder"
+            aria-label="Report a street issue (coming soon)"
+            title="Street reports are coming soon"
+            disabled
+          >
+            <span className="walk-report-symbol" aria-hidden="true">
+              <img className="walk-report-outline" src={reportOutline} alt="" />
+              <img className="walk-report-fill" src={reportFill} alt="" />
+              <span>+</span>
+            </span>
+          </button>
+        </div>
+      )}
+      {arrivalLabel && !reporting.isSheetOpen && (
+        <p className="walk-arrival-badge">{arrivalLabel}</p>
       )}
       <div className="map-bottom">
         <ReportSheets reporting={reporting} />

@@ -39,6 +39,7 @@ test('the time left is right again as soon as the phone is unlocked', () => {
 
   expect(screen.getByRole('timer')).toHaveAccessibleName('8 min left')
   expect(screen.getByText('08:00')).toBeInTheDocument()
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '60')
 })
 
 test('asks "Are you okay?" when the phone is unlocked after the deadline', () => {
@@ -192,11 +193,12 @@ test('the walk screen offers more time and Cancel walk, as in the design', () =>
   expect(screen.getByRole('button', { name: 'Cancel walk' })).toBeInTheDocument()
 })
 
-test('in the last 5 minutes the walk screen says the walk is almost over', () => {
+test('the last five minutes keep the compact timer without the old warning paragraph', () => {
   render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onDone={vi.fn()} />)
   act(() => lockPhoneUntil('2026-10-06T22:16:00'))
 
-  expect(screen.getByText(/Your walk is almost over/)).toBeInTheDocument()
+  expect(screen.queryByText(/Your walk is almost over/)).not.toBeInTheDocument()
+  expect(screen.getByRole('timer')).toHaveAccessibleName('4 min left')
 })
 
 test('reviewing the reminder does not change the deadline until a choice is confirmed', async () => {

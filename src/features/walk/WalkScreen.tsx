@@ -5,7 +5,7 @@ import AreYouOkScreen from './AreYouOkScreen.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import HomeSafeScreen from './HomeSafeScreen.tsx'
 import { walkPhase } from './grace.ts'
-import { formatClock, timerPhase, isReminderDue } from './time.ts'
+import { formatClock, minutesUntil, timerPhase, isReminderDue } from './time.ts'
 import { useLocationUpdates } from './useLocationUpdates.ts'
 import { useNow } from './useNow.ts'
 import { useRefreshDuringGrace } from './useRefreshDuringGrace.ts'
@@ -14,7 +14,7 @@ import { useWalkContactNames } from './useWalkContactNames.ts'
 import { useWalkWatchers } from './useWalkWatchers.ts'
 import WatchersLine from './WatchersLine.tsx'
 import WalkActions from './WalkActions.tsx'
-import WalkTimer from './WalkTimer.tsx'
+import WalkStatusTimer from './WalkStatusTimer.tsx'
 import ArrivedSheet from './ArrivedSheet.tsx'
 import RunningLateSheet from './RunningLateSheet.tsx'
 import { useWalkPrompts } from './useWalkPrompts.ts'
@@ -54,7 +54,9 @@ function WalkScreen({
   useRefreshDuringGrace(phase === 'grace', onRefresh)
   const contactNames = useWalkContactNames(isLate ? walk.id : null)
   const hasCheckedIn = walk.status === 'safe'
-  const { isLocationOff, fixes } = useLocationUpdates(hasCheckedIn ? null : walk.id)
+  // No location is read or sent once the user is home.
+  const { fixes } = useLocationUpdates(hasCheckedIn ? null : walk.id)
+  // "Are you home?" and "Running late?", from the SCRUM-97 ideation.
   const prompts = useWalkPrompts({ walk, route, routeSeconds, fixes, now })
   const watchers = useWalkWatchers(hasCheckedIn ? null : walk.id)
   const [isBusy, setIsBusy] = useState(false)
@@ -92,31 +94,27 @@ function WalkScreen({
 
   return (
     <main className="walk-live">
-      <WalkMap route={route} />
+      <WalkMap
+        route={route}
+        arrivalLabel={`Arrival ${formatClock(walk.deadline)} · ${minutesUntil(walk.deadline, now)} min walk`}
+      />
 
-      <section className={`walk-panel is-${timerPhase(walk.deadline, now)}`} aria-label="Your walk">
+      <section
+        className={`walk-panel walk-navigation-panel is-${timerPhase(walk.deadline, now)}`}
+        aria-label="Your walk"
+      >
+        <div className="walk-sheet-handle" aria-hidden="true" />
+        <WalkStatusTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
         <div className="walk-panel-top">
-          <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
           <div className="walk-panel-text">
             <p className="walk-small">Walking to</p>
             <p className="walk-destination">{walk.destinationLabel}</p>
-            <p>
-              Home by <strong>{formatClock(walk.deadline)}</strong>
-            </p>
-            <p className="walk-small">
-              {isLocationOff
-                ? 'Location is off, so the app cannot save where you last were.'
-                : 'The app saves where you last were.'}
-            </p>
           </div>
+          <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
         </div>
+        <p className="walk-deadline">Check in by {formatClock(walk.deadline)}</p>
+        <WalkActions onExtend={onExtend} onCancel={onCancel} compact />
         <WatchersLine names={watchers} />
-        {timerPhase(walk.deadline, now) === 'almost-up' && !isReminderDue(walk.deadline, now) && (
-          <p className="walk-almost" role="status">
-            <strong>Your walk is almost over.</strong> You have less than 5 minutes left. Do you
-            need more time?
-          </p>
-        )}
         {isReminderDue(walk.deadline, now) && (
           <WalkReminder
             deadline={walk.deadline}
@@ -125,8 +123,6 @@ function WalkScreen({
           />
         )}
         {error && <p role="alert">{error}</p>}
-        <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
-        <WalkActions onExtend={onExtend} onCancel={onCancel} />
       </section>
 
       {prompts.isArrived && (
