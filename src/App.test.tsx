@@ -12,6 +12,7 @@ const walks = vi.hoisted(() => ({
   fetchCurrentWalk: vi.fn(),
   fetchWalkContacts: vi.fn(),
   fetchWalkWatchers: vi.fn(),
+  shareWalkRoute: vi.fn(),
   startWalk: vi.fn(),
   updateWalkLocation: vi.fn(),
 }))
@@ -26,7 +27,6 @@ function walkEndingIn(minutes: number) {
   }
 }
 
-// Stand-ins for the real backend, so the tests never talk to Supabase.
 vi.mock('./lib/supabase.ts', () => ({ supabase: { auth } }))
 vi.mock('./features/profile/profile.ts', () => profile)
 vi.mock('./features/walk/walk.ts', () => walks)
@@ -46,15 +46,11 @@ vi.mock('./features/followedWalk/followedWalk.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./features/followedWalk/followedWalk.ts')>()),
   ...followed,
 }))
-// The map needs a real browser; it has its own tests in features/map.
-// A route chosen on Home, from Stratumseind to the station.
 const routeViaStratumseind = vi.hoisted((): [number, number][] => [
   [5.4791, 51.4385],
   [5.4794, 51.4409],
   [5.4797, 51.4433],
 ])
-// The Home map's stand-in has a button that chooses a route, and the walk map's stand-in says
-// which route it got.
 vi.mock('./features/map/RoutePlanner.tsx', () => ({
   default: ({
     onRouteChange,
@@ -295,6 +291,23 @@ test('the route chosen on Home is on the walk map after the walk starts', async 
 
   expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
   expect(walks.startWalk).toHaveBeenCalledWith(expect.objectContaining({ minutes: 30 }))
+  // The contacts see the same route on their screen.
+  expect(walks.shareWalkRoute).toHaveBeenCalledWith('walk-1', routeViaStratumseind)
+})
+
+test('a walk still starts when sharing the route with the contacts fails', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  walks.startWalk.mockResolvedValue(walkEndingIn(20))
+  walks.shareWalkRoute.mockRejectedValue(new Error('network'))
+  renderApp(loggedIn)
+  await screen.findByText('Hi Sam')
+
+  click('Choose the route via Stratumseind')
+  click('Start walk')
+  click('Start walk')
+
+  expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
 test('a walk started without a route shows no route', async () => {
@@ -307,6 +320,7 @@ test('a walk started without a route shows no route', async () => {
   click('Start walk')
 
   expect(await screen.findByText('Map shows no route')).toBeInTheDocument()
+  expect(walks.shareWalkRoute).not.toHaveBeenCalled()
 })
 
 test('the route is still on the walk map when the app is opened again during the walk', async () => {
@@ -435,6 +449,16 @@ test('opening an invite link asks the contact to accept, then shows their contac
   click('Decline')
 
   expect(await screen.findByRole('heading', { name: 'Trusted contacts' })).toBeInTheDocument()
+})
+
+test('an invite link opened before signing in says who sent it on the welcome screen', async () => {
+  window.history.replaceState(null, '', '/?invite=0ddc2e61-c2a8-4dc4-9586-6656c2bdc63a')
+  contactsApi.fetchInvite.mockResolvedValue({ inviterName: 'Anna', expiresAt: new Date() })
+  renderApp(null)
+
+  expect(await screen.findByRole('heading', { name: 'Anna invited you' })).toBeInTheDocument()
+  expect(screen.getByText(/Sign in or create an account to accept/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument()
 })
 
 test('a walk is started with the contacts who are switched on', async () => {

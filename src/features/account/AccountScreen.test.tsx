@@ -10,7 +10,6 @@ const notifications = vi.hoisted(() => ({
 }))
 
 vi.mock('../auth/auth.ts', () => ({ logOut }))
-// The browser parts have their own tests in notifications.test.ts.
 vi.mock('../notifications/notifications.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../notifications/notifications.ts')>()),
   ...notifications,

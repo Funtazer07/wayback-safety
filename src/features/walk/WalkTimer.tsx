@@ -14,14 +14,12 @@ type WalkTimerProps = {
   now: Date
 }
 
-// Colour is never the only sign: each phase also has its own words under the countdown.
 const phaseLabel: Record<TimerPhase, string> = {
   'on-time': 'left',
   'almost-up': 'Almost time',
   'time-up': 'Time is up',
 }
 
-/** A ring that empties as the walk's time runs out, with the countdown in the middle. */
 function WalkTimer({ startedAt, deadline, now }: WalkTimerProps) {
   const phase = timerPhase(deadline, now)
   const share = timeLeftShare(startedAt, deadline, now)
@@ -31,7 +29,7 @@ function WalkTimer({ startedAt, deadline, now }: WalkTimerProps) {
     <div
       className={`walk-timer-ring is-${phase}`}
       role="timer"
-      // Minutes, not seconds: a screen reader should not be told something new every second.
+      // Minutes, so a screen reader is not told something new every second.
       aria-label={phase === 'time-up' ? 'Time is up' : `${formatDuration(minutes)} left`}
     >
       <svg viewBox="0 0 120 120" aria-hidden="true">

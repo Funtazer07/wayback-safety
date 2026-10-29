@@ -9,7 +9,6 @@ type RouteSummaryProps = {
   onShowAll: () => void
 }
 
-/** The chosen route in one bar, once the list is closed, so most of the screen is map. */
 function RouteSummary({ routes, selectedIndex, onShowAll }: RouteSummaryProps) {
   const route = routes[selectedIndex]
   const details = [

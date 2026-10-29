@@ -1,13 +1,11 @@
 import './topBar.css'
 
 type TopBarProps = {
-  /** The small title next to the back button, for example "Walking to Home" or "Your circle". */
   title: string
-  /** Where the back button goes. Without it there is no back button, only the title. */
+  /** Without it there is no back button. */
   onBack?: () => void
 }
 
-/** The top of most screens in the prototype: "‹" in a pale circle and a small title. */
 function TopBar({ title, onBack }: TopBarProps) {
   return (
     <div className="top-bar">

@@ -8,21 +8,14 @@ import './contacts.css'
 
 type ContactsScreenProps = {
   userId: string
-  /** The user's own name, put in the invite text: "Anna would like you as a trusted contact". */
   displayName: string
-  /** Back to the Activity feed (screen 09), where this screen is opened from. */
   onBack: () => void
 }
 
-/**
- * Screen 14 of the prototype: the user's trusted contacts, and inviting a new one (SCRUM-60).
- * Opened from Activity. Their walks are shown there, not here.
- */
 function ContactsScreen({ userId, displayName, onBack }: ContactsScreenProps) {
   const { contacts, isLoading, error, invite, pause, remove } = useContacts(userId)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isInviting, setIsInviting] = useState(false)
-  // Read once: whether an invite has expired does not need to change while the screen is open.
   const [now] = useState(() => new Date())
   const selected = contacts.find((contact) => contact.id === selectedId) ?? null
 

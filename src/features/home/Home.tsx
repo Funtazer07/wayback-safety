@@ -2,18 +2,19 @@ import { useState } from 'react'
 import type { PlannedRoute } from '../map/walkRoute.ts'
 import RoutePlanner from '../map/RoutePlanner.tsx'
 import { isInstalled } from '../../lib/install.ts'
+import NewContactsCard from '../contacts/NewContactsCard.tsx'
 import InstallSheet from './InstallSheet.tsx'
 import './home.css'
 
 type HomeProps = {
+  userId: string
   displayName: string
   onStartWalk: () => void
-  /** Hears which route is on the map, so the walk can show it. */
   onRouteChange: (route: PlannedRoute | null) => void
+  onOpenContacts: () => void
 }
 
-/** Screen 3 of the onboarding v2 wireframe: where the onboarding ends. */
-function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
+function Home({ userId, displayName, onStartWalk, onRouteChange, onOpenContacts }: HomeProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   return (
@@ -22,6 +23,8 @@ function Home({ displayName, onStartWalk, onRouteChange }: HomeProps) {
         <p>Hi {displayName}</p>
         <h1>Ready when you are</h1>
       </div>
+
+      <NewContactsCard userId={userId} onOpenContacts={onOpenContacts} />
 
       {!isInstalled() && (
         <div className="home-banner">

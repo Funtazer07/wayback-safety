@@ -3,14 +3,11 @@ import type { LngLat } from './geometry.ts'
 
 export type UserPosition = {
   coordinates: LngLat
-  /** How exact the position is, in metres. */
+  /** In metres. */
   accuracy: number
 }
 
-/**
- * The phone's position, kept up to date once `start` is called. It is only drawn on the map and
- * used as the start of a route; this hook never stores or sends it.
- */
+/** Never stores or sends the position. */
 export function useUserPosition() {
   const [position, setPosition] = useState<UserPosition | null>(null)
   const [isUnavailable, setIsUnavailable] = useState(false)

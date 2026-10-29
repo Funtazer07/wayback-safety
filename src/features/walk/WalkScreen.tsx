@@ -5,7 +5,7 @@ import AreYouOkScreen from './AreYouOkScreen.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import HomeSafeScreen from './HomeSafeScreen.tsx'
 import { walkPhase } from './grace.ts'
-import { formatClock, timerPhase } from './time.ts'
+import { formatClock, timerPhase, isReminderDue } from './time.ts'
 import { useLocationUpdates } from './useLocationUpdates.ts'
 import { useNow } from './useNow.ts'
 import { useRefreshDuringGrace } from './useRefreshDuringGrace.ts'
@@ -18,32 +18,22 @@ import WalkTimer from './WalkTimer.tsx'
 import ArrivedSheet from './ArrivedSheet.tsx'
 import RunningLateSheet from './RunningLateSheet.tsx'
 import { useWalkPrompts } from './useWalkPrompts.ts'
+import WalkReminder from './WalkReminder.tsx'
 import './walk.css'
 
 type WalkScreenProps = {
   walk: Walk
-  /** The route chosen on Home for this walk, shown on the map. */
   route?: LngLat[] | null
-  /** The route planner's walking time for that route, to know the walker's pace. */
   routeSeconds?: number | null
-  /** Tells the server the user is home. Fails when the server cannot be reached. */
   onCheckIn: () => Promise<void>
-  /** Gives the user more time. Fails when the server cannot be reached or refuses. */
   onExtend?: (minutes: number) => Promise<void>
-  /** Stops the walk without a check-in (SCRUM-94). Fails when the server cannot be reached. */
   onCancel?: () => Promise<void>
-  /** Asks the server for the walk again, to hear about the warning and about overdue. */
   onRefresh?: () => Promise<void>
-  /** Called when the user leaves the "You're home" screen. */
   onDone: () => void
 }
 
 const doNothing = async () => {}
 
-/**
- * Screen 2 of the walk wireframe: the map, with the time left readable at a glance. Once the time
- * has run out it becomes the "Are you okay?" screen (SCRUM-101).
- */
 function WalkScreen({
   walk,
   route = null,
@@ -54,17 +44,18 @@ function WalkScreen({
   onRefresh = doNothing,
   onDone,
 }: WalkScreenProps) {
+  const [isReviewingTime, setIsReviewingTime] = useState(() => {
+    // Set when the walker tapped the reminder push.
+    return new URLSearchParams(window.location.search).get('reminder') === walk.id
+  })
   const now = useNow()
   const phase = walkPhase(walk, now)
   const isLate = phase === 'grace' || phase === 'overdue'
   useRefreshDuringGrace(phase === 'grace', onRefresh)
   const contactNames = useWalkContactNames(isLate ? walk.id : null)
   const hasCheckedIn = walk.status === 'safe'
-  // No location is read or sent once the user is home.
   const { isLocationOff, fixes } = useLocationUpdates(hasCheckedIn ? null : walk.id)
-  // "Are you home?" and "Running late?", from the SCRUM-97 ideation.
   const prompts = useWalkPrompts({ walk, route, routeSeconds, fixes, now })
-  // Who tapped "I'm watching" (SCRUM-114). Not needed once the walk has ended.
   const watchers = useWalkWatchers(hasCheckedIn ? null : walk.id)
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,14 +71,12 @@ function WalkScreen({
     setIsBusy(false)
   }
 
-  // Screen 12 (SCRUM-106). The server's check-in time when it is known, so it matches what the
-  // contacts were told; otherwise this moment.
+  // The server's time, so it matches what the contacts were told.
   if (hasCheckedIn) {
     return <HomeSafeScreen walkId={walk.id} endedAt={walk.checkedInAt ?? now} onDone={onDone} />
   }
 
-  // The location keeps being sent on this screen too: when the contacts are told, where the user
-  // last was matters most.
+  // The location keeps being sent here: this is when it matters most.
   if (isLate) {
     return (
       <AreYouOkScreen
@@ -105,8 +94,6 @@ function WalkScreen({
     <main className="walk-live">
       <WalkMap route={route} />
 
-      {/* The whole panel turns yellow in the last minutes, as on the "almost over" design; the
-          timer also says "Almost time", so colour is not the only sign. */}
       <section className={`walk-panel is-${timerPhase(walk.deadline, now)}`} aria-label="Your walk">
         <div className="walk-panel-top">
           <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
@@ -124,11 +111,18 @@ function WalkScreen({
           </div>
         </div>
         <WatchersLine names={watchers} />
-        {timerPhase(walk.deadline, now) === 'almost-up' && (
+        {timerPhase(walk.deadline, now) === 'almost-up' && !isReminderDue(walk.deadline, now) && (
           <p className="walk-almost" role="status">
             <strong>Your walk is almost over.</strong> You have less than 5 minutes left. Do you
             need more time?
           </p>
+        )}
+        {isReminderDue(walk.deadline, now) && (
+          <WalkReminder
+            deadline={walk.deadline}
+            now={now}
+            onReview={() => setIsReviewingTime(true)}
+          />
         )}
         {error && <p role="alert">{error}</p>}
         <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
@@ -138,12 +132,18 @@ function WalkScreen({
       {prompts.isArrived && (
         <ArrivedSheet isBusy={isBusy} onHome={handleCheckIn} onNotYet={prompts.dismissArrival} />
       )}
-      {prompts.suggestion !== null && (
+      {!prompts.isArrived && (prompts.suggestion !== null || isReviewingTime) && (
         <RunningLateSheet
-          suggestion={prompts.suggestion}
+          suggestion={prompts.suggestion ?? 10}
           deadline={walk.deadline}
           onExtend={onExtend}
-          onDismiss={prompts.dismissLate}
+          onDismiss={() => {
+            prompts.dismissLate()
+            setIsReviewingTime(false)
+            const url = new URL(window.location.href)
+            url.searchParams.delete('reminder')
+            window.history.replaceState(null, '', url)
+          }}
         />
       )}
     </main>

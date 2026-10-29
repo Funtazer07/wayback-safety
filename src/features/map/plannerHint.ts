@@ -4,7 +4,6 @@ type HintState = {
   hasStart: boolean
 }
 
-/** What the user can do next on the planner map, as one sentence. */
 export function plannerHint({ hasRoutes, isChoosing, hasStart }: HintState): string {
   if (hasRoutes && isChoosing) return 'Pick the route you want to walk.'
   if (hasRoutes) return 'Press and hold the map to report a broken street light.'
@@ -18,7 +17,6 @@ type LocationState = {
   isOutside: boolean
 }
 
-/** A message about the user's location, or an empty string when there is nothing to say. */
 export function locationMessage({ isLocating, isUnavailable, isOutside }: LocationState): string {
   if (isUnavailable)
     return 'Could not find your location. Allow location access, or tap where you start.'

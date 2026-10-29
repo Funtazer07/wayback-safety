@@ -12,37 +12,29 @@ import {
 } from './geometry.ts'
 import type { Route } from './routes.ts'
 
-// The municipality's open data portal, dataset "data-openbare-verlichting" (named in SCRUM-26). It
-// is a register: it says where a lamp stands, not whether it is on.
+// A register of where lamps stand, not whether they are on.
 const lampExportUrl =
   'https://data.eindhoven.nl/api/explore/v2.1/catalog/datasets/data-openbare-verlichting/exports/geojson'
 
-// Assumption: a lamp lights the route when it stands within 5 m of it. A wider reach also counted
-// lamps on a busy road running next to the walking route. With 3 m most lamps on normal streets
-// dropped out, because a route often follows the middle of the road.
+// Assumption: 5 m. Wider also counted lamps on a parallel road; 3 m missed most normal streets.
 export const lampReach = 5
-// Assumption: a press within 30 m of a street light is meant for that light. The user cannot see
-// the lamps, so the press has to be forgiving.
+// Assumption: forgiving, because the user cannot see the lamps on the map.
 export const reportReach = 30
 
-/** One registered street light. */
 export type Lamp = {
   lampId: string
   coordinates: LngLat
   street: string
-  /** The number of the lamp post in the register, as printed on the post. */
+  /** As printed on the post. */
   number: string
 }
 
-/** A route with what the register says about the street lights along it. */
 export type MeasuredRoute = Route & {
-  /** Length in metres. */
   length: number
-  /** Street lights along the route that nobody reported as broken. */
   lampCount: number
   brokenCount: number
   lampsPerKm: number
-  /** The longest piece of the route without a working street light, in metres. */
+  /** In metres. */
   longestDark: number
 }
 
@@ -78,7 +70,6 @@ export function lampsInUrl(rectangles: Rectangle[], fields: string): string {
   return `${lampExportUrl}?${params}`
 }
 
-/** Counts the street lights along a route, leaving out the spots that are reported broken. */
 export function measureRoute(
   route: Route,
   answer: unknown,
@@ -95,11 +86,9 @@ export function measureRoute(
     const place = placeOf(coordinates)
     if (working.has(place) || broken.has(place)) continue
 
-    // The rectangles are rough: only lamps really within reach of the route count.
     const { distance, along } = measureFromLine(routeInMetres, toMetres(coordinates))
     if (distance > lampReach) continue
 
-    // A light reported as broken gives no light, so it does not count for the route.
     if (brokenPlaces.has(place)) broken.add(place)
     else working.set(place, along)
   }
@@ -130,7 +119,6 @@ export async function measureRouteLamps(
   return measureRoute(route, await fetchJson(url, signal), brokenPlaces)
 }
 
-/** The registered street light nearest to a spot, or null when none is within reach. */
 export function nearestLamp(point: LngLat, answer: unknown): Lamp | null {
   let nearest: { lamp: Lamp; distance: number } | null = null
   for (const feature of featuresOf(answer)) {

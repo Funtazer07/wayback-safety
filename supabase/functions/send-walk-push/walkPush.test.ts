@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 import {
   audienceOf,
   formatClock,
+  isReminderCurrent,
   isSubscriptionGone,
   isWalkEvent,
   messageFor,
@@ -176,4 +177,65 @@ test('a check-in after the alert tells the contacts clearly that the person is s
 
 test('the alert is kept for a day for a phone that is off', () => {
   expect(timeToLive('overdue')).toBe(24 * 60 * 60)
+})
+
+test('the pre-deadline reminder goes only to the walker and opens the time review', () => {
+  expect(isWalkEvent('reminder')).toBe(true)
+  expect(audienceOf('reminder')).toBe('walker')
+  expect(messageFor('reminder', 'Anna', walk)).toEqual({
+    title: 'Need more time?',
+    body: 'Your check-in is due at 22:36. Open WayBack to add time or say you’re home.',
+    url: '?reminder=walk-1',
+  })
+})
+
+test('a reminder expires at the deadline, never five minutes after sending', () => {
+  const now = new Date('2026-10-15T20:35:30Z')
+  expect(timeToLive('reminder', walk.deadline, now)).toBe(30)
+  expect(timeToLive('reminder', walk.deadline, new Date('2026-10-15T20:34:00Z'))).toBe(60)
+  expect(timeToLive('reminder', walk.deadline, walk.deadline)).toBe(0)
+  expect(timeToLive('reminder')).toBe(0)
+})
+
+test('a queued reminder is sent only in the last minute of the same active deadline', () => {
+  const now = new Date('2026-10-15T20:35:30Z')
+  const queued = walk.deadline.toISOString()
+  expect(isReminderCurrent('active', walk.deadline, queued, now)).toBe(true)
+  expect(isReminderCurrent('active', new Date('2026-10-15T20:46:00Z'), queued, now)).toBe(false)
+  expect(isReminderCurrent('active', walk.deadline, queued, walk.deadline)).toBe(false)
+  expect(isReminderCurrent('active', walk.deadline, queued, new Date('2026-10-15T20:34:59Z'))).toBe(
+    false,
+  )
+  expect(isReminderCurrent('active', walk.deadline, 'invalid', now)).toBe(false)
+  expect(isReminderCurrent('active', walk.deadline, undefined, now)).toBe(false)
+})
+
+test.each(['safe', 'cancelled', 'overdue'])('a %s walk receives no reminder', (status) => {
+  const now = new Date('2026-10-15T20:35:30Z')
+  expect(isReminderCurrent(status, walk.deadline, walk.deadline.toISOString(), now)).toBe(false)
+})
+
+test('added time tells the contacts the new arrival time and that nothing needs doing', () => {
+  // The deadline after +10 minutes: 22:46 Eindhoven time.
+  const message = messageFor('deadline_extended', 'Anna', {
+    ...walk,
+    deadline: new Date('2026-10-15T20:46:00Z'),
+  })
+
+  expect(audienceOf('deadline_extended')).toBe('contacts')
+  expect(message).toEqual({
+    title: 'Anna updated the arrival time',
+    body: 'Anna needs a little more time to get home. The new expected arrival time is 22:46. No action is needed.',
+    url: '?walk=walk-1',
+  })
+})
+
+test('"arrival time updated" is only delivered until the new time, and at most an hour', () => {
+  expect(timeToLive('deadline_extended', walk.deadline, new Date('2026-10-15T20:26:00Z'))).toBe(
+    10 * 60,
+  )
+  expect(timeToLive('deadline_extended', walk.deadline, new Date('2026-10-15T18:00:00Z'))).toBe(
+    60 * 60,
+  )
+  expect(timeToLive('deadline_extended', walk.deadline, walk.deadline)).toBe(0)
 })

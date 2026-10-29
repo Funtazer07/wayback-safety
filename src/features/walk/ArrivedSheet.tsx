@@ -4,11 +4,7 @@ type ArrivedSheetProps = {
   onNotYet: () => void
 }
 
-/**
- * "Are you home?" (SCRUM-112), when the phone is at the end of the planned route. One tap ends the
- * walk, so forgetting "I'm home" does not alarm anyone. The app does not end the walk by itself:
- * being near home is not the same as being safe inside.
- */
+/** Never ends the walk by itself: being near home is not the same as being safe inside. */
 function ArrivedSheet({ isBusy, onHome, onNotYet }: ArrivedSheetProps) {
   return (
     <div className="sheet-backdrop">

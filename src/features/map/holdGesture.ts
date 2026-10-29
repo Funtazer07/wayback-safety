@@ -1,17 +1,11 @@
 import type { Map as MapLibreMap, MapMouseEvent, MapTouchEvent } from 'maplibre-gl'
 import type { LngLat } from './geometry.ts'
 
-// Assumption: holding a finger still for about half a second means "press and hold", like in
-// other map apps. Phones do not give one signal for this (an iPhone sends none at all), so it is
-// measured here. Moving the finger, or a second finger for zooming, cancels it.
+// Phones give no single long-press signal (an iPhone sends none), so it is measured here.
 const holdTime = 550
 const holdMaxMove = 10
 
-/**
- * Calls `onHold` when the user presses and holds the map, or right-clicks it on a laptop. A long
- * press ends with the finger lifting, which the map may also see as a tap: `isTapIgnored` tells
- * the tap handler to skip that tap.
- */
+/** Lifting the finger after a hold also looks like a tap: `isTapIgnored` says to skip it. */
 export function watchHold(map: MapLibreMap, onHold: (point: LngLat) => void) {
   let timer: ReturnType<typeof setTimeout> | undefined
   let startPoint: { x: number; y: number } | null = null
@@ -25,7 +19,6 @@ export function watchHold(map: MapLibreMap, onHold: (point: LngLat) => void) {
 
   function hold({ lng, lat }: { lng: number; lat: number }) {
     ignoreTapsUntil = Date.now() + 700
-    // A short buzz on phones that can, so the user feels the press was noticed.
     navigator.vibrate?.(15)
     onHold([lng, lat])
   }
@@ -47,8 +40,7 @@ export function watchHold(map: MapLibreMap, onHold: (point: LngLat) => void) {
     if (moved > holdMaxMove) cancel()
   }
 
-  // A right click on a laptop. Android also sends this after a long press: the time check stops
-  // the menu from opening twice.
+  // Android also sends this after a long press; the time check stops a double open.
   function onContextMenu(event: MapMouseEvent) {
     event.originalEvent.preventDefault()
     if (Date.now() < ignoreTapsUntil) return

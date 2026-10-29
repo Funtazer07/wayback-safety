@@ -12,16 +12,13 @@ function exampleWalk(): Walk {
   }
 }
 
-/**
- * The real walk screen with a 20-minute example walk and no backend, for showing the check-in in
- * a user test (SCRUM-49). Nothing is sent to Supabase; see docs/check-in-preview.md.
- */
+/** For user tests, without a backend. See docs/check-in-preview.md. */
 function CheckInPreview() {
   const [walk, setWalk] = useState(exampleWalk)
 
   return (
     <WalkScreen
-      // A new key starts the screen from scratch, so the demo can be shown again.
+      // A new key restarts the demo.
       key={walk.startedAt.getTime()}
       walk={walk}
       onCheckIn={async () => setWalk({ ...walk, status: 'safe' })}

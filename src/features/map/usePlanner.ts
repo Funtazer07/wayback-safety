@@ -7,29 +7,23 @@ import { fetchRoutes } from './routes.ts'
 import type { UserPosition } from './useUserPosition.ts'
 
 type PlanOptions = {
-  /** Planning again after a report: keep the route the user chose, and the list as it was. */
   keepChoice?: boolean
-  /** Shown when the counting is done, so the "Counting…" message does not wipe it away. */
   thankYou?: string
 }
 
-/** Planning a walk on the map: the start, the destination and the routes to choose from. */
 export function usePlanner(position: UserPosition | null) {
   const [chosenStart, setChosenStart] = useState<LngLat | null>(null)
   const [destination, setDestination] = useState<LngLat | null>(null)
   const [routes, setRoutes] = useState<MeasuredRoute[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
-  // True while the list of routes is open. Choosing a route closes it, to give the map more room.
   const [isChoosing, setIsChoosing] = useState(false)
   const [status, setStatus] = useState('')
-  // The routes of the latest new plan, so the map can zoom out to show them. Planning again after
-  // a report does not change it, so the map stays where the user was looking.
+  // Planning again after a report does not change this, so the map does not move.
   const [newRoutes, setNewRoutes] = useState<MeasuredRoute[] | null>(null)
   const request = useRef<AbortController | null>(null)
 
   useEffect(() => () => request.current?.abort(), [])
 
-  // A tapped start wins; otherwise the user's own position, when it is inside the map.
   const start =
     chosenStart ?? (position && isInEindhoven(position.coordinates) ? position.coordinates : null)
 
@@ -81,7 +75,6 @@ export function usePlanner(position: UserPosition | null) {
     }
   }
 
-  /** A tap on the map: first it sets the start (when there is no position), then the destination. */
   function tapPlace(point: LngLat, lights: BrokenLight[]) {
     if (!start) {
       setChosenStart(point)
@@ -91,7 +84,6 @@ export function usePlanner(position: UserPosition | null) {
     plan(start, point, lights)
   }
 
-  /** The counts change when a light breaks or works again, so the walk is planned again. */
   function replan(lights: BrokenLight[], thankYou: string) {
     if (start && destination) plan(start, destination, lights, { keepChoice: true, thankYou })
     else setStatus(thankYou)

@@ -5,12 +5,12 @@ import EmailScreen from '../auth/EmailScreen.tsx'
 import './onboarding.css'
 
 type WelcomeProps = {
-  /** Something to tell the user who just logged out, for example that alerts may still arrive. */
   notice?: string | null
+  /** Set when the app was opened from an invite link. */
+  inviterName?: string | null
 }
 
-/** Screen 1 of the onboarding v2 wireframe: welcome and sign-in on one screen. */
-function Welcome({ notice = null }: WelcomeProps) {
+function Welcome({ notice = null, inviterName = null }: WelcomeProps) {
   const [usesEmail, setUsesEmail] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
@@ -19,7 +19,6 @@ function Welcome({ notice = null }: WelcomeProps) {
     setError(null)
     setIsBusy(true)
     try {
-      // On success the browser leaves for the Google page, so nothing happens after this.
       await signInWithGoogle()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Something went wrong. Try again.')
@@ -33,6 +32,15 @@ function Welcome({ notice = null }: WelcomeProps) {
     <main className="screen">
       <ProgressDots step={1} total={2} />
       {notice && <p role="status">{notice}</p>}
+      {inviterName && (
+        <section className="card onboarding-invite" aria-labelledby="onboarding-invite-title">
+          <h2 id="onboarding-invite-title">{inviterName} invited you</h2>
+          <p>
+            Sign in or create an account to accept. You will look out for each other on walks home.
+            Nothing is shared before you accept.
+          </p>
+        </section>
+      )}
       {/* Placeholder until the group has a logo and hero illustration. */}
       <div className="onboarding-hero">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" />
@@ -47,16 +55,14 @@ function Welcome({ notice = null }: WelcomeProps) {
 
       <div className="screen-actions">
         {error && <p role="alert">{error}</p>}
-        {/* The wireframe has "Continue with Apple" and "Use phone number instead" here. The group
-            chose Google plus email: Apple needs a paid developer account and phone a paid SMS
-            provider. */}
+        {/* No Apple or phone sign-in: both cost money. */}
         <button type="button" className="button-primary" disabled={isBusy} onClick={handleSignIn}>
           Continue with Google
         </button>
         <button type="button" className="button-link" onClick={() => setUsesEmail(true)}>
           Use email instead
         </button>
-        {/* The Terms and the Privacy statement are not written yet, so these are not links. */}
+        {/* Not links yet: the Terms and Privacy statement are not written. */}
         <p className="onboarding-small">
           By continuing you agree to the Terms and the Privacy statement. We never sell your data
           and never ask for your contact book.

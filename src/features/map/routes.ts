@@ -3,17 +3,14 @@ import { isSameWay, type LngLat } from './geometry.ts'
 
 export type Route = {
   coordinates: LngLat[]
-  /** Walking time in seconds. */
   duration: number
 }
 
-// Free public route planners on OpenStreetMap data, run by FOSSGIS. Fine for a demo; a real app
-// needs its own route planner or a paid one. The start point (often the user's location) is sent
-// to them, see docs/backend.md.
+// Free FOSSGIS planners: fine for a demo, not for a real app. They receive the start point.
 const footRouter = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/'
 const bikeRouter = 'https://routing.openstreetmap.de/routed-bike/route/v1/bike/'
 
-// Assumption: an average walking pace of 5 km/h, to give the cycle-network route a walking time.
+// Assumption: 5 km/h, to give the cycle-network route a walking time.
 const walkingMetresPerSecond = 5000 / 3600
 const maxRoutes = 3
 
@@ -32,10 +29,7 @@ export function routeUrl(router: 'foot' | 'bike', from: LngLat, to: LngLat): str
   return `${base}${from.join(',')};${to.join(',')}?${params}`
 }
 
-/**
- * The walking routes, plus the main route through the cycle network: that one often follows
- * bigger, better lit roads, a useful extra choice. Routes that are almost the same are left out.
- */
+/** The cycle-network route often follows bigger, better lit roads, so it is an extra choice. */
 export function routesFromAnswers(walking: unknown, cycling: unknown): Route[] {
   const candidates: Route[] = []
   const walkingAnswer = walking as PlannerAnswer | undefined

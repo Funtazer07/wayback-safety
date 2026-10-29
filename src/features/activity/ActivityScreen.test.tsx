@@ -5,7 +5,6 @@ import ActivityScreen from './ActivityScreen.tsx'
 
 const { fetchContactWalks } = vi.hoisted(() => ({ fetchContactWalks: vi.fn() }))
 vi.mock('../followedWalk/followedWalk.ts', () => ({ fetchContactWalks }))
-// The notification card has its own tests in features/notifications.
 vi.mock('../notifications/NotificationCard.tsx', () => ({ default: () => null }))
 
 // Mum's walk: started at 22:06, check-in due at 22:26.

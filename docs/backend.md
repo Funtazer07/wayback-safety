@@ -168,7 +168,8 @@ memory only.
 **Extending** adds minutes to the deadline. If the deadline has already passed, for example during
 the "Are you OK?" grace period, the minutes count from now instead, so the user really gets the
 time they asked for. The client's rule is that the app never moves the deadline by itself: the
-server only does it when the user taps a button.
+server only does it when the user taps a button. The contacts then get "Anna updated the arrival
+time" with the new time (SCRUM-107, see "Sending push").
 
 **Cancelling** ends the walk as `cancelled` and saves the time in `cancelled_at`. Like a check-in,
 it stops the timer and erases the last known location, and the walk refuses new locations from then
@@ -203,7 +204,8 @@ How someone becomes a contact:
 
 1. The user gives the contact a name, for example "Mum", and gets an invite link. They send it
    themselves, in WhatsApp or their own email. We send no email.
-2. The contact opens the link, signs in, sees who invited them and taps accept or decline.
+2. The contact opens the link and sees who invited them, already on the sign-in screen. They sign
+   in and tap accept or decline.
 3. **Accepting links both ways** (`0014_mutual_contacts.sql`): the contact looks out for the user,
    and the user looks out for the contact, under the name the user chose in onboarding. Decided on
    26 Oct after testing on two phones, different from SCRUM-27 and SCRUM-59 in Jira, which describe
@@ -213,9 +215,26 @@ How someone becomes a contact:
    Removing a contact also takes them off the walks they followed.
 
 An invite link opens in the browser, not in an app installed on the Home Screen. Accepting there
-is saved on the server. On iPhone the Home Screen app has its own storage, so after adding WayBack
-there the contact signs in again and turns on notifications under Contacts; the accept screen says
-so.
+is saved on the server. On iPhone the Home Screen app has its own storage, apart from Safari, so it
+starts signed out: the contact has to sign in a second time there. The app cannot avoid that, so
+the accept screen says it up front as numbered steps under "What's next" (`AcceptedNextSteps.tsx`).
+On Android the installed app shares the browser's storage, so the steps leave the second sign-in
+out.
+
+**Found in the invite test with 3 pairs (SCRUM-61):** the link landed on a bare sign-in page, the
+second sign-in in the Home Screen app came as a surprise, and once in the app nothing showed that
+the invite had worked. Fixed with:
+
+- **The inviter on the sign-in screen**: "Anna invited you. Sign in or create an account to
+  accept." `get_invite` may now be called before signing in (`0024_invite_before_sign_in.sql`,
+  tested by `supabase/tests/invite_before_sign_in_test.sql`). A signed-out visitor learns only
+  the inviter's name, and only with a working link. Accepting still needs an account.
+- **The steps after accepting**, as above.
+- **A card on Home** for both sides (`NewContactsCard.tsx`): "You and Anna now look out for each
+  other", with See contacts and Close, and "Turn on notifications" when they are off. It shows
+  contacts who accepted in the last 2 days (_assumption_, like the 48 hours of a link). Closing it
+  is remembered on that phone only (`localStorage`), so the Home Screen app on iPhone shows it too
+  after it was closed in Safari.
 
 The link works once and for 48 hours. The database keeps only a fingerprint (SHA-256 hash) of
 the secret in the link, so someone who reads the table cannot rebuild a working link. The
@@ -231,13 +250,13 @@ contacts itself.
 The app cannot write to `contacts` or `walk_contacts` directly. It calls these functions, or
 deletes a contact row, which both sides are allowed to do:
 
-| Function             | What it does                                                    |
-| -------------------- | --------------------------------------------------------------- |
-| `create_invite`      | Creates an invite and returns the secret for the link, once     |
-| `get_invite`         | Tells the person who opened the link who sent it                |
-| `accept_invite`      | Links the logged-in user as the contact. The link stops working |
-| `decline_invite`     | Deletes the invite                                              |
-| `set_contact_paused` | Pauses a contact, or lets them follow walks again               |
+| Function             | What it does                                                             |
+| -------------------- | ------------------------------------------------------------------------ |
+| `create_invite`      | Creates an invite and returns the secret for the link, once              |
+| `get_invite`         | Tells the person who opened the link who sent it, also before signing in |
+| `accept_invite`      | Links the logged-in user as the contact. The link stops working          |
+| `decline_invite`     | Deletes the invite                                                       |
+| `set_contact_paused` | Pauses a contact, or lets them follow walks again                        |
 
 Code: `src/features/contacts/contacts.ts` talks to the database.
 
@@ -372,23 +391,36 @@ Code: `src/features/notifications/`.
 
 ### Sending push
 
-When a walk starts, is checked in, is cancelled or becomes overdue, its contacts get a push
-notification (SCRUM-69, SCRUM-74). No location is ever in these messages, only the time it was
+When a walk starts, gets more time, is checked in, is cancelled or becomes overdue, its contacts
+get a push notification (SCRUM-69, SCRUM-74, SCRUM-107). No location is ever in these messages, only the time it was
 saved:
 
-| When                          | Title                      | Text                                                                                                                                                                                       |
-| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The walk starts               | Anna is on the way home    | Expected home at 22:36.                                                                                                                                                                    |
-| The user checks in            | Anna has arrived safely    | Checked in at 22:31.                                                                                                                                                                       |
-| The user cancels the walk     | Anna stopped the walk      | Cancelled at 22:20. No check-in will follow.                                                                                                                                               |
-| The walk becomes overdue      | Anna hasn't checked in yet | Anna was expected home at 22:36 but hasn't confirmed arriving safely. This does not necessarily mean something is wrong. Last known location from 22:31, not live. Open WayBack to see it. |
-| The user checks in after that | Anna is safe               | Anna checked in at 22:44, after the missed check-in alert. No need to look any further.                                                                                                    |
+| When                          | Title                         | Text                                                                                                                                                                                       |
+| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The walk starts               | Anna is on the way home       | Expected home at 22:36.                                                                                                                                                                    |
+| The user checks in            | Anna has arrived safely       | Checked in at 22:31.                                                                                                                                                                       |
+| The user adds time            | Anna updated the arrival time | Anna needs a little more time to get home. The new expected arrival time is 22:46. No action is needed.                                                                                    |
+| The user cancels the walk     | Anna stopped the walk         | Cancelled at 22:20. No check-in will follow.                                                                                                                                               |
+| The walk becomes overdue      | Anna hasn't checked in yet    | Anna was expected home at 22:36 but hasn't confirmed arriving safely. This does not necessarily mean something is wrong. Last known location from 22:31, not live. Open WayBack to see it. |
+| The user checks in after that | Anna is safe                  | Anna checked in at 22:44, after the missed check-in alert. No need to look any further.                                                                                                    |
 
 Without a saved location the alert says "No location was shared during this walk." Tapping the
 alert opens the app with `?walk=<id>` on the contact's view of that walk (see "The contact's view").
 
 The cancelled message was added on 24 Oct: SCRUM-63 and SCRUM-12 promise it, and no other subtask
-built it. Extending a walk sends nothing.
+built it.
+
+**Arrival time updated** (SCRUM-107): each time the walker adds time (+5 / +10 / +15, or "Confirm"
+on "Running late?"), the contacts get the new time, so they do not worry when the old time passes.
+A trigger on the deadline (`0022_arrival_time_updated.sql`) sends it once per extension, and only
+while the walk is `active`. Starting a walk does not send it: "is on the way home" already gives
+the time. If the walker checks in or cancels before it goes out, it is skipped, because that newer
+message is the one that counts. It is kept only until the new time (at most an hour), because
+after that "No action is needed" may no longer be true. Two quick taps send two messages, both with
+the latest time.
+
+To set it up: deploy `send-walk-push` again (it now knows `deadline_extended`), then run
+`0022_arrival_time_updated.sql`. Tested by `supabase/tests/arrival_time_updated_test.sql`.
 
 How it works:
 
@@ -513,15 +545,27 @@ is on the way or overdue.
 
 Every message to a contact opens this screen, not only the alert: "is on the way home" shows the
 due time without a location, "has arrived safely" and "stopped the walk" show how the walk ended.
+
+**The planned route** (decided on 27 Oct). While the walk is on the way, the contact's screen shows
+the route the walker planned on Home, on a map with "The route Anna planned. This is not a live
+position." (`PlannedRouteMap.tsx`). It is the plan, not where the walker is: no position is shown,
+and the last known location still only appears after a missed check-in. Right after the walk
+starts, the app sends the route with `share_walk_route` (`0023_shared_walk_route.sql`); if that
+fails, the walk still runs and the contact sees the due time without a map. A walk started without
+a route shows no map. A route that leaves Eindhoven is not shown, because the map would cut it off.
+The route is erased by a trigger as soon as the walk is checked in, cancelled or becomes overdue.
+Tested by `supabase/tests/shared_walk_route_test.sql`. To set it up: run
+`0023_shared_walk_route.sql`.
 Before 26 Oct only the alert had a link, so tapping the others only brought the app to the front.
 
 **"I'm watching" (SCRUM-114).** While the walk is on the way, the contact's screen has a button
 "I'm watching". Tapping it calls `watch_walk` (`0019_im_watching.sql`), which saves the moment in
 `walk_contacts.watching_at`, only for a contact on that walk who accepted and is not paused, and
 only while the walk is `active`. The walker's walk screen then shows "Mum is watching your walk"
-(`fetchWalkWatchers`, asked every 30 seconds, when the app comes back on screen and when a push
-arrives). `followed_walk` also says whether this contact already tapped, so the button does not come
-back after reopening the app. From the Studio Krom feedback: choosing contacts without any sign from
+(`fetchWalkWatchers`, asked every 5 seconds while the walk screen is open, when the app comes back
+on screen and when a push arrives). Tapping sends the walker no push, so without the quick check it
+showed only after a reload or up to 30 seconds later. `followed_walk` also says whether this
+contact already tapped, so the button does not come back after reopening the app. From the Studio Krom feedback: choosing contacts without any sign from
 their side may not be enough for the walker to feel someone is looking out. The walker gets no push
 message for it, to keep the walk quiet; they see it on the walk screen.
 
@@ -531,7 +575,10 @@ What a contact may see comes from one database function, `followed_walk` (`0013_
   walk is not shared with you", also for a walk that does not exist.
 - The location only while the walk is overdue. Before that the contact sees only "on the way, home
   by 22:36"; after the check-in only "safe", because the check-in erases the location.
-- Never the destination, the start time or the route. Decided on 25 Oct: a typed destination can be
+- The planned route only while the walk is on the way (see above). The whole route is shared,
+  including its end, which is usually the walker's home: decided on 27 Oct, because contacts are
+  people the walker chose and who accepted. This replaces the 25 Oct rule "never the route".
+- Never the destination's name or the start time. Decided on 25 Oct: a typed destination can be
   a home address. The design shows "Destination: Home"; that line is left out.
 
 Jira asked for "an RLS rule". A row policy would open the whole walk row, destination included, so
@@ -582,7 +629,9 @@ Written down here because the app handles location and personal data.
   is the user's own statement; the age is not verified.
 - **Location:** a walk stores the destination and one last known location. Each update
   overwrites the previous one, so there is no trail of where someone walked. Only the user can
-  read their own walks.
+  read their own walks. A walk started with a planned route also stores that route (the plan, not
+  where the user walked) while it is on the way; it is erased when the walk ends or becomes
+  overdue.
 - **Location after the walk:** checking in or cancelling erases the last known location, and the
   walk refuses new locations afterwards. A walk that became overdue keeps it for 24 hours, so the
   contacts know where to look, and then it is erased too (assumption until SCRUM-71 and SCRUM-30
@@ -606,15 +655,17 @@ Written down here because the app handles location and personal data.
   accepting, the contact also shares their own walks with the person who invited them; the accept
   screen says this before the tap.
 - **Invite links:** only a fingerprint of the link is stored, it works for 48 hours, and it is
-  erased when the invite is accepted.
+  erased when the invite is accepted. Anyone who has a working link can see the inviter's display
+  name before signing in, and nothing else.
 - **Push subscriptions:** per phone we store only the push service address and its two keys. No
   device name, browser or IP address. The row is deleted when notifications are turned off on that
   phone, and with the account.
 - **Contacts reading a walk:** the first and only time someone other than the owner reads walk
   data (SCRUM-102). A contact who was added to the walk, accepted and is not paused sees the
   walker's name, the status, the due time and the check-in or cancel time. The last known location
-  only while the walk is overdue, and so for at most 24 hours. Never the destination or the
-  route. The Activity feed gets the same fields as the walk screen plus the start time (which the
+  only while the walk is overdue, and so for at most 24 hours. The planned route only while the
+  walk is on the way, including its end, usually the walker's home (decided on 27 Oct); it is
+  erased when the walk ends or becomes overdue. Never the destination's name. The Activity feed gets the same fields as the walk screen plus the start time (which the
   "is on the way home" message already tells), without the location. See "The contact's view".
 - **"I'm watching":** only the moment the contact tapped is stored, on their link to that walk, and
   it goes with the walk. The walker sees who tapped; the contact learns nothing new (SCRUM-114).
@@ -794,3 +845,24 @@ it, and do not paste rows into the group chat.
 | "Could not check you in" on every tap          | `0004_check_in.sql` was not run yet (step 2), or there is no connection   |
 | "Check your email" after signing up with email | "Confirm email" is still on (step 5)                                      |
 | A query returns no rows but data exists        | The table's RLS policy does not allow it                                  |
+
+### Pre-deadline reminders (SCRUM-64)
+
+Migration `0020_walk_reminders.sql` adds `walks.reminder_deadline` and a
+`check-walk-reminders` database job. Migration `0021_one_minute_walk_reminder.sql` changes it to
+check every 10 seconds and remind in the final minute, as requested on 27 October 2026. Normally
+50–60 seconds remain when queued, plus network delivery time. The timer colour still changes
+at five minutes.
+This does not change the 3-minute grace period after the deadline.
+
+The new column is a queue marker for the current deadline, not a delivery receipt. It contains
+only a timestamp and follows the walk's existing ownership and retention rules. No new location,
+route or contact data is collected. The reminder goes to the walker through the existing push
+subscriptions. Its message contains the check-in time and no location. Extensions, check-ins and
+cancellation are rechecked by the Edge Function before sending. App roles cannot run the queue
+or scheduler functions.
+
+Redeploy `send-walk-push` with the `reminder` event before running 0020, and the 60-second
+version before 0021. Both migrations are already run on the shared project. It uses the existing
+Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
+queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).

@@ -5,21 +5,15 @@ import { NotSharedError, fetchFollowedWalk, type FollowedWalk } from './followed
 type FollowedWalkState = {
   walk: FollowedWalk | null
   isLoading: boolean
-  /** A sentence for the contact, or null. */
   error: string | null
 }
 
 const loading: FollowedWalkState = { walk: null, isLoading: true, error: null }
 
-// Assumption: every 30 seconds is soon enough for a worried contact to see "is safe" after the
-// walker checks in, without draining their battery.
+// Assumption: soon enough for a worried contact, light enough for the battery.
 const THIRTY_SECONDS = 30_000
 
-/**
- * The walk a contact opened. While it is on the way or overdue it is asked for again every 30
- * seconds and when the app comes back on screen, so "overdue", "safe" or "cancelled" shows up
- * without reloading. A walk that ended does not change any more, so then it stops asking.
- */
+/** Stops polling once the walk has ended, as it cannot change any more. */
 export function useFollowedWalk(walkId: string): FollowedWalkState {
   const [state, setState] = useState(loading)
   const isOngoing = state.walk?.status === 'active' || state.walk?.status === 'overdue'
@@ -49,7 +43,6 @@ export function useFollowedWalk(walkId: string): FollowedWalkState {
     if (!isOngoing) return
 
     let isCurrent = true
-    // A failed refresh keeps what is on screen; the next one tries again.
     const refresh = () =>
       fetchFollowedWalk(walkId)
         .then((walk) => isCurrent && setState({ walk, isLoading: false, error: null }))
@@ -58,7 +51,6 @@ export function useFollowedWalk(walkId: string): FollowedWalkState {
 
     const timer = setInterval(refresh, THIRTY_SECONDS)
     document.addEventListener('visibilitychange', refreshWhenBackOnScreen)
-    // "hasn't checked in" and "is safe" arrive as push messages: show them at once.
     const stopListening = onPushMessage(refresh)
     return () => {
       isCurrent = false

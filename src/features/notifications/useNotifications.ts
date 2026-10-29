@@ -8,7 +8,6 @@ import {
 } from './notifications.ts'
 
 type NotificationsHookState = {
-  /** null while the phone is being checked. */
   notificationState: NotificationState | null
   isLoading: boolean
   error: string | null
@@ -16,7 +15,6 @@ type NotificationsHookState = {
 
 const loading: NotificationsHookState = { notificationState: null, isLoading: true, error: null }
 
-/** Whether this phone can get alerts, and a way to turn them on and off. */
 export function useNotifications() {
   const [state, setState] = useState(loading)
 
@@ -27,8 +25,7 @@ export function useNotifications() {
         (notificationState) =>
           isCurrent && setState({ notificationState, isLoading: false, error: null }),
       )
-      // Could not reach the server to save the subscription again. Showing the button lets the
-      // user try once more.
+      // Showing the button lets the user try again.
       .catch(
         () => isCurrent && setState({ notificationState: 'off', isLoading: false, error: null }),
       )
@@ -38,7 +35,7 @@ export function useNotifications() {
     }
   }, [])
 
-  /** Asks the user for permission. Call it from a button tap. */
+  /** Call it from a button tap. */
   async function enable() {
     setState({ ...state, isLoading: true, error: null })
     try {
@@ -56,7 +53,6 @@ export function useNotifications() {
     }
   }
 
-  /** Stops alerts on this phone (SCRUM-105). Afterwards the app can ask again. */
   async function disable() {
     setState({ ...state, isLoading: true, error: null })
     try {

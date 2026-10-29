@@ -2,15 +2,11 @@ import { useEffect, useState } from 'react'
 import { onPushMessage } from '../../lib/pushMessages.ts'
 import { fetchWalkWatchers } from './walk.ts'
 
-// Assumption: every 30 seconds is soon enough to see "Mum is watching", like the contact's own
-// screens (useContactWalks.ts), and light on the battery during a walk.
-const THIRTY_SECONDS = 30_000
+// "I'm watching" sends the walker no push, so asking often is the only way it shows quickly.
+// Assumption: every 5 seconds while the walk screen is open is quick enough and costs little.
+const FIVE_SECONDS = 5_000
 
-/**
- * Who tapped "I'm watching" on this walk (SCRUM-114), kept up to date while the walk screen is open:
- * every 30 seconds, when the app comes back on screen, and when a push message arrives. Pass null
- * to load nothing, for example after the walk ended.
- */
+/** Pass null to load nothing, for example after the walk ended. */
 export function useWalkWatchers(walkId: string | null): string[] {
   const [names, setNames] = useState<string[]>([])
 
@@ -18,8 +14,7 @@ export function useWalkWatchers(walkId: string | null): string[] {
     if (!walkId) return
 
     let isCurrent = true
-    // A failed check keeps what is on screen; the next one tries again. The walk itself does not
-    // depend on this line.
+    // A failed check keeps what is on screen; the next one tries again.
     const load = () =>
       fetchWalkWatchers(walkId)
         .then((found) => isCurrent && setNames(found))
@@ -27,7 +22,7 @@ export function useWalkWatchers(walkId: string | null): string[] {
     const loadWhenBackOnScreen = () => document.visibilityState === 'visible' && load()
 
     load()
-    const timer = setInterval(load, THIRTY_SECONDS)
+    const timer = setInterval(load, FIVE_SECONDS)
     document.addEventListener('visibilitychange', loadWhenBackOnScreen)
     const stopListening = onPushMessage(load)
     return () => {

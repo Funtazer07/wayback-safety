@@ -5,7 +5,6 @@ type CheckInButtonProps = {
   disabled?: boolean
 }
 
-/** The "I'm home" button on the walk screen. One tap ends the walk (SCRUM-47, SCRUM-48). */
 function CheckInButton({ onCheckIn, disabled = false }: CheckInButtonProps) {
   return (
     <div className="check-in-actions">

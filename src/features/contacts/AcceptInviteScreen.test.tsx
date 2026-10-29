@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import AcceptInviteScreen from './AcceptInviteScreen.tsx'
 
@@ -9,7 +9,6 @@ const api = vi.hoisted(() => ({
 }))
 
 vi.mock('./contacts.ts', () => api)
-// The notification card has its own tests in features/notifications.
 vi.mock('../notifications/NotificationCard.tsx', () => ({
   default: ({ reason }: { reason: string }) => <p>Notification card: {reason}</p>,
 }))
@@ -41,12 +40,30 @@ test('accepting links them both ways and then offers notifications', async () =>
     screen.getByRole('heading', { name: 'You and Anna now look out for each other' }),
   ).toBeInTheDocument()
   // Opened in the browser, not the installed app: say where to continue.
-  expect(
-    screen.getByText(/sign in again and turn on notifications under Contacts/),
-  ).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'What’s next' })).toBeInTheDocument()
+  expect(screen.getByText(/Open WayBack from your home screen/)).toBeInTheDocument()
   expect(
     screen.getByText(/Notification card: WayBack can then tell you when Anna/),
   ).toBeInTheDocument()
+})
+
+test('on iPhone the steps say the Home Screen app needs one more sign-in', async () => {
+  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (iPhone) Safari')
+  render(<AcceptInviteScreen token={token} onClose={vi.fn()} />)
+
+  const button = await screen.findByRole('button', { name: 'Accept' })
+  await act(async () => fireEvent.click(button))
+
+  const steps = within(screen.getByRole('list')).getAllByRole('listitem')
+  expect(steps.map((step) => step.textContent)).toEqual([
+    'Add WayBack to your Home Screen: tap the Share button, then "Add to Home Screen".',
+    'Open WayBack from your Home Screen.',
+    'Sign in again with the same account. iPhone keeps the Home Screen app apart from Safari, so this is needed once.',
+    'Turn on notifications there, so you hear about Anna’s walks.',
+  ])
+  // Safari on iPhone cannot show notifications, so the card would only repeat step 4.
+  expect(screen.queryByText(/Notification card/)).not.toBeInTheDocument()
+  vi.restoreAllMocks()
 })
 
 test('declining answers the invite and closes the screen', async () => {

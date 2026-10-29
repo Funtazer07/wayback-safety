@@ -3,9 +3,7 @@ import type { Map as MapLibreMap, StyleImageInterface } from 'maplibre-gl'
 export const brokenColour = '#dc2626'
 export const locationColour = '#16a34a'
 
-// A broken light: a white bulb with a slash through it, in a red badge with a white edge. Drawn at
-// twice the size and shown at half, so it stays sharp. Bulb shape from the Lucide icon set (ISC
-// licence).
+// Drawn at twice the size, so it stays sharp. Bulb shape from Lucide (ISC licence).
 const brokenLightSvg = `
   <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
     <circle cx="16" cy="16.75" r="13" fill="#000" opacity="0.22"/>
@@ -31,10 +29,7 @@ export function loadBrokenLightIcon(): Promise<HTMLImageElement> {
   return brokenLightImage
 }
 
-/**
- * "You are here": a dot with a white edge and a slow pulse around it, drawn on a canvas each frame.
- * People who asked their phone for less motion get a still glow.
- */
+/** Pulses, except for people who asked their phone for less motion. */
 export function youAreHereIcon(map: MapLibreMap): StyleImageInterface {
   const size = 112
   const isReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches

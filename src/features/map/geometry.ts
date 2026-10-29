@@ -1,4 +1,4 @@
-/** A spot on the map. MapLibre and GeoJSON write longitude first, then latitude. */
+/** Longitude first, as in MapLibre and GeoJSON. */
 export type LngLat = [longitude: number, latitude: number]
 
 export type Rectangle = {
@@ -25,10 +25,7 @@ export function isInEindhoven([longitude, latitude]: LngLat): boolean {
   return longitude >= west && longitude <= east && latitude >= south && latitude <= north
 }
 
-/**
- * Turns longitude and latitude into metres from one point. Accurate enough inside a city, and much
- * simpler than real map projections.
- */
+/** Accurate enough inside a city, and much simpler than a real projection. */
 export function metresFrom([longitude0, latitude0]: LngLat): (point: LngLat) => [number, number] {
   const perLongitude = metresPerDegreeLongitude(latitude0)
   return ([longitude, latitude]) => [
@@ -42,7 +39,6 @@ export function distanceInMetres(from: LngLat, to: LngLat): number {
   return Math.hypot(x, y)
 }
 
-/** How far a point is from a line, and how far along the line its nearest spot lies (in metres). */
 export function measureFromLine(
   lineInMetres: [number, number][],
   [px, py]: [number, number],
@@ -76,9 +72,7 @@ export function lineLength(lineInMetres: [number, number][]): number {
   return length
 }
 
-/** Two lines are the same way when nearly every point of the second lies on the first. */
 export function isSameWay(first: LngLat[], second: LngLat[]): boolean {
-  // A "line" of one point has no length to lie on: then only the very same spot counts.
   if (first.length < 2) {
     return second.length > 0 && second.every((point) => placeOf(point) === placeOf(first[0]))
   }
@@ -102,11 +96,7 @@ export function rectangleAround([longitude, latitude]: LngLat, metres: number): 
   }
 }
 
-/**
- * Rectangles that together cover a line with a margin. One rectangle around a whole route would
- * also hold a lot of the city far away from it, so the line is cut into pieces of about
- * `pieceLength` metres, each with its own rectangle.
- */
+/** One rectangle around a whole route would cover too much of the city, so it is cut in pieces. */
 export function rectanglesAlong(line: LngLat[], margin: number, pieceLength = 250): Rectangle[] {
   const marginLatitude = margin / metresPerDegreeLatitude
   const marginLongitude = margin / metresPerDegreeLongitude(line[0][1])
@@ -134,7 +124,7 @@ export function rectanglesAlong(line: LngLat[], margin: number, pieceLength = 25
   return rectangles
 }
 
-/** The register sometimes lists two lamps at exactly the same spot. Lamps are compared by spot. */
+/** The register sometimes lists two lamps at the same spot, so lamps are compared by spot. */
 export function placeOf([longitude, latitude]: LngLat): string {
   return `${longitude.toFixed(6)},${latitude.toFixed(6)}`
 }

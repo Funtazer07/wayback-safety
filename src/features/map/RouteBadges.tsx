@@ -3,7 +3,6 @@ type RouteBadgesProps = {
   isFastest: boolean
 }
 
-/** The labels of a route, as words, so colour is never the only sign. */
 function RouteBadges({ isMostLights, isFastest }: RouteBadgesProps) {
   if (!isMostLights && !isFastest) return null
   return (

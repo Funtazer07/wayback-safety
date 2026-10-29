@@ -8,7 +8,6 @@ type ContactRowProps = {
   onSelect: () => void
 }
 
-/** One person on the Trusted contacts list (screen 14): tap for their options. */
 function ContactRow({ contact, now, isSelected, onSelect }: ContactRowProps) {
   return (
     <li className="contacts-item">

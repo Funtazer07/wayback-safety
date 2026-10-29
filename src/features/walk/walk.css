@@ -1,4 +1,3 @@
-/* Screen 04, "Set your check-in". */
 .walk-row {
   display: flex;
   flex-direction: row;
@@ -22,7 +21,6 @@
   text-align: center;
 }
 
-/* "ESTIMATED ARRIVAL": small capitals above the time, as in the design. */
 .walk-label {
   font-size: 0.75rem;
   font-weight: 700;
@@ -43,7 +41,6 @@
   gap: 0.75rem;
 }
 
-/* "− 20 min +" on a green tint, with round white buttons. */
 .walk-stepper {
   display: flex;
   flex-direction: column;
@@ -59,8 +56,7 @@
   justify-content: space-between;
 }
 
-/* The slider: a thick track, filled green up to the thumb, and a big round thumb that is easy to
-   hold with a thumb (44 px including its edge). --fill is set by TimerPicker. */
+/* --fill is set by TimerPicker. */
 .walk-slider {
   width: 100%;
   min-height: 0;
@@ -141,7 +137,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 10 / 15 / 20 / 30 min. The chosen one is green with white text and bold, not colour alone. */
+/* The chosen one is also bold, so colour is not the only sign. */
 .walk-presets {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -180,7 +176,6 @@
   stroke-linecap: round;
 }
 
-/* The destination choices in the sheet. */
 .walk-card {
   display: flex;
   flex-direction: column;
@@ -203,7 +198,6 @@
   border-color: var(--green-button);
 }
 
-/* The running walk: the map fills the screen, the timer panel sits under it within thumb reach. */
 .walk-live {
   display: flex;
   flex-direction: column;
@@ -258,7 +252,6 @@
   white-space: nowrap;
 }
 
-/* "Need more time? +5 +10 +15" (SCRUM-94) and on screen 13 (SCRUM-113). */
 .walk-more-time {
   display: flex;
   flex-direction: column;
@@ -282,7 +275,6 @@
   background: var(--green-soft);
 }
 
-/* The last 5 minutes, as on the "almost over" walk screen variant. Words, not only the yellow. */
 .walk-almost {
   padding: 0.625rem 0.75rem;
   border-radius: 0.75rem;
@@ -291,7 +283,6 @@
   border: 1px solid var(--warning-edge);
 }
 
-/* "Cancel this walk?": a red cross in a pale circle, and a red confirm button. */
 .walk-cancel-sheet,
 .walk-arrived-sheet {
   text-align: center;
@@ -322,7 +313,6 @@
   color: var(--text);
 }
 
-/* "Mum is watching your walk" (SCRUM-114): green, with an eye, in words. */
 .walk-watchers {
   display: flex;
   align-items: center;
@@ -368,7 +358,6 @@
 .walk-timer-ring svg {
   width: 100%;
   height: 100%;
-  /* Start the ring at the top and let it run clockwise. */
   transform: rotate(-90deg);
 }
 
@@ -402,7 +391,7 @@
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1;
-  /* Every digit as wide as the others, so the countdown does not wobble each second. */
+  /* Keeps the countdown from wobbling each second. */
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
@@ -414,7 +403,6 @@
   color: var(--text-muted);
 }
 
-/* Darker than the ring, so the words stay readable on the yellow panel. */
 .is-almost-up .walk-timer-label,
 .is-time-up .walk-timer-label {
   color: var(--warning-text);
@@ -430,7 +418,6 @@
   }
 }
 
-/* Screen 08, "Are you okay?" (SCRUM-101): a calm green page, the countdown in a warm yellow box. */
 .walk-alert {
   text-align: center;
 }
@@ -461,7 +448,6 @@
   width: 100%;
   padding: 1rem;
   border-radius: var(--radius);
-  /* Dark text on light yellow keeps strong contrast; the words carry the meaning, not the colour. */
   color: var(--warning-text);
   background: var(--warning-soft);
 }
@@ -471,4 +457,20 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+
+.walk-reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--warning-edge);
+  border-radius: var(--radius);
+  color: var(--warning-text);
+  background: var(--surface);
+}
+
+.walk-reminder .walk-extend {
+  color: var(--green-text);
+  font-weight: 700;
 }

@@ -4,7 +4,6 @@ import type { Walk } from './walk.ts'
 import WalkScreen from './WalkScreen.tsx'
 
 vi.mock('../../lib/supabase.ts', () => ({ supabase: null }))
-// The map needs a real browser; it has its own tests in features/map.
 vi.mock('../map/WalkMap.tsx', () => ({ default: () => null }))
 
 const walk: Walk = {
@@ -198,4 +197,38 @@ test('in the last 5 minutes the walk screen says the walk is almost over', () =>
   act(() => lockPhoneUntil('2026-10-06T22:16:00'))
 
   expect(screen.getByText(/Your walk is almost over/)).toBeInTheDocument()
+})
+
+test('reviewing the reminder does not change the deadline until a choice is confirmed', async () => {
+  const onExtend = vi.fn().mockResolvedValue(undefined)
+  render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onExtend={onExtend} onDone={vi.fn()} />)
+  expect(screen.queryByRole('button', { name: 'Review check-in time' })).not.toBeInTheDocument()
+  act(() => lockPhoneUntil('2026-10-06T22:18:59'))
+  expect(screen.queryByRole('button', { name: 'Review check-in time' })).not.toBeInTheDocument()
+  act(() => lockPhoneUntil('2026-10-06T22:19:00'))
+  fireEvent.click(screen.getByRole('button', { name: 'Review check-in time' }))
+  expect(screen.getByRole('dialog', { name: 'Running late?' })).toBeInTheDocument()
+  expect(onExtend).not.toHaveBeenCalled()
+  await act(async () =>
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add 5 minutes' }).at(-1)!),
+  )
+  expect(onExtend).toHaveBeenCalledWith(5)
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('tapping the push link opens the walker’s time review without extending automatically', () => {
+  window.history.replaceState(null, '', '?reminder=walk-1')
+  const onExtend = vi.fn()
+  render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onExtend={onExtend} onDone={vi.fn()} />)
+  expect(screen.getByRole('dialog', { name: 'Running late?' })).toBeInTheDocument()
+  expect(onExtend).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Keep my time' }))
+  expect(window.location.search).toBe('')
+})
+
+test('an old push for a different walk does not open a time review', () => {
+  window.history.replaceState(null, '', '?reminder=old-walk')
+  render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onDone={vi.fn()} />)
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  window.history.replaceState(null, '', window.location.pathname)
 })

@@ -12,15 +12,11 @@
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
-  /* MapLibre gives its controls z-index values. Keep them inside the map, under other sheets. */
+  /* Keeps MapLibre's z-index values inside the map, under the sheets. */
   isolation: isolate;
 }
 
-/* On Home the map shares the screen with the greeting and the buttons. It takes the room they leave
-   (.home-screen in home.css), down to this floor on very small phones. A fixed 30rem made the page
-   taller than a phone once the bottom bar came (SCRUM-60), and a page that scrolls under a map is
-   hard to use. Assumption: 11rem still shows enough streets to plan a walk; it keeps Start walk
-   above the bottom bar on the smallest phones we checked (320 × 568). */
+/* Assumption: 11rem still shows enough streets and keeps Start walk in view on a 320 × 568 phone. */
 .planner {
   /* Never smaller than its panels plus the open map between them (about 11rem without a list), so
      the panels are never cut off or pushed over each other. */
@@ -31,7 +27,7 @@
 .map-canvas {
   position: absolute;
   inset: 0;
-  /* Stops the phone's own long-press menu and text selection, so press and hold is ours. */
+  /* Press and hold is ours, not the phone's menu. */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
@@ -112,15 +108,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  /* Assumption: half the map is enough for the list; it scrolls when there are more routes. */
   max-height: 16rem;
   overflow-y: auto;
 }
 
-/* Row 1: time, distance and labels. Row 2: street lights. Row 3: the longest dark piece. */
-/* Line 1: time and labels. Line 2: lights and "On the map". Then the longest gap. When the text on
-   the phone is set larger and a line does not fit, its second part wraps under the first, instead
-   of squeezing both into a narrow strip. */
 .route-card {
   /* The list scrolls when it is full; the cards keep their own height instead of being squeezed
      over each other. */
@@ -231,7 +222,6 @@
 
 /* ---- Reporting ---- */
 
-/* One big choice per kind of problem, easy to hit with a thumb. */
 .report-option {
   display: flex;
   align-items: center;

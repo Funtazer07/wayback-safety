@@ -13,11 +13,16 @@ vi.mock('./followedWalk.ts', async (importOriginal) => ({
   fetchFollowedWalk,
   watchWalk,
 }))
-// The map needs a real browser; it has its own tests in features/map.
 vi.mock('../map/MapView.tsx', () => ({
-  default: (props: { lastLocation?: [number, number] | null }) => (
-    <p>Map with a pin at {props.lastLocation?.join(', ')}</p>
-  ),
+  default: (props: {
+    lastLocation?: [number, number] | null
+    routes?: { coordinates: [number, number][] }[]
+  }) =>
+    props.routes?.length ? (
+      <p>Map with a route of {props.routes[0].coordinates.length} points</p>
+    ) : (
+      <p>Map with a pin at {props.lastLocation?.join(', ')}</p>
+    ),
 }))
 
 // Anna's walk, overdue: due at 22:36, last seen near Stratumseind at 22:31.
@@ -30,6 +35,7 @@ const overdue: FollowedWalk = {
   cancelledAt: null,
   lastLocation: { coordinates: [5.4791, 51.4385], savedAt: new Date('2026-10-15T22:31:00') },
   youAreWatching: false,
+  route: null,
 }
 
 beforeEach(() => {
@@ -155,4 +161,32 @@ test('an overdue walk has no "I’m watching": the alert has already gone out', 
 
   await screen.findByText('Check-in overdue')
   expect(screen.queryByRole('button', { name: 'I’m watching' })).not.toBeInTheDocument()
+})
+
+test('while the walk is on the way, the contact sees the planned route and that it is not live', async () => {
+  fetchFollowedWalk.mockResolvedValue({
+    ...overdue,
+    status: 'active',
+    lastLocation: null,
+    // From Stratumseind towards Kruisstraat.
+    route: [
+      [5.4791, 51.4385],
+      [5.4801, 51.439],
+      [5.482, 51.4402],
+    ],
+  })
+  renderScreen()
+
+  expect(await screen.findByText('Map with a route of 3 points')).toBeInTheDocument()
+  expect(
+    screen.getByText('The route Anna planned. This is not a live position.'),
+  ).toBeInTheDocument()
+})
+
+test('a walk on the way without a planned route shows no map', async () => {
+  fetchFollowedWalk.mockResolvedValue({ ...overdue, status: 'active', lastLocation: null })
+  renderScreen()
+
+  await screen.findByRole('heading', { name: 'Anna is on the way home' })
+  expect(screen.queryByText(/Map with/)).not.toBeInTheDocument()
 })

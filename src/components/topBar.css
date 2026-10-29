@@ -1,4 +1,3 @@
-/* "‹ Walking to Home" at the top of a screen (prototype screens 04, 08, 10, 13, 14). */
 .top-bar {
   display: flex;
   align-items: center;
@@ -6,7 +5,6 @@
   min-height: 2.75rem;
 }
 
-/* A pale circle, 44 × 44 px so it is easy to hit with a thumb. */
 .top-bar-back {
   display: grid;
   flex: none;

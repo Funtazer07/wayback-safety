@@ -3,19 +3,12 @@ import { addMinutes, formatClock } from './time.ts'
 import { EXTEND_CHOICES } from './WalkActions.tsx'
 
 type RunningLateSheetProps = {
-  /** The amount the app suggests, from progress.ts. */
   suggestion: number
   deadline: Date
   onExtend: (minutes: number) => Promise<void>
-  /** "Keep my time": the walker is fine with the deadline as it is. */
   onDismiss: () => void
 }
 
-/**
- * Screen 13 of the prototype, "Running late?" (SCRUM-113). Shown while the app is open, when the
- * walker is moving toward home but will arrive after the check-in time. The app only suggests:
- * nothing changes until the walker taps (client rule).
- */
 function RunningLateSheet({ suggestion, deadline, onExtend, onDismiss }: RunningLateSheetProps) {
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
