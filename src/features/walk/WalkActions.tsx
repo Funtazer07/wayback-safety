@@ -59,7 +59,7 @@ function WalkActions({ onExtend, onCancel, compact = false }: WalkActionsProps) 
       </div>
       <button
         type="button"
-        className={compact ? 'button-danger walk-cancel-icon' : 'button-danger'}
+        className={compact ? 'button-danger walk-cancel-label' : 'button-danger'}
         aria-label={compact ? 'Cancel walk' : undefined}
         title={compact ? 'Cancel walk' : undefined}
         disabled={isBusy}
@@ -68,13 +68,7 @@ function WalkActions({ onExtend, onCancel, compact = false }: WalkActionsProps) 
           setIsConfirming(true)
         }}
       >
-        {compact ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        ) : (
-          'Cancel walk'
-        )}
+        {compact ? 'Cancel' : 'Cancel walk'}
       </button>
       {isConfirming && (
         <CancelWalkSheet
