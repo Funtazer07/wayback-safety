@@ -1,6 +1,15 @@
+/* A map with panels floating over it. The map fills the whole box; the panels sit in three rows on
+   top of it: the planner panel at the top, open map in the middle, the route list or a report sheet
+   at the bottom. Each panel has its own row, so they can never slide over each other, also not with
+   the large text some people set on their phone. */
 .map-area {
   position: relative;
   flex: 1;
+  display: grid;
+  /* Assumption: 4rem of open map between the panels is the least that still shows where you are. */
+  grid-template-rows: auto minmax(4rem, 1fr) auto;
+  /* Never wider than the screen, also when a long word in a panel would like more room. */
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
   /* Keeps MapLibre's z-index values inside the map, under the sheets. */
@@ -9,7 +18,9 @@
 
 /* Assumption: 11rem still shows enough streets and keeps Start walk in view on a 320 × 568 phone. */
 .planner {
-  min-height: 11rem;
+  /* Never smaller than its panels plus the open map between them (about 11rem without a list), so
+     the panels are never cut off or pushed over each other. */
+  min-height: min-content;
   border-radius: 0.75rem;
 }
 
@@ -25,10 +36,9 @@
 .planner-panel,
 .map-sheet,
 .map-toast {
-  position: absolute;
-  left: 0.5rem;
-  right: 0.5rem;
   z-index: 2;
+  /* A long street name breaks onto the next line instead of pushing the panel off the screen. */
+  overflow-wrap: anywhere;
   border-radius: 0.875rem;
   color: var(--text);
   background: var(--surface);
@@ -36,7 +46,9 @@
 }
 
 .planner-panel {
-  top: 0.5rem;
+  position: relative;
+  grid-row: 1;
+  margin: 0.5rem 0.5rem 0;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
@@ -67,17 +79,13 @@
 }
 
 .map-bottom {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: relative;
+  grid-row: 3;
   z-index: 2;
 }
 
 .map-sheet {
   position: relative;
-  left: auto;
-  right: auto;
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
@@ -105,16 +113,27 @@
 }
 
 .route-card {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: 0.75rem;
+  /* The list scrolls when it is full; the cards keep their own height instead of being squeezed
+     over each other. */
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   row-gap: 0.125rem;
   min-height: 0;
   padding: 0.5rem 0.75rem;
   border: 2px solid var(--border);
   text-align: left;
   font-weight: 400;
+}
+
+.route-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 0.75rem;
+  row-gap: 0.125rem;
 }
 
 .route-card[aria-pressed='true'] {
@@ -161,13 +180,11 @@
 .route-shown {
   font-size: 0.8125rem;
   font-weight: 600;
-  text-align: right;
   color: #2563eb;
 }
 
 .route-gap,
 .route-broken {
-  grid-column: 1 / -1;
   font-size: 0.8125rem;
 }
 
@@ -176,13 +193,15 @@
   color: #dc2626;
 }
 
+/* The button moves under the text when they do not fit side by side. */
 .route-summary {
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
 }
 
 .route-summary-text {
-  flex: 1;
+  flex: 1 1 10rem;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -245,7 +264,10 @@
 }
 
 .map-toast {
+  position: absolute;
   top: 0.5rem;
+  right: 0.5rem;
+  left: 0.5rem;
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
   font-weight: 600;

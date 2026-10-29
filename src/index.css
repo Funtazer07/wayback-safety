@@ -3,6 +3,11 @@
   color-scheme: light;
   font-family: system-ui, sans-serif;
   line-height: 1.5;
+  /* Phones sometimes make text bigger on their own (Safari when the phone is turned sideways).
+     That breaks the layout, so it is switched off. The text size the user chose in the phone's
+     settings still works, and the layout makes room for it. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 
   --page: #f2f8f4;
   --page-tint: #e8f4ec;
