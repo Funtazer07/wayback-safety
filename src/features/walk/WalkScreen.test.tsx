@@ -184,8 +184,11 @@ test('without a planned route the app never asks "Are you home?"', () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
-test('the walk screen offers more time and Cancel walk, as in the design', () => {
+test('more time and Cancel walk wait behind one button, so the walk screen stays calm', () => {
   render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onDone={vi.fn()} />)
+  expect(screen.queryByRole('button', { name: 'Cancel walk' })).not.toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: 'More time or cancel' }))
 
   expect(screen.getByText('Need more time?')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Add 5 minutes' })).toBeInTheDocument()
@@ -197,6 +200,8 @@ test('in the last 5 minutes the walk screen says the walk is almost over', () =>
   act(() => lockPhoneUntil('2026-10-06T22:16:00'))
 
   expect(screen.getByText(/Your walk is almost over/)).toBeInTheDocument()
+  // Extra time is needed now, so it is shown without a tap.
+  expect(screen.getByRole('button', { name: 'Add 5 minutes' })).toBeInTheDocument()
 })
 
 test('reviewing the reminder does not change the deadline until a choice is confirmed', async () => {

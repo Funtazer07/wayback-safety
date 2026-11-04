@@ -13,7 +13,7 @@ import type { Walk } from './walk.ts'
 import { useWalkContactNames } from './useWalkContactNames.ts'
 import { useWalkWatchers } from './useWalkWatchers.ts'
 import WatchersLine from './WatchersLine.tsx'
-import WalkActions from './WalkActions.tsx'
+import WalkMoreOptions from './WalkMoreOptions.tsx'
 import WalkTimer from './WalkTimer.tsx'
 import ArrivedSheet from './ArrivedSheet.tsx'
 import RunningLateSheet from './RunningLateSheet.tsx'
@@ -90,6 +90,10 @@ function WalkScreen({
     )
   }
 
+  const isAlmostUp = timerPhase(walk.deadline, now) === 'almost-up'
+
+  // A navigation screen: the map takes most of the phone, the panel under it keeps only what is
+  // needed while walking. Reporting is the red button on the map (SCRUM-96).
   return (
     <main className="walk-live">
       <WalkMap route={route} />
@@ -103,15 +107,15 @@ function WalkScreen({
             <p>
               Home by <strong>{formatClock(walk.deadline)}</strong>
             </p>
-            <p className="walk-small">
-              {isLocationOff
-                ? 'Location is off, so the app cannot save where you last were.'
-                : 'The app saves where you last were.'}
-            </p>
+            {isLocationOff && (
+              <p className="walk-small">
+                Location is off, so the app cannot save where you last were.
+              </p>
+            )}
           </div>
         </div>
         <WatchersLine names={watchers} />
-        {timerPhase(walk.deadline, now) === 'almost-up' && !isReminderDue(walk.deadline, now) && (
+        {isAlmostUp && !isReminderDue(walk.deadline, now) && (
           <p className="walk-almost" role="status">
             <strong>Your walk is almost over.</strong> You have less than 5 minutes left. Do you
             need more time?
@@ -126,7 +130,7 @@ function WalkScreen({
         )}
         {error && <p role="alert">{error}</p>}
         <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
-        <WalkActions onExtend={onExtend} onCancel={onCancel} />
+        <WalkMoreOptions onExtend={onExtend} onCancel={onCancel} isAlmostUp={isAlmostUp} />
       </section>
 
       {prompts.isArrived && (

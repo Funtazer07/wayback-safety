@@ -1,0 +1,101 @@
+/* The report form (SCRUM-96). It opens over the walk screen, like the other sheets. */
+.report-sheet {
+  gap: 0.75rem;
+  /* Four categories and a note are taller than a small phone: the sheet scrolls, the page not. */
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding-top: 1.5rem;
+}
+
+.report-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-category {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4rem;
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  font-weight: 400;
+}
+
+/* The chosen one: a thick green edge, a soft green fill and a tick, so it is not colour alone. */
+.report-category[aria-pressed='true'] {
+  border: 2px solid var(--green-button);
+  background: var(--green-soft);
+}
+
+.report-category[aria-pressed='true']::after {
+  content: '✓';
+  flex: none;
+  margin-left: auto;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.report-category-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.report-category-icon svg {
+  width: 1.375rem;
+  height: 1.375rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.report-category-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.report-category-text span {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.report-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.report-note textarea {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  font: inherit;
+  font-weight: 400;
+  color: inherit;
+  background: var(--surface);
+  resize: vertical;
+}
+
+.report-note textarea:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+.report-note-help {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}

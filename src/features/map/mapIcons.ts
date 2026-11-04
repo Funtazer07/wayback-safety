@@ -1,4 +1,6 @@
 import type { Map as MapLibreMap, StyleImageInterface } from 'maplibre-gl'
+import { categoryOrder, reportCategories } from '../reports/reportCategories.ts'
+import type { ReportCategory } from '../reports/reports.ts'
 
 export const brokenColour = '#dc2626'
 export const locationColour = '#16a34a'
@@ -27,6 +29,34 @@ export function loadBrokenLightIcon(): Promise<HTMLImageElement> {
     return image
   })()
   return brokenLightImage
+}
+
+function reportSvg(colour: string, icon: string): string {
+  return `
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
+    <circle cx="16" cy="16.75" r="13" fill="#000" opacity="0.22"/>
+    <circle cx="16" cy="15" r="12" fill="${colour}" stroke="#fff" stroke-width="2.25"/>
+    <g transform="translate(6.4 5.4) scale(0.8)" fill="none" stroke="#fff" stroke-width="2.4"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="${icon}"/>
+    </g>
+  </svg>`
+}
+
+let reportImages: Promise<[ReportCategory, HTMLImageElement][]> | undefined
+
+/** One round icon per report category, in the category's colour, with its own picture. */
+export function loadReportIcons(): Promise<[ReportCategory, HTMLImageElement][]> {
+  reportImages ??= Promise.all(
+    categoryOrder.map(async (category): Promise<[ReportCategory, HTMLImageElement]> => {
+      const { colour, icon } = reportCategories[category]
+      const image = new Image()
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(reportSvg(colour, icon))}`
+      await image.decode()
+      return [category, image]
+    }),
+  )
+  return reportImages
 }
 
 /** Pulses, except for people who asked their phone for less motion. */

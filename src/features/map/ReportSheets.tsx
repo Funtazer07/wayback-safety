@@ -1,3 +1,4 @@
+import PlaceReportInfo from '../reports/PlaceReportInfo.tsx'
 import BrokenLightSheet from './BrokenLightSheet.tsx'
 import ReportSheet from './ReportSheet.tsx'
 import type { useReporting } from './useReporting.ts'
@@ -25,6 +26,9 @@ function ReportSheets({ reporting }: ReportSheetsProps) {
         onClose={reporting.closeAll}
       />
     )
+  }
+  if (reporting.openReport) {
+    return <PlaceReportInfo report={reporting.openReport} onClose={reporting.closeAll} />
   }
   return null
 }
