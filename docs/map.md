@@ -21,9 +21,17 @@ started, with the destination pin, and the user's position. Press and hold repor
 in the same way. There is no route planner during a walk; a walk started without a route shows the
 map without one.
 
+The walk screen is kept calm, like a navigation app: the map takes most of the screen, and the
+panel under it shows the timer, the destination and **I'm home**. Extra time and Cancel walk are
+behind **More time or cancel**, except in the last 5 minutes. The red **Report** button on the map
+opens the report form for the spot where the user is (SCRUM-96, see "Place reports" below).
+
 The street lights themselves are not drawn on the map; they only count for the routes. Only lights
 someone reported as broken are drawn, with a red icon. Tapping one shows when it was reported and a
 button **It works again**.
+
+The map credits ("i") sit bottom left and are closed when the map opens. They cannot be removed:
+the licence of the OpenStreetMap data asks for them to be on the map.
 
 ## How a route is scored
 
@@ -67,6 +75,18 @@ working. If a report or "It works again" cannot be saved, the user sees "Could n
 
 Reports that testers made before SCRUM-92 were kept on their own phone (`localStorage`) and are not
 moved to the table.
+
+## Place reports
+
+Made with the **Report** button during a walk (`src/features/reports/`): one of four categories
+(broken or flickering light, dark or unlit area, suspicious or unsafe situation, other hazard) and
+an optional note. Decided on 4 Nov: they are shown on both maps (Home and the walk) to every
+signed-in user, earlier than SCRUM-8 planned (it waited for SCRUM-10).
+
+On the map each report is a round icon in the colour of its category, with its own picture, inside
+a soft circle of about 60 m. The circle is there because the spot is rounded: it shows the area,
+not where the reporter stood. Tapping the icon shows the category and when it was reported. The
+note and who reported it are never shown. A new report appears on the map as soon as it is saved.
 
 ## Privacy
 

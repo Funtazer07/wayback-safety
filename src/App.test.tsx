@@ -494,6 +494,7 @@ test('cancelling a walk asks first, then goes back Home and forgets the route', 
   renderApp(loggedIn)
   await screen.findByRole('timer')
 
+  click('More time or cancel')
   click('Cancel walk')
   fireEvent.click(screen.getByRole('button', { name: 'Confirm cancel' }))
 

@@ -1,18 +1,40 @@
 import { supabase } from '../../lib/supabase.ts'
+import type { LngLat } from '../map/geometry.ts'
 
-export type ReportCategory = 'no_light' | 'quiet' | 'unsafe' | 'other'
+/** The four categories of the report form (SCRUM-96). Must match 0025_report_categories.sql. */
+export type ReportCategory = 'broken_light' | 'dark_area' | 'unsafe' | 'other'
+
+/** A place report as every user sees it on the map: never who made it, never the note. */
+export type PlaceReport = {
+  id: string
+  category: ReportCategory
+  /** The rounded spot, about 100 m from where the reporter really was. */
+  coordinates: LngLat
+  reportedAt: Date
+}
+
+type PlaceReportRow = {
+  id: string
+  category: ReportCategory
+  lat: number
+  lng: number
+  created_at: string
+}
 
 export type NewPlaceReport = {
   category: ReportCategory
   /** Rounded before it leaves the phone; see roundForReport. */
   latitude: number
   longitude: number
-  /** At most 140 characters. */
+  /** At most NOTE_MAX_LENGTH characters. */
   note?: string
 }
 
 // Assumption: about 110 by 70 m in Eindhoven. Must match 0008_reports.sql.
 const DECIMALS = 3
+
+/** Must match the check on reports.note in 0008_reports.sql. */
+export const NOTE_MAX_LENGTH = 140
 
 function client() {
   if (!supabase) throw new Error('The backend is not set up. See docs/backend.md.')
@@ -23,6 +45,26 @@ function client() {
 export function roundForReport(coordinate: number): number {
   const factor = 10 ** DECIMALS
   return Math.round(coordinate * factor) / factor
+}
+
+function toPlaceReport(row: PlaceReportRow): PlaceReport {
+  return {
+    id: row.id,
+    category: row.category,
+    coordinates: [row.lng, row.lat],
+    reportedAt: new Date(row.created_at),
+  }
+}
+
+/** The place reports of the last 30 days. Broken lights from the map are fetched separately. */
+export async function fetchPlaceReports(): Promise<PlaceReport[]> {
+  // RLS leaves out expired reports, and the column rights leave out who reported and the note.
+  const { data, error } = await client()
+    .from('reports')
+    .select('id, category, lat, lng, created_at')
+    .is('lamp_id', null)
+  if (error) throw error
+  return (data as PlaceReportRow[]).map(toPlaceReport)
 }
 
 /** Others never see who made it. Fails after 20 reports in a day. */

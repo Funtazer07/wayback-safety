@@ -8,6 +8,7 @@ import {
   brokenLightsLayer,
   chosenRouteLayer,
   drawMapData,
+  placeReportsLayer,
   routeHitLayer,
   type MapData,
 } from './mapLayers.ts'
@@ -20,7 +21,7 @@ import {
 import { mapStyle } from './mapStyles.ts'
 import { moveCamera, type CameraMove } from './moveCamera.ts'
 
-type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
+type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex' | 'placeReports'>> &
   Pick<MapData, 'brokenLights' | 'position'> & {
     start?: LngLat | null
     destination?: LngLat | null
@@ -31,6 +32,7 @@ type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex'>> &
     onHold: (point: LngLat) => void
     onSelectRoute?: (index: number) => void
     onBrokenLightTap: (lampId: string) => void
+    onPlaceReportTap?: (id: string) => void
   }
 
 function MapView(props: MapViewProps) {
@@ -48,6 +50,7 @@ function MapView(props: MapViewProps) {
     routes: props.routes ?? [],
     selectedIndex: props.selectedIndex ?? 0,
     brokenLights: props.brokenLights,
+    placeReports: props.placeReports ?? [],
     position: props.position,
   }
   // MapLibre keeps its first handlers, so they read the latest props through a ref.
@@ -69,8 +72,10 @@ function MapView(props: MapViewProps) {
       minZoom: 12,
       maxZoom: 19,
       maxBounds: eindhovenBounds,
-      attributionControl: { compact: true },
+      // Added below, bottom left: the round buttons of the walk map sit bottom right.
+      attributionControl: false,
     })
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left')
     mapRef.current = map
     markersRef.current = {
       start: startMarker(),
@@ -78,6 +83,16 @@ function MapView(props: MapViewProps) {
       lamp: foundLampMarker(),
       last: lastLocationMarker(),
     }
+
+    // MapLibre opens the map credits as soon as it knows them. They are closed once, so they stay
+    // one tap away behind the "i" button: a calmer screen that still names the map makers.
+    const closeCredits = () => {
+      const credits = container.querySelector('.maplibregl-ctrl-attrib.maplibregl-compact-show')
+      if (!credits) return
+      credits.classList.remove('maplibregl-compact-show')
+      map.off('data', closeCredits)
+    }
+    map.on('data', closeCredits)
 
     map.on('style.load', async () => {
       await addOurLayers(map)
@@ -87,13 +102,15 @@ function MapView(props: MapViewProps) {
     const hold = watchHold(map, (point) => latest.current.onHold(point))
     map.on('click', (event) => {
       if (hold.isTapIgnored()) return
-      const layers = [brokenLightsLayer, routeHitLayer, chosenRouteLayer].filter((id) =>
-        map.getLayer(id),
+      const layers = [brokenLightsLayer, placeReportsLayer, routeHitLayer, chosenRouteLayer].filter(
+        (id) => map.getLayer(id),
       )
       const hits = map.queryRenderedFeatures(event.point, { layers })
       const brokenLight = hits.find((hit) => hit.layer.id === brokenLightsLayer)
+      const placeReport = hits.find((hit) => hit.layer.id === placeReportsLayer)
       const otherRoute = hits.find((hit) => hit.layer.id === routeHitLayer)
       if (brokenLight) latest.current.onBrokenLightTap(String(brokenLight.properties.lampId))
+      else if (placeReport) latest.current.onPlaceReportTap?.(String(placeReport.properties.id))
       else if (otherRoute) latest.current.onSelectRoute?.(Number(otherRoute.properties.index))
       else if (hits.length === 0) latest.current.onTap?.([event.lngLat.lng, event.lngLat.lat])
     })
