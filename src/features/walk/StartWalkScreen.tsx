@@ -9,7 +9,7 @@ import { HOME } from './destination.ts'
 import DestinationSheet from './DestinationSheet.tsx'
 import { addMinutes, formatClock } from './time.ts'
 import TimerPicker from './TimerPicker.tsx'
-import { EXTRA_MINUTES, suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts'
+import { suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts'
 import { useNow } from './useNow.ts'
 import type { NewWalk } from './walk.ts'
 import './walk.css'
@@ -74,8 +74,8 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
             </span>
           </p>
           <p className="small">
-            The timer below includes {EXTRA_MINUTES} minutes extra, so a slower walk does not worry
-            anyone.
+            The timer below starts at this walking time. Add a few minutes if you walk slowly or
+            plan to stop on the way.
           </p>
         </div>
       )}

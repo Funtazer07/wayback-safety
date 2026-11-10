@@ -81,13 +81,15 @@ choices (`TimerPicker.tsx`, `timerSuggestion.ts`). Decided on 26 Oct: the design
 minutes felt too rough. With a route planned on Home it adapts to that route, so the user does not
 have to guess and a slower walk does not set off "Are you OK?" (Studio Krom feedback):
 
-- it starts at the walking time plus 5 minutes (a 12-minute route starts at 17);
+- it starts at the walking time from the route planner (a 12-minute route starts at 12), as
+  SCRUM-125 asks; until then it started 5 minutes above it;
 - it cannot go below the walking time, and goes up to three times it, at least an hour;
-- the quick choices are the walking time plus 5, 10, 15 and 20 minutes.
+- the quick choices are the walking time and the walking time plus 5, 10 and 15 minutes, so a
+  slower walker adds time with one tap.
 
 Without a route it starts at the design's 20 minutes, goes from 5 minutes to 2 hours, and the quick
-choices are 10, 15, 20 and 30. _Assumptions:_ the 5 extra minutes, three times the walking time,
-and 2 hours without a route. The server accepts 1 to 180 minutes.
+choices are 10, 15, 20 and 30. _Assumptions:_ three times the walking time, and 2 hours without a
+route. The server accepts 1 to 180 minutes.
 
 `fetchCurrentWalk` returns an `active` walk, and also an `overdue` one: the user has not checked in
 yet and must still be able to tap "I'm home" to tell their contacts they are safe.
