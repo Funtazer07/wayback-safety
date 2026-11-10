@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest'
 import { DEFAULT_MINUTES, suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts'
 
-test('a planned route starts the timer at its walking time plus 5 minutes, to the minute', () => {
-  expect(suggestedMinutes(12 * 60)).toBe(17)
+test('a planned route starts the timer at its walking time, to the minute', () => {
+  expect(suggestedMinutes(12 * 60)).toBe(12)
   // 20 minutes and 10 seconds counts as 21 minutes of walking.
-  expect(suggestedMinutes(20 * 60 + 10)).toBe(26)
+  expect(suggestedMinutes(20 * 60 + 10)).toBe(21)
 })
 
 test('the slider cannot go below the walking time, and reaches three times it', () => {
@@ -26,9 +26,9 @@ test('without a planned route the timer starts at 20 minutes, from 5 minutes to 
   expect(timerRange(null)).toEqual({ min: 5, max: 120 })
 })
 
-test('the quick choices fit the route: its walking time plus 5, 10, 15 and 20 minutes', () => {
-  expect(timerPresets(12 * 60)).toEqual([17, 22, 27, 32])
+test('the quick choices fit the route: its walking time, then 5, 10 and 15 minutes more', () => {
+  expect(timerPresets(12 * 60)).toEqual([12, 17, 22, 27])
   expect(timerPresets(null)).toEqual([10, 15, 20, 30])
   // Near the 3-hour limit the same choice is not shown twice.
-  expect(timerPresets(170 * 60)).toEqual([175, 180])
+  expect(timerPresets(170 * 60)).toEqual([170, 175, 180])
 })

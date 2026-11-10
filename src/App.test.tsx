@@ -285,12 +285,12 @@ test('the route chosen on Home is on the walk map after the walk starts', async 
 
   click('Choose the route via Stratumseind')
   click('Start walk')
-  // A 25-minute route: the timer starts at 25 + 5 minutes extra.
-  expect(screen.getByText('30 min', { selector: 'strong' })).toBeInTheDocument()
+  // A 25-minute route: the timer starts at its walking time.
+  expect(screen.getByText('25 min', { selector: 'strong' })).toBeInTheDocument()
   click('Start walk')
 
   expect(await screen.findByText('Map shows a route of 3 points')).toBeInTheDocument()
-  expect(walks.startWalk).toHaveBeenCalledWith(expect.objectContaining({ minutes: 30 }))
+  expect(walks.startWalk).toHaveBeenCalledWith(expect.objectContaining({ minutes: 25 }))
   // The contacts see the same route on their screen.
   expect(walks.shareWalkRoute).toHaveBeenCalledWith('walk-1', routeViaStratumseind)
 })
