@@ -89,6 +89,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
       <MapView
         position={position}
         brokenLights={reporting.brokenLights}
+        placeReports={reporting.placeReports}
         routes={planner.routes}
         selectedIndex={planner.selectedIndex}
         start={planner.chosenStart}
@@ -103,6 +104,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
         onHold={reporting.startReport}
         onSelectRoute={(index) => !reporting.isSheetOpen && planner.selectRoute(index)}
         onBrokenLightTap={reporting.showLight}
+        onPlaceReportTap={reporting.showPlaceReport}
       />
       <PlannerPanel
         panelRef={panelRef}

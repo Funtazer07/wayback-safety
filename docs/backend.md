@@ -303,14 +303,31 @@ Not here yet: an "I'm watching" signal from the contact to the user. The client 
 
 One table, `reports`, for two kinds of report (SCRUM-92):
 
-- **Place report** (SCRUM-8, the form comes in SCRUM-96): a category (no light, quiet or empty, an
-  unsafe feeling, other), the spot where the user is, and an optional note of at most 140
-  characters.
+- **Place report** (SCRUM-8, the form is SCRUM-96): a category, the spot where the user is, and an
+  optional note of at most 140 characters. The user opens the form with the red Report button on
+  the walk map.
+
+The four categories (decided on 4 Nov, `0025_report_categories.sql`; this replaces the list in
+SCRUM-8, which had "quiet or empty" instead of the two light categories):
+
+| Value          | In the app                     | Meaning                                                    |
+| -------------- | ------------------------------ | ---------------------------------------------------------- |
+| `broken_light` | Broken or flickering light     | A street light is broken, flickering or switched off       |
+| `dark_area`    | Dark or unlit area             | A street or path feels too dark: there is too little light |
+| `unsafe`       | Suspicious or unsafe situation | Harassment, intimidation or behaviour that feels unsafe    |
+| `other`        | Other hazard                   | An obstacle, a blocked path or another danger on the route |
+
+A broken-light report from the map (press and hold on a lamp) is also `broken_light`. Older reports
+were moved by the migration: `no_light` became `broken_light` (with a lamp) or `dark_area`
+(without), and `quiet` became `unsafe` (Assumption).
+
 - **Broken street light** (the map, see [map.md](map.md)): one lamp from the register, saved at
   the lamp's own spot with its street.
 
 Decided on 22 Oct, different from the SCRUM-92 text in Jira, which kept reports hidden until
-SCRUM-10: every signed-in user can see reports, so the map can show them. Hidden from other users:
+SCRUM-10: every signed-in user can see reports, so the map can show them. Since 4 Nov the maps show
+place reports too, with their category and time (see "Place reports" in [map.md](map.md)). Hidden
+from other users:
 
 - **who** reported it. The table keeps `user_id` only to delete a user's reports with their
   account and to limit how many reports one person makes. Column rights stop the app from reading
