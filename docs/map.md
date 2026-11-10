@@ -54,14 +54,15 @@ lights" and never that a light is on.
 | Service                                        | What for                                                  | Notes                                                                                      |
 | ---------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | data.eindhoven.nl, `data-openbare-verlichting` | The register of street lights                             | Asked per route, in rectangles of about 250 m along it                                     |
-| routing.openstreetmap.de (FOSSGIS)             | Walking routes, plus one cycle route                      | Free demo service, no key. A real app needs its own or a paid one                          |
+| OpenRouteService (HeiGIT), via `plan-route`    | Walking routes, plus one cycle route                      | Free plan with a key. Asked by our Edge Function, never by the phone; see backend.md       |
 | tiles.openfreemap.org                          | The base map (the "liberty" style, on OpenStreetMap data) | Free, no key. A raster and a dark style were tried in the prototypes; this one looked best |
 
 The cycle route is offered because it often follows bigger, better lit roads. Its walking time is
 worked out at 5 km/h (_Assumption_).
 
-Every request gives up after 12 seconds and is tried once more (`fetchJson.ts`): the municipality's
-services sometimes do not answer for half a minute.
+Every request for lamps gives up after 12 seconds and is tried once more (`fetchJson.ts`): the
+municipality's services sometimes do not answer for half a minute. A route request is not tried
+again; `plan-route` gives each OpenRouteService request 12 seconds itself.
 
 ## Broken-light reports
 
@@ -91,9 +92,9 @@ note and who reported it are never shown. A new report appears on the map as soo
 ## Privacy
 
 - The user's position is drawn on the map and used as the start of a route. To plan a route, the
-  start and the destination are sent to the FOSSGIS route planner. Nothing else about the user is
-  sent, and the map does not store the position. This is written down in
-  [backend.md](backend.md) as well.
+  start and the destination are sent to our `plan-route` Edge Function, which asks
+  OpenRouteService. Nothing else about the user is sent, and neither the map nor the function
+  stores the position. This is written down in [backend.md](backend.md) as well.
 - The route of a running walk is kept on the phone (`walkRoute.ts`), so the walk screen can show it
   after the app was closed. It includes the start, which is often where the user was. It is erased
   when the user leaves the "You're home" screen. A walk that is never checked in keeps it

@@ -1,4 +1,4 @@
-import { fetchJson } from './fetchJson.ts'
+import { supabase } from '../../lib/supabase.ts'
 import { isSameWay, type LngLat } from './geometry.ts'
 
 export type Route = {
@@ -6,51 +6,27 @@ export type Route = {
   duration: number
 }
 
-// Free FOSSGIS planners: fine for a demo, not for a real app. They receive the start point.
-const footRouter = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/'
-const bikeRouter = 'https://routing.openstreetmap.de/routed-bike/route/v1/bike/'
-
-// Assumption: 5 km/h, to give the cycle-network route a walking time.
-const walkingMetresPerSecond = 5000 / 3600
 const maxRoutes = 3
+// The Edge Function asks for a walking and a cycle route, each with its own 12 second limit.
+const requestTimeout = 30_000
 
-type PlannerAnswer = {
-  code?: string
-  routes?: { geometry: { coordinates: LngLat[] }; duration: number; distance: number }[]
+type PlannerAnswer = { routes?: { coordinates?: unknown; duration?: unknown }[] }
+
+function client() {
+  if (!supabase) throw new Error('The backend is not set up. See docs/backend.md.')
+  return supabase
 }
 
-export function routeUrl(router: 'foot' | 'bike', from: LngLat, to: LngLat): string {
-  const base = router === 'foot' ? footRouter : bikeRouter
-  const params = new URLSearchParams({
-    alternatives: '3',
-    overview: 'full',
-    geometries: 'geojson',
-  })
-  return `${base}${from.join(',')};${to.join(',')}?${params}`
-}
-
-/** The cycle-network route often follows bigger, better lit roads, so it is an extra choice. */
-export function routesFromAnswers(walking: unknown, cycling: unknown): Route[] {
-  const candidates: Route[] = []
-  const walkingAnswer = walking as PlannerAnswer | undefined
-  const cyclingAnswer = cycling as PlannerAnswer | undefined
-
-  if (walkingAnswer?.code === 'Ok') {
-    for (const route of walkingAnswer.routes ?? []) {
-      candidates.push({ coordinates: route.geometry.coordinates, duration: route.duration })
-    }
-  }
-  const cyclingRoute = cyclingAnswer?.code === 'Ok' ? cyclingAnswer.routes?.[0] : undefined
-  if (cyclingRoute) {
-    candidates.push({
-      coordinates: cyclingRoute.geometry.coordinates,
-      duration: cyclingRoute.distance / walkingMetresPerSecond,
-    })
-  }
-
+/** The server sends walking routes first and the cycle-network route last. */
+export function routesFromAnswer(answer: unknown): Route[] {
   const unique: Route[] = []
-  for (const candidate of candidates) {
-    if (!unique.some((route) => isSameWay(route.coordinates, candidate.coordinates))) {
+  for (const route of (answer as PlannerAnswer | null)?.routes ?? []) {
+    if (!Array.isArray(route.coordinates) || typeof route.duration !== 'number') continue
+    const candidate: Route = {
+      coordinates: route.coordinates as LngLat[],
+      duration: route.duration,
+    }
+    if (!unique.some((kept) => isSameWay(kept.coordinates, candidate.coordinates))) {
       unique.push(candidate)
     }
   }
@@ -58,13 +34,12 @@ export function routesFromAnswers(walking: unknown, cycling: unknown): Route[] {
 }
 
 export async function fetchRoutes(from: LngLat, to: LngLat, signal: AbortSignal): Promise<Route[]> {
-  const [walking, cycling] = await Promise.allSettled([
-    fetchJson(routeUrl('foot', from, to), signal),
-    fetchJson(routeUrl('bike', from, to), signal),
-  ])
+  const { data, error } = await client().functions.invoke('plan-route', {
+    body: { from, to },
+    signal,
+    timeout: requestTimeout,
+  })
   if (signal.aborted) throw new Error('Planning was stopped')
-  return routesFromAnswers(
-    walking.status === 'fulfilled' ? walking.value : undefined,
-    cycling.status === 'fulfilled' ? cycling.value : undefined,
-  )
+  if (error) throw error
+  return routesFromAnswer(data)
 }

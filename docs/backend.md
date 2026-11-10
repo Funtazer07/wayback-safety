@@ -1,8 +1,9 @@
 # Backend
 
 The backend is [Supabase](https://supabase.com): a hosted database (Postgres) with login built in.
-The app talks to Supabase directly from the phone. The only server code of our own is one Edge
-Function that sends push notifications (see "Sending push").
+The app talks to Supabase directly from the phone. The only server code of our own is two Edge
+Functions: one sends push notifications (see "Sending push"), the other plans walking routes (see
+"Planning a route").
 
 ## How login works
 
@@ -499,6 +500,44 @@ open the function's **Logs**, or run `select * from net._http_response order by 
 10;` in the SQL Editor to see what the function answered. When nothing shows up there at all, look
 for a `queue_walk_push` warning under **Logs > Postgres**.
 
+### Planning a route
+
+The phone never calls the routing service itself. It sends the start and the destination to the
+Edge Function `plan-route` (`supabase/functions/plan-route/index.ts`), which asks
+[OpenRouteService](https://openrouteservice.org) for up to three walking routes and one cycle
+route, and sends back each route's line, distance (m) and walking time (s). The cycle route gets a
+walking time at 5 km/h. The choice of OpenRouteService is explained in the SCRUM-122 research on
+Confluence.
+
+- The OpenRouteService key is an Edge Function secret. It is never in the app, `.env.local` or
+  GitHub.
+- **Verify JWT** is on, so only signed-in users can plan and use up our free quota (2,000 routes a
+  day; a plan uses one walking and one cycle request).
+- Both spots must lie inside the Eindhoven area (the same box as the map), or the function answers 400.
+- When the daily or per-minute limit is used up, the function answers 503. The app then says it
+  could not plan a route; a walk can still start without one.
+- How the request and the answer look is in `planRoute.ts`, tested by `planRoute.test.ts`.
+
+#### Setting it up
+
+Done once by the owner of the Supabase account.
+
+1. **Get a key.** Sign up at [account.heigit.org](https://account.heigit.org) with the team
+   account (or log in with GitHub). The dashboard shows a free **Basic Key** for openrouteservice;
+   copy it with the copy button next to it.
+2. **Edge Function secrets.** **Edge Functions > Secrets**, add:
+   - `ORS_API_KEY`: the key from step 1.
+   - `ORS_URL`: not needed. The function uses `https://api.heigit.org/openrouteservice`. Only
+     if HeiGIT moves its API again, put the new address here, without a `/` at the end.
+3. **Deploy the function.** **Edge Functions > Deploy a new function > Via editor**, name
+   `plan-route`. Paste `supabase/functions/plan-route/index.ts` into `index.ts`, and add a second
+   file named `planRoute.ts` (next to `index.ts`, no folder) with the contents of
+   `supabase/functions/plan-route/planRoute.ts`. Leave **Verify JWT** on.
+
+Until this is done, planning a route on the map shows "Could not plan a route". When the function
+code changes, deploy it again the same way. The function's **Logs** show why a request failed;
+they never contain the trip.
+
 ### Late walks
 
 A job in the database checks every minute for walks that ran past their deadline (SCRUM-73,
@@ -654,9 +693,10 @@ Written down here because the app handles location and personal data.
   contacts know where to look, and then it is erased too (assumption until SCRUM-71 and SCRUM-30
   decide). The alert itself never carries the location, only the time it was saved.
 - **Route planning:** to compare routes on the map, the start (often the user's position) and the
-  destination are sent to the free FOSSGIS route planner (routing.openstreetmap.de), outside our
-  own backend. Nothing is stored by our app. The privacy statement must mention this. See
-  [map.md](map.md).
+  destination are sent to our `plan-route` Edge Function, which passes them on to OpenRouteService
+  (HeiGIT, Germany). OpenRouteService sees our server, not the user's phone, and gets no name or
+  account. The function stores and logs nothing about the trip. The privacy statement must mention
+  OpenRouteService. See "Planning a route" and [map.md](map.md).
 - **Reports:** every signed-in user sees the category, the spot and the time, never who reported
   it. A place report is stored rounded (about 100 m), never at the GPS position; a broken light at
   the lamp's own spot. Notes are hidden from other users until flagging exists (SCRUM-32). No
