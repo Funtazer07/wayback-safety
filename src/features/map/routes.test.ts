@@ -1,64 +1,62 @@
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 import type { LngLat } from './geometry.ts'
-import { routesFromAnswers, routeUrl } from './routes.ts'
+import { fetchRoutes, routesFromAnswer } from './routes.ts'
+
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }))
+
+vi.mock('../../lib/supabase.ts', () => ({ supabase: { functions: { invoke } } }))
+
+const station: LngLat = [5.4791, 51.4434]
+const stratumseind: LngLat = [5.4797, 51.4433]
 
 function line(longitude: number): LngLat[] {
   return Array.from({ length: 20 }, (_, step) => [longitude, 51.4385 + step * 0.0002])
 }
 
-function answer(...routes: { longitude: number; duration: number; distance: number }[]) {
-  return {
-    code: 'Ok',
-    routes: routes.map(({ longitude, duration, distance }) => ({
-      geometry: { coordinates: line(longitude) },
-      duration,
-      distance,
-    })),
-  }
+function route(longitude: number, duration: number) {
+  return { coordinates: line(longitude), distance: 800, duration }
 }
 
-test('asks the walking route planner for alternatives between two spots', () => {
-  const url = new URL(routeUrl('foot', [5.4791, 51.4385], [5.4797, 51.4433]))
-
-  expect(url.pathname).toContain('/foot/5.4791,51.4385;5.4797,51.4433')
-  expect(url.searchParams.get('alternatives')).toBe('3')
-  expect(url.searchParams.get('geometries')).toBe('geojson')
+beforeEach(() => {
+  invoke.mockReset()
 })
 
-test('adds the cycle-network route with a walking time at 5 km/h', () => {
-  const routes = routesFromAnswers(
-    answer({ longitude: 5.479, duration: 660, distance: 812 }),
-    answer({ longitude: 5.482, duration: 240, distance: 1150 }),
-  )
+test('asks our server for routes between two spots', async () => {
+  invoke.mockResolvedValue({ data: { routes: [route(5.479, 660)] }, error: null })
 
-  expect(routes).toHaveLength(2)
-  expect(routes[0].duration).toBe(660)
-  expect(routes[1].duration).toBeCloseTo(828, 0)
+  const routes = await fetchRoutes(station, stratumseind, new AbortController().signal)
+
+  expect(invoke).toHaveBeenCalledWith(
+    'plan-route',
+    expect.objectContaining({ body: { from: station, to: stratumseind } }),
+  )
+  expect(routes).toEqual([{ coordinates: line(5.479), duration: 660 }])
+})
+
+test('planning fails when the server refuses it', async () => {
+  invoke.mockResolvedValue({ data: null, error: new Error('The route planner is busy') })
+
+  await expect(fetchRoutes(station, stratumseind, new AbortController().signal)).rejects.toThrow(
+    'busy',
+  )
 })
 
 test('leaves out a route that goes over the same streets', () => {
-  const routes = routesFromAnswers(
-    answer({ longitude: 5.479, duration: 660, distance: 812 }),
-    answer({ longitude: 5.479, duration: 300, distance: 812 }),
-  )
+  const routes = routesFromAnswer({ routes: [route(5.479, 660), route(5.479, 828)] })
 
   expect(routes).toHaveLength(1)
+  expect(routes[0].duration).toBe(660)
 })
 
 test('keeps at most three routes', () => {
-  const routes = routesFromAnswers(
-    answer(
-      { longitude: 5.47, duration: 600, distance: 800 },
-      { longitude: 5.475, duration: 620, distance: 820 },
-      { longitude: 5.48, duration: 640, distance: 840 },
-      { longitude: 5.485, duration: 660, distance: 860 },
-    ),
-    undefined,
-  )
+  const routes = routesFromAnswer({
+    routes: [route(5.47, 600), route(5.475, 620), route(5.48, 640), route(5.485, 660)],
+  })
 
   expect(routes).toHaveLength(3)
 })
 
 test('gives no routes when the route planner found none', () => {
-  expect(routesFromAnswers({ code: 'NoRoute' }, undefined)).toEqual([])
+  expect(routesFromAnswer({ routes: [] })).toEqual([])
+  expect(routesFromAnswer(null)).toEqual([])
 })

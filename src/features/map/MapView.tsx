@@ -75,7 +75,13 @@ function MapView(props: MapViewProps) {
       // Added below, bottom left: the round buttons of the walk map sit bottom right.
       attributionControl: false,
     })
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left')
+    map.addControl(
+      new maplibregl.AttributionControl({
+        compact: true,
+        customAttribution: 'Routes © openrouteservice.org by HeiGIT',
+      }),
+      'bottom-left',
+    )
     mapRef.current = map
     markersRef.current = {
       start: startMarker(),

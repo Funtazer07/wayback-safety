@@ -22,5 +22,9 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "supabase/functions/send-walk-push/walkPush*.ts"]
+  "include": [
+    "src",
+    "supabase/functions/send-walk-push/walkPush*.ts",
+    "supabase/functions/plan-route/planRoute*.ts"
+  ]
 }
