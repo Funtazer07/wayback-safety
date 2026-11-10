@@ -8,6 +8,7 @@ import {
   metresFrom,
   placeOf,
   rectanglesAlong,
+  sharedPart,
   type LngLat,
 } from './geometry.ts'
 
@@ -46,6 +47,16 @@ test('sees two lines over the same streets as the same way', () => {
 
   expect(isSameWay(way, way)).toBe(true)
   expect(isSameWay(way, otherWay)).toBe(false)
+})
+
+test('measures how much of a line runs along another one', () => {
+  const way: LngLat[] = Array.from({ length: 20 }, (_, step) => [5.4791, 51.4385 + step * 0.0001])
+  const halfOther: LngLat[] = way.map(([longitude, latitude], index) =>
+    index < 10 ? [longitude, latitude] : [longitude + 0.002, latitude],
+  )
+
+  expect(sharedPart(way, way)).toBe(1)
+  expect(sharedPart(way, halfOther)).toBeCloseTo(0.6, 1)
 })
 
 test('a way of a single point is only the same as that very spot', () => {

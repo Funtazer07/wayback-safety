@@ -9,7 +9,10 @@ prototype (`maplibre-prototype-v3.html`), which was tested with the client first
 
 1. Tap the map where you start, or tap **My location**.
 2. Tap where you want to go. The app finds up to three walking routes and counts the registered
-   street lights along each one.
+   street lights along each one. A route that runs for more than 70% along one already shown is
+   left out (`routes.ts`), because testers saw routes that differ in a street or two as no real
+   choice (_Assumption:_ 70%, to check again with users). So sometimes only one or two routes are
+   shown.
 3. A list shows the routes, the one with the most street lights first, labelled **Most street
    lights** and **Fastest**. Choosing a route closes the list and leaves a short bar with
    **Other routes**.
