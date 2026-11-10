@@ -56,6 +56,112 @@
   font-size: 0.9375rem;
 }
 
+/* "Where are you going?": a round search field like in a maps app, with the results under it. */
+.place-search {
+  position: relative;
+}
+
+.place-search-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0 2.75rem 0 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  font-weight: 400;
+  background: var(--page);
+}
+
+.place-search-field:focus-within {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+.place-search-field svg {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+/* Read by screen readers; the placeholder says the same for everyone else. */
+.place-search-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.place-search-field input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0;
+  border: none;
+  font-size: 1rem;
+  background: transparent;
+  appearance: none;
+}
+
+.place-search-field input:focus-visible {
+  outline: none;
+}
+
+.place-search-field input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.place-search-clear {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.place-results {
+  margin-top: 0.375rem;
+  font-size: 0.9375rem;
+}
+
+.place-results p {
+  padding: 0.25rem 0.25rem 0.375rem;
+  color: var(--text-muted);
+}
+
+.place-results ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-results li + li {
+  border-top: 1px solid var(--border);
+}
+
+.place-results button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  text-align: left;
+  font-weight: 500;
+  background: transparent;
+}
+
 .planner-status {
   font-size: 0.8125rem;
   font-weight: 600;

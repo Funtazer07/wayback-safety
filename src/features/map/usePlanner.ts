@@ -21,6 +21,7 @@ export function usePlanner(position: UserPosition | null) {
   // Planning again after a report does not change this, so the map does not move.
   const [newRoutes, setNewRoutes] = useState<MeasuredRoute[] | null>(null)
   const request = useRef<AbortController | null>(null)
+  const waitingLights = useRef<BrokenLight[] | null>(null)
 
   useEffect(() => () => request.current?.abort(), [])
 
@@ -84,6 +85,26 @@ export function usePlanner(position: UserPosition | null) {
     plan(start, point, lights)
   }
 
+  function goTo(point: LngLat, lights: BrokenLight[]) {
+    setDestination(point)
+    if (start) {
+      plan(start, point, lights)
+      return
+    }
+    // The hint above already asks for the start.
+    waitingLights.current = lights
+    setStatus('')
+  }
+
+  // A destination searched before the start was known is planned as soon as there is a start:
+  // a tap on the map, or the phone's location coming in.
+  useEffect(() => {
+    const lights = waitingLights.current
+    if (!lights || !start || !destination) return
+    waitingLights.current = null
+    plan(start, destination, lights)
+  })
+
   function replan(lights: BrokenLight[], thankYou: string) {
     if (start && destination) plan(start, destination, lights, { keepChoice: true, thankYou })
     else setStatus(thankYou)
@@ -96,6 +117,7 @@ export function usePlanner(position: UserPosition | null) {
 
   function reset() {
     request.current?.abort()
+    waitingLights.current = null
     setChosenStart(null)
     setDestination(null)
     setRoutes([])
@@ -113,6 +135,7 @@ export function usePlanner(position: UserPosition | null) {
     status,
     newRoutes,
     tapPlace,
+    goTo,
     replan,
     selectRoute,
     showAllRoutes: () => setIsChoosing(true),

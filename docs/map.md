@@ -8,8 +8,10 @@ prototype (`maplibre-prototype-v3.html`), which was tested with the client first
 **On Home** (`RoutePlanner.tsx`):
 
 1. Tap the map where you start, or tap **My location**.
-2. Tap where you want to go. The app finds up to three walking routes and counts the registered
-   street lights along each one. A route that runs for more than 70% along one already shown is
+2. Type where you want to go in the search bar ("Where are you going?") and pick a result, or press
+   Enter for the first one. Tapping the map still works too, for a spot without an address. A place
+   searched before the start is known is planned as soon as there is a start. The app finds up to
+   three walking routes and counts the registered street lights along each one. A route that runs for more than 70% along one already shown is
    left out (`routes.ts`), because testers saw routes that differ in a street or two as no real
    choice (_Assumption:_ 70%, to check again with users). So sometimes only one or two routes are
    shown.
@@ -59,6 +61,10 @@ lights" and never that a light is on.
 | data.eindhoven.nl, `data-openbare-verlichting` | The register of street lights                             | Asked per route, in rectangles of about 250 m along it                                     |
 | OpenRouteService (HeiGIT), via `plan-route`    | Walking routes, plus one cycle route                      | Free plan with a key. Asked by our Edge Function, never by the phone; see backend.md       |
 | tiles.openfreemap.org                          | The base map (the "liberty" style, on OpenStreetMap data) | Free, no key. A raster and a dark style were tried in the prototypes; this one looked best |
+| api.pdok.nl, Locatieserver (Kadaster)          | The search bar: addresses, streets and postcodes          | Free, no key, made for search-as-you-type. Only places in Eindhoven are asked for          |
+
+The search waits until the user stops typing for 300 ms (_Assumption_), so it does not send a
+request for every key. Shops and cafés cannot be found: the register holds addresses only.
 
 The cycle route is offered because it often follows bigger, better lit roads. Its walking time is
 worked out at 5 km/h (_Assumption_).
@@ -98,6 +104,8 @@ note and who reported it are never shown. A new report appears on the map as soo
   start and the destination are sent to our `plan-route` Edge Function, which asks
   OpenRouteService. Nothing else about the user is sent, and neither the map nor the function
   stores the position. This is written down in [backend.md](backend.md) as well.
+- What the user types in the search bar goes straight from the phone to PDOK, without anything
+  about the user. PDOK does see the phone's internet address, like every website does.
 - The route of a running walk is kept on the phone (`walkRoute.ts`), so the walk screen can show it
   after the app was closed. It includes the start, which is often where the user was. It is erased
   when the user leaves the "You're home" screen. A walk that is never checked in keeps it

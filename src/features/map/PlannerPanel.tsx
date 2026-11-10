@@ -1,16 +1,26 @@
-import type { RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 
 type PlannerPanelProps = {
   panelRef: RefObject<HTMLDivElement | null>
+  /** The search field, at the top of the panel. */
+  search: ReactNode
   hint: string
   status: string
   onLocate: () => void
   onStartOver: () => void
 }
 
-function PlannerPanel({ panelRef, hint, status, onLocate, onStartOver }: PlannerPanelProps) {
+function PlannerPanel({
+  panelRef,
+  search,
+  hint,
+  status,
+  onLocate,
+  onStartOver,
+}: PlannerPanelProps) {
   return (
     <div ref={panelRef} className="planner-panel">
+      {search}
       <p>{hint}</p>
       <p className="planner-status" role="status">
         {status}

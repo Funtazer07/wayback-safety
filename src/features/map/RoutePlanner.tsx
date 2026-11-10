@@ -3,6 +3,7 @@ import { isInEindhoven } from './geometry.ts'
 import MapView from './MapView.tsx'
 import type { CameraMove } from './moveCamera.ts'
 import { locationMessage, plannerHint } from './plannerHint.ts'
+import PlaceSearch from './PlaceSearch.tsx'
 import PlannerPanel from './PlannerPanel.tsx'
 import ReportSheets from './ReportSheets.tsx'
 import RouteList from './RouteList.tsx'
@@ -23,6 +24,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
   const reporting = useReporting((lights, thankYou) => planner.replan(lights, thankYou))
   const [camera, setCamera] = useState<CameraMove | null>(null)
   const [isLocating, setIsLocating] = useState(false)
+  const [searchKey, setSearchKey] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const { position } = location
@@ -96,11 +98,14 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
         destination={planner.destination}
         foundLamp={reporting.menu?.state === 'found' ? reporting.menu.lamp.coordinates : null}
         camera={camera}
-        onTap={(point) =>
-          reporting.isSheetOpen
-            ? reporting.closeAll()
-            : planner.tapPlace(point, reporting.brokenLights)
-        }
+        onTap={(point) => {
+          if (reporting.isSheetOpen) {
+            reporting.closeAll()
+            return
+          }
+          if (planner.start) setSearchKey((key) => key + 1)
+          planner.tapPlace(point, reporting.brokenLights)
+        }}
         onHold={reporting.startReport}
         onSelectRoute={(index) => !reporting.isSheetOpen && planner.selectRoute(index)}
         onBrokenLightTap={reporting.showLight}
@@ -108,6 +113,20 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
       />
       <PlannerPanel
         panelRef={panelRef}
+        search={
+          <PlaceSearch
+            // A new key empties the field, after Start over or a destination tapped on the map.
+            key={searchKey}
+            onChoose={(place) => {
+              reporting.closeAll()
+              // With a start the new routes move the map; without one, show the place itself.
+              if (!planner.start) {
+                setCamera({ id: Date.now(), kind: 'centre', centre: place.coordinates, zoom: 16 })
+              }
+              planner.goTo(place.coordinates, reporting.brokenLights)
+            }}
+          />
+        }
         hint={plannerHint({
           hasRoutes,
           isChoosing: planner.isChoosing,
@@ -117,6 +136,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
         onLocate={locate}
         onStartOver={() => {
           reporting.closeAll()
+          setSearchKey((key) => key + 1)
           planner.reset()
         }}
       />
