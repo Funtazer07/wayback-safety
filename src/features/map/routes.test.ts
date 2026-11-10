@@ -17,6 +17,14 @@ function route(longitude: number, duration: number) {
   return { coordinates: line(longitude), distance: 800, duration }
 }
 
+/** The same line as route(5.479), but from point `from` on it takes a street about 140 m east. */
+function detour(from: number, duration: number) {
+  const coordinates = line(5.479).map(([longitude, latitude], index): LngLat =>
+    index < from ? [longitude, latitude] : [longitude + 0.002, latitude],
+  )
+  return { coordinates, distance: 820, duration }
+}
+
 beforeEach(() => {
   invoke.mockReset()
 })
@@ -46,6 +54,18 @@ test('leaves out a route that goes over the same streets', () => {
 
   expect(routes).toHaveLength(1)
   expect(routes[0].duration).toBe(660)
+})
+
+test('leaves out a route that only differs in its last streets', () => {
+  const routes = routesFromAnswer({ routes: [route(5.479, 660), detour(16, 680)] })
+
+  expect(routes).toHaveLength(1)
+})
+
+test('keeps a route that takes other streets for a good part of the way', () => {
+  const routes = routesFromAnswer({ routes: [route(5.479, 660), detour(10, 700)] })
+
+  expect(routes).toHaveLength(2)
 })
 
 test('keeps at most three routes', () => {

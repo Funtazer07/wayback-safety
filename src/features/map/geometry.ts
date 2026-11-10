@@ -72,17 +72,23 @@ export function lineLength(lineInMetres: [number, number][]): number {
   return length
 }
 
-export function isSameWay(first: LngLat[], second: LngLat[]): boolean {
-  if (first.length < 2) {
-    return second.length > 0 && second.every((point) => placeOf(point) === placeOf(first[0]))
-  }
+/** How much of the second line (0 to 1) runs along the first one, within 15 m. */
+export function sharedPart(first: LngLat[], second: LngLat[]): number {
+  if (first.length < 2 || second.length === 0) return 0
   const toMetres = metresFrom(first[0])
   const firstInMetres = first.map(toMetres)
   const samples = second.filter((_, index) => index % 4 === 0)
   const onFirst = samples.filter(
     (point) => measureFromLine(firstInMetres, toMetres(point)).distance < 15,
   )
-  return onFirst.length / samples.length > 0.9
+  return onFirst.length / samples.length
+}
+
+export function isSameWay(first: LngLat[], second: LngLat[]): boolean {
+  if (first.length < 2) {
+    return second.length > 0 && second.every((point) => placeOf(point) === placeOf(first[0]))
+  }
+  return sharedPart(first, second) > 0.9
 }
 
 export function rectangleAround([longitude, latitude]: LngLat, metres: number): Rectangle {
