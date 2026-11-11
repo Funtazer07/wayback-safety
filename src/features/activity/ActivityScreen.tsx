@@ -17,7 +17,7 @@ function ActivityScreen({ displayName, onOpenWalk, onOpenCircle }: ActivityScree
   const [now] = useState(() => new Date())
 
   return (
-    <main className="screen">
+    <main className="screen activity-screen">
       <div className="activity-account">
         <p className="activity-eyebrow">{displayName}’s account</p>
         <span className="initial" aria-hidden="true">
@@ -30,9 +30,7 @@ function ActivityScreen({ displayName, onOpenWalk, onOpenCircle }: ActivityScree
       </div>
 
       {feed.length === 0 ? (
-        <p className="card">
-          No updates yet. When someone you look out for starts a walk, it shows here.
-        </p>
+        <p className="card">No updates yet.</p>
       ) : (
         <ul className="activity-list" aria-label="Updates">
           {feed.map((update) => (
@@ -49,7 +47,6 @@ function ActivityScreen({ displayName, onOpenWalk, onOpenCircle }: ActivityScree
       <button type="button" className="activity-circle" onClick={onOpenCircle}>
         <span>
           <strong>Trusted contacts</strong>
-          <span className="small">Choose who hears about each walk, or invite someone.</span>
         </span>
         <span aria-hidden="true">›</span>
       </button>

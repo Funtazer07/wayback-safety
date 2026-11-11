@@ -20,7 +20,7 @@ function ContactsScreen({ userId, displayName, onBack }: ContactsScreenProps) {
   const selected = contacts.find((contact) => contact.id === selectedId) ?? null
 
   return (
-    <main className="screen">
+    <main className="screen contacts-screen">
       <TopBar title="Your circle" onBack={onBack} />
       <div>
         <h1>Trusted contacts</h1>
@@ -30,10 +30,7 @@ function ContactsScreen({ userId, displayName, onBack }: ContactsScreenProps) {
       {isLoading && <p>Loading…</p>}
       {error && <p role="alert">{error} Check your connection and try again.</p>}
       {!isLoading && !error && contacts.length === 0 && (
-        <p className="contacts-empty">
-          No contacts yet. Invite someone you trust. Once they accept, you look out for each other:
-          you both hear when the other starts a walk, gets home or misses a check-in.
-        </p>
+        <p className="contacts-empty">No contacts yet. Invite someone you trust.</p>
       )}
 
       <ul className="contacts-list" aria-label="Your trusted contacts">

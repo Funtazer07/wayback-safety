@@ -21,9 +21,7 @@ function ArrivedSheet({ isBusy, onHome, onNotYet }: ArrivedSheetProps) {
           </svg>
         </div>
         <h2 id="walk-arrived-title">Are you home?</h2>
-        <p className="small">
-          You are at the end of your route. Tap I’m home to end the walk and let your contacts know.
-        </p>
+        <p className="small">End your walk and let your contacts know.</p>
         <button type="button" className="button-primary" disabled={isBusy} onClick={onHome}>
           Yes, I’m home
         </button>

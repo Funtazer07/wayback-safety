@@ -25,10 +25,10 @@ function NameScreen({ onSave }: NameScreenProps) {
   }
 
   return (
-    <main className="screen">
+    <main className="screen auth-screen">
       <ProgressDots step={2} total={2} />
       <h1>What should we call you?</h1>
-      <p>A first name or nickname is enough. Your friend sees it in the message.</p>
+      <p>Use a first name or nickname.</p>
 
       <form className="screen-fill" onSubmit={handleSubmit}>
         <label htmlFor="name">First name or nickname</label>
@@ -58,7 +58,6 @@ function NameScreen({ onSave }: NameScreenProps) {
           <button type="submit" className="button-primary" disabled={isBusy}>
             Continue
           </button>
-          <p className="onboarding-small">No profile picture, bio, email or password needed.</p>
         </div>
       </form>
     </main>

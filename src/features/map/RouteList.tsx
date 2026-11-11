@@ -1,11 +1,14 @@
 import { formatDistance, formatMinutes } from './formatRoute.ts'
 import type { MeasuredRoute } from './lamps.ts'
 import RouteBadges from './RouteBadges.tsx'
+import RouteDescription from './RouteDescription.tsx'
+import type { RouteReports } from './routeReports.ts'
 import { fastestIndex, mostLightsIndex } from './routeChoice.ts'
 
 type RouteListProps = {
   routes: MeasuredRoute[]
   selectedIndex: number
+  reports?: RouteReports[]
   onSelect: (index: number) => void
 }
 
@@ -15,12 +18,16 @@ function brokenText(count: number): string {
     : `${count} lights on this route are reported broken`
 }
 
-function RouteList({ routes, selectedIndex, onSelect }: RouteListProps) {
+function RouteList({ routes, selectedIndex, onSelect, reports = [] }: RouteListProps) {
   const fastest = fastestIndex(routes)
   const mostLights = mostLightsIndex(routes)
 
   return (
-    <section className="map-sheet route-sheet" aria-labelledby="routes-title">
+    <section
+      className="map-sheet route-sheet"
+      aria-labelledby="routes-title"
+      aria-describedby="route-register-note"
+    >
       <h2 id="routes-title">Choose a route</h2>
       <div className="route-list">
         {routes.map((route, index) => (
@@ -39,7 +46,13 @@ function RouteList({ routes, selectedIndex, onSelect }: RouteListProps) {
               </span>
               <RouteBadges isMostLights={index === mostLights} isFastest={index === fastest} />
             </span>
-            <span className="route-line">
+            <RouteDescription
+              isMostLights={index === mostLights}
+              isFastest={index === fastest}
+              brokenCount={route.brokenCount}
+              reports={reports[index]}
+            />
+            <span className="route-line route-measurements">
               <span className="route-lights">
                 {route.lampCount} lights, {Math.round(route.lampsPerKm)} per km
               </span>
@@ -54,7 +67,7 @@ function RouteList({ routes, selectedIndex, onSelect }: RouteListProps) {
           </button>
         ))}
       </div>
-      <p className="map-note">
+      <p className="route-register-note" id="route-register-note">
         Counted from the municipality's register of street lights: where lamps stand, not whether
         they are on. Lights reported as broken do not count.
       </p>

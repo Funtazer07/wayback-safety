@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest'
+import { formatMinutes } from '../map/formatRoute.ts'
 import { DEFAULT_MINUTES, suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts'
 
 test('a planned route starts the timer at its walking time, to the minute', () => {
@@ -31,4 +32,10 @@ test('the quick choices fit the route: its walking time, then 5, 10 and 15 minut
   expect(timerPresets(null)).toEqual([10, 15, 20, 30])
   // Near the 3-hour limit the same choice is not shown twice.
   expect(timerPresets(170 * 60)).toEqual([170, 175, 180])
+})
+
+test('the displayed route time matches the initial timer even with partial minutes', () => {
+  for (const seconds of [14 * 60, 17 * 60, 17 * 60 + 10, 14 * 60 - 10]) {
+    expect(formatMinutes(seconds)).toBe(`${suggestedMinutes(seconds)} min`)
+  }
 })

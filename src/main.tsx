@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import SessionProvider from './features/auth/SessionProvider.tsx'
+import './day.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -324,6 +324,18 @@ A broken-light report from the map (press and hold on a lamp) is also `broken_li
 were moved by the migration: `no_light` became `broken_light` (with a lamp) or `dark_area`
 (without), and `quiet` became `unsafe` (Assumption).
 
+`0026_quiet_reports.sql` is a prepared, additive migration for the revised design. It adds new
+`quiet` reports (quiet/empty or few people), without changing historical reports. It also adds
+`quiet_reporting_available()`, a read-only capability check for signed-in users. Until this
+migration is applied, Quiet stays disabled in the form. Existing report categories keep working.
+No location precision, retention, ownership, rate limit, or read policy changes.
+
+Route captions use reports within 100 m of a route (Assumption: includes the uncertainty of the
+rounded spot). `Quiet` means at least one nearby quiet/empty report. `More quiet` means the highest
+number of those reports per km among routes with differing, non-zero quiet-report densities.
+It does not measure noise, count people, or mean that routes without reports are busy or unsafe.
+Darkness and unsafe tags are explicitly worded as user reports. Route ranking is unchanged.
+
 - **Broken street light** (the map, see [map.md](map.md)): one lamp from the register, saved at
   the lamp's own spot with its street.
 

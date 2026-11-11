@@ -39,6 +39,22 @@ function TimerPicker({ minutes, onChange, range, presets, now }: TimerPickerProp
             +
           </button>
         </div>
+      </div>
+      <div className="walk-presets">
+        {presets.map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            className="walk-preset"
+            aria-pressed={minutes === preset}
+            onClick={() => onChange(preset)}
+          >
+            {formatDuration(preset)}
+          </button>
+        ))}
+      </div>
+      <details className="walk-timer-fine-tune">
+        <summary>Adjust with slider</summary>
         <input
           type="range"
           className="walk-slider"
@@ -57,20 +73,7 @@ function TimerPicker({ minutes, onChange, range, presets, now }: TimerPickerProp
           <span>{formatDuration(range.min)}</span>
           <span>{formatDuration(range.max)}</span>
         </div>
-      </div>
-      <div className="walk-presets">
-        {presets.map((preset) => (
-          <button
-            key={preset}
-            type="button"
-            className="walk-preset"
-            aria-pressed={minutes === preset}
-            onClick={() => onChange(preset)}
-          >
-            {formatDuration(preset)}
-          </button>
-        ))}
-      </div>
+      </details>
       <p className="walk-check-in-by">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9" />

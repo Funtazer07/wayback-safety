@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { logOut } from '../auth/auth.ts'
 import { disableNotifications } from '../notifications/notifications.ts'
+import AccountLocation from './AccountLocation.tsx'
+import './account.css'
 import AccountNotifications from './AccountNotifications.tsx'
 
 type AccountScreenProps = {
@@ -25,11 +27,12 @@ function AccountScreen({ displayName, onLoggingOut }: AccountScreenProps) {
   }
 
   return (
-    <main className="screen">
+    <main className="screen account-screen">
       <h1>Account</h1>
       <p>
         Signed in as <strong>{displayName}</strong>.
       </p>
+      <AccountLocation />
       <AccountNotifications />
       <div className="screen-actions">
         <button type="button" disabled={isLoggingOut} onClick={handleLogOut}>

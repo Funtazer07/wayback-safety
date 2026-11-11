@@ -2,7 +2,7 @@ import { useState } from 'react'
 import TopBar from '../../components/TopBar.tsx'
 import ContactToggles from '../contacts/ContactToggles.tsx'
 import { useContacts } from '../contacts/useContacts.ts'
-import { formatDistance } from '../map/formatRoute.ts'
+import { formatDistance, formatMinutes } from '../map/formatRoute.ts'
 import type { PlannedRoute } from '../map/walkRoute.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
 import { HOME } from './destination.ts'
@@ -13,6 +13,7 @@ import { suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts
 import { useNow } from './useNow.ts'
 import type { NewWalk } from './walk.ts'
 import './walk.css'
+import './startWalk.css'
 
 type StartWalkScreenProps = {
   userId: string
@@ -48,11 +49,11 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
   }
 
   return (
-    <main className="screen">
+    <main className="screen walk-start">
       <TopBar title="Home" onBack={onBack} />
       <h1>Set your check-in</h1>
 
-      <div className="card walk-row">
+      <div className="walk-row walk-start-destination">
         <p>
           <span className="small">Going to</span> <strong>{destination}</strong>
         </p>
@@ -69,13 +70,8 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
               {formatClock(addMinutes(now, Math.ceil(plannedRoute.seconds / 60)))}
             </strong>
             <span className="small">
-              {Math.max(1, Math.round(plannedRoute.seconds / 60))} min walk ·{' '}
-              {formatDistance(plannedRoute.metres)}
+              {formatMinutes(plannedRoute.seconds)} walk · {formatDistance(plannedRoute.metres)}
             </span>
-          </p>
-          <p className="small">
-            The timer below starts at this walking time. Add a few minutes if you walk slowly or
-            plan to stop on the way.
           </p>
         </div>
       )}
@@ -98,7 +94,10 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
       />
 
       {/* Not in the design: "Are you OK?" is a push, and iPhones only ask after a tap. */}
-      <NotificationCard reason="WayBack can then warn you if your timer runs out, also when your phone is locked." />
+      <NotificationCard
+        compact
+        reason="WayBack can then warn you if your timer runs out, also when your phone is locked."
+      />
 
       <div className="screen-actions">
         {error && <p role="alert">{error}</p>}

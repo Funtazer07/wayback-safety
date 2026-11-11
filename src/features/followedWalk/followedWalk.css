@@ -65,3 +65,11 @@
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+.followed .followed-box {
+  border-radius: 1.125rem;
+}
+
+.followed .followed-heading h1 {
+  font-size: 1.5rem;
+}
