@@ -49,7 +49,7 @@ function HomeSafeScreen({ walkId, endedAt, onDone }: HomeSafeScreenProps) {
 
       <div className="screen-actions">
         <button type="button" className="button-primary" onClick={onDone}>
-          Back to your places
+          Back to Home
         </button>
       </div>
     </main>

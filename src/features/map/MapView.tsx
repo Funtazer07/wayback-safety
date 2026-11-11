@@ -1,14 +1,12 @@
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { eindhovenBounds, eindhovenCentre, type LngLat } from './geometry.ts'
 import { watchHold } from './holdGesture.ts'
 import {
   addOurLayers,
-  brokenLightsLayer,
   chosenRouteLayer,
   drawMapData,
-  placeReportsLayer,
   routeHitLayer,
   type MapData,
 } from './mapLayers.ts'
@@ -18,6 +16,8 @@ import {
   lastLocationMarker,
   startMarker,
 } from './mapMarkers.ts'
+import MapReportChooser from './MapReportChooser.tsx'
+import { mapReportHits, type MapReportChoice } from './mapReportHits.ts'
 import { mapStyle } from './mapStyles.ts'
 import { moveCamera, type CameraMove } from './moveCamera.ts'
 
@@ -37,6 +37,7 @@ type MapViewProps = Partial<Pick<MapData, 'routes' | 'selectedIndex' | 'placeRep
 
 function MapView(props: MapViewProps) {
   const { start, destination, foundLamp, lastLocation, camera } = props
+  const [reportChoices, setReportChoices] = useState<MapReportChoice[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{
@@ -90,6 +91,12 @@ function MapView(props: MapViewProps) {
       last: lastLocationMarker(),
     }
 
+    function openReport(choice: MapReportChoice) {
+      setReportChoices([])
+      if (choice.kind === 'light') latest.current.onBrokenLightTap(choice.id)
+      else latest.current.onPlaceReportTap?.(choice.id)
+    }
+
     // MapLibre opens the map credits as soon as it knows them. They are closed once, so they stay
     // one tap away behind the "i" button: a calmer screen that still names the map makers.
     const closeCredits = () => {
@@ -107,17 +114,23 @@ function MapView(props: MapViewProps) {
 
     const hold = watchHold(map, (point) => latest.current.onHold(point))
     map.on('click', (event) => {
+      const target = event.originalEvent.target
+      if (target instanceof Element && target.closest('.map-report-chooser')) return
       if (hold.isTapIgnored()) return
-      const layers = [brokenLightsLayer, placeReportsLayer, routeHitLayer, chosenRouteLayer].filter(
-        (id) => map.getLayer(id),
-      )
+      const reports = mapReportHits(map, event.point)
+      if (reports.length > 1) {
+        setReportChoices(reports)
+        return
+      }
+      setReportChoices([])
+      if (reports.length === 1) {
+        openReport(reports[0])
+        return
+      }
+      const layers = [routeHitLayer, chosenRouteLayer].filter((id) => map.getLayer(id))
       const hits = map.queryRenderedFeatures(event.point, { layers })
-      const brokenLight = hits.find((hit) => hit.layer.id === brokenLightsLayer)
-      const placeReport = hits.find((hit) => hit.layer.id === placeReportsLayer)
       const otherRoute = hits.find((hit) => hit.layer.id === routeHitLayer)
-      if (brokenLight) latest.current.onBrokenLightTap(String(brokenLight.properties.lampId))
-      else if (placeReport) latest.current.onPlaceReportTap?.(String(placeReport.properties.id))
-      else if (otherRoute) latest.current.onSelectRoute?.(Number(otherRoute.properties.index))
+      if (otherRoute) latest.current.onSelectRoute?.(Number(otherRoute.properties.index))
       else if (hits.length === 0) latest.current.onTap?.([event.lngLat.lng, event.lngLat.lat])
     })
 
@@ -152,7 +165,21 @@ function MapView(props: MapViewProps) {
     if (mapRef.current && camera) moveCamera(mapRef.current, camera)
   }, [camera])
 
-  return <div ref={containerRef} className="map-canvas" role="region" aria-label="Map" />
+  return (
+    <div ref={containerRef} className="map-canvas" role="region" aria-label="Map">
+      {reportChoices.length > 0 && (
+        <MapReportChooser
+          choices={reportChoices}
+          onClose={() => setReportChoices([])}
+          onChoose={(choice) => {
+            setReportChoices([])
+            if (choice.kind === 'light') latest.current.onBrokenLightTap(choice.id)
+            else latest.current.onPlaceReportTap?.(choice.id)
+          }}
+        />
+      )}
+    </div>
+  )
 }
 
 export default MapView

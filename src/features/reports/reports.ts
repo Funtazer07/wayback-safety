@@ -1,8 +1,8 @@
 import { supabase } from '../../lib/supabase.ts'
 import type { LngLat } from '../map/geometry.ts'
 
-/** The four categories of the report form (SCRUM-96). Must match 0025_report_categories.sql. */
-export type ReportCategory = 'broken_light' | 'dark_area' | 'unsafe' | 'other'
+/** Categories supported by the report form and the report migrations. */
+export type ReportCategory = 'broken_light' | 'dark_area' | 'quiet' | 'unsafe' | 'other'
 
 /** A place report as every user sees it on the map: never who made it, never the note. */
 export type PlaceReport = {
@@ -76,4 +76,10 @@ export async function reportPlace(report: NewPlaceReport): Promise<void> {
     note: report.note?.trim() || null,
   })
   if (error) throw error
+}
+
+/** Older servers do not have the quiet category yet. */
+export async function quietReportingAvailable(): Promise<boolean> {
+  const { data, error } = await client().rpc('quiet_reporting_available')
+  return !error && data === true
 }

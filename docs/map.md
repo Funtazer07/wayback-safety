@@ -25,8 +25,8 @@ in the same way. There is no route planner during a walk; a walk started without
 map without one.
 
 The walk screen is kept calm, like a navigation app: the map takes most of the screen, and the
-panel under it shows the timer, the destination and **I'm home**. Extra time and Cancel walk are
-behind **More time or cancel**, except in the last 5 minutes. The red **Report** button on the map
+panel under it shows the timer, the destination and **I'm home**. Extra-time controls and Cancel walk are
+visible in the bottom panel. The yellow **Report** button on the map
 opens the report form for the spot where the user is (SCRUM-96, see "Place reports" below).
 
 The street lights themselves are not drawn on the map; they only count for the routes. Only lights
@@ -113,3 +113,27 @@ note and who reported it are never shown. A new report appears on the map as soo
 MapLibre needs a real browser with WebGL, so the tests replace the map with a stand-in
 (`RoutePlanner.test.tsx`) and test the logic on its own (`lamps.test.ts`, `routes.test.ts`,
 `geometry.test.ts`, …). Check the map itself in the browser and on a phone.
+
+## Day design and timer setup
+
+The day design uses the same green actions, rounded white cards and compact text on Home,
+the route panel and the timer setup screen. The route panel can be collapsed with its handle;
+the Home, Contacts and Account navigation stays visible while planning.
+
+The chosen route supplies the timer setup screen with its duration and distance. Walking time
+is rounded up to a whole minute consistently in route cards, estimated arrival and the initial
+timer. The user can add time with the stepper, quick choices or the slider under **Adjust with
+slider**. The server still sets the real deadline when the user starts the walk.
+
+Coloured subtitles use approximate place reports within 100 m of each route. Exact broken-light
+marks use the same 5 m corridor as registered lamp ranking, so a lamp on a neighbouring street
+does not label the route. Assumption: 100 m accounts for rounded place-report coordinates. No report does not mean a route is safe, quiet or lit.
+Quiet / empty remains unavailable until the prepared migration is applied by the team.
+
+Report icons have a 44 px tap target. When several markers share that target, a short list lets
+the user choose which report to open instead of always opening the top broken-light marker.
+
+The shared day foundations also apply to authentication, Activity, invitations, the followed-walk
+view, arrival and overdue screens, and modal sheets. Screen-specific status colours remain for
+warnings and errors. Repeated action instructions are removed; permission reasons are collapsed,
+while cancellation consequences and last-location notices remain visible.

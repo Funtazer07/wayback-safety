@@ -10,6 +10,7 @@ function AccountNotifications() {
   if (notificationState !== 'on') {
     return (
       <NotificationCardView
+        compact
         reason="WayBack can then tell you about your walks and the walks of the people you look out for, also when your phone is locked."
         {...notifications}
       />

@@ -7,13 +7,16 @@ import type { CameraMove } from './moveCamera.ts'
 import ReportSheets from './ReportSheets.tsx'
 import { useReporting } from './useReporting.ts'
 import { useUserPosition } from './useUserPosition.ts'
+import locationIcon from '../../assets/day/location.png'
+import reportIcon from '../../assets/day/report.png'
 import './map.css'
 
 type WalkMapProps = {
   route: LngLat[] | null
+  arrivalLabel?: string
 }
 
-function WalkMap({ route }: WalkMapProps) {
+function WalkMap({ route, arrivalLabel }: WalkMapProps) {
   const { position, isUnavailable, start } = useUserPosition()
   const [thankYou, setThankYou] = useState('')
   const [isReportingPlace, setIsReportingPlace] = useState(false)
@@ -64,12 +67,14 @@ function WalkMap({ route }: WalkMapProps) {
           {thankYou}
         </p>
       )}
+      {arrivalLabel && !reporting.isSheetOpen && <p className="map-arrival">{arrivalLabel}</p>}
       {!reporting.isSheetOpen && (
         <div className="map-actions">
           {position && (
             <button
               type="button"
               className="map-locate"
+              aria-label="My location"
               onClick={() =>
                 setCamera({
                   id: Date.now(),
@@ -79,22 +84,20 @@ function WalkMap({ route }: WalkMapProps) {
                 })
               }
             >
-              My location
+              <img src={locationIcon} alt="" />
             </button>
           )}
           {/* SCRUM-96: one tap opens the report form for the spot where the user is now. */}
           <button
             type="button"
             className="map-report"
+            aria-label="Report"
             onClick={() => {
               setThankYou('')
               setIsReportingPlace(true)
             }}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
-            </svg>
-            Report
+            <img src={reportIcon} alt="" />
           </button>
         </div>
       )}

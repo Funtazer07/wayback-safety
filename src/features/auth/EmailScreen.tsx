@@ -43,7 +43,7 @@ function EmailScreen({ onBack }: EmailScreenProps) {
 
   if (mustConfirmEmail) {
     return (
-      <main className="screen">
+      <main className="screen auth-screen">
         <h1>Check your email</h1>
         <p>
           We sent an email to <strong>{email}</strong>. Tap the link in it, then come back here and
@@ -66,7 +66,7 @@ function EmailScreen({ onBack }: EmailScreenProps) {
   }
 
   return (
-    <main className="screen">
+    <main className="screen auth-screen">
       <h1>{isNewUser ? 'Sign up with email' : 'Log in with email'}</h1>
 
       <form className="screen-fill" onSubmit={handleSubmit}>

@@ -188,3 +188,17 @@
 .contacts-new-actions button {
   flex: 1;
 }
+
+.contacts-screen .contacts-list {
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.contacts-screen .contacts-row {
+  min-height: 5.5rem;
+  padding: 1rem;
+}
+
+.contacts-screen .contacts-options {
+  background: var(--day-mint);
+}

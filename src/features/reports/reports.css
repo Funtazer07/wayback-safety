@@ -99,3 +99,152 @@
   font-weight: 400;
   color: var(--text-muted);
 }
+
+.report-sheet {
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.report-categories {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.report-category {
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 1.125rem;
+  background: var(--day-page);
+}
+
+.report-category-icon {
+  color: var(--text);
+  background: var(--day-mint);
+}
+
+.report-sheet {
+  max-width: 27.5rem;
+  padding: 1.25rem;
+  gap: 1rem;
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+.report-subtitle {
+  margin-top: -0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.report-category {
+  position: relative;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 8rem;
+  padding: 0.75rem 0.5rem 1rem;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-weight: 700;
+}
+.report-category-text {
+  align-items: center;
+  font-size: 0.9375rem;
+}
+.report-category[aria-pressed='true']::after {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.5rem;
+}
+.report-category-art {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  overflow: hidden;
+}
+.report-category-art img {
+  position: absolute;
+  max-width: none;
+}
+.report-category-art.is-broken_light {
+  width: 3.5rem;
+  height: 3.375rem;
+}
+.report-category-art.is-broken_light img {
+  width: 649.06%;
+  height: 504.82%;
+  left: -105.19%;
+  top: -135.74%;
+}
+.report-category-art.is-unsafe img {
+  width: 722.31%;
+  height: 541.73%;
+  left: -369.03%;
+  top: -288.45%;
+}
+.report-category-art.is-other img {
+  width: 711.11%;
+  height: 533.33%;
+  left: -480.88%;
+  top: -149.35%;
+}
+.report-category-art svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--green-soft);
+  stroke: var(--text);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.report-prompt {
+  padding: 0.5rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.report-details:not([hidden]) {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.report-category-art.is-quiet img {
+  width: 703.84%;
+  height: 527.88%;
+  left: -238.11%;
+  top: -141.69%;
+}
+.report-quiet:disabled {
+  opacity: 1;
+}
+.report-extra-categories {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.report-extra-categories summary {
+  cursor: pointer;
+}
+.report-extra-categories .report-category {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.report-sheet {
+  position: relative;
+}
+.report-sheet h2 {
+  padding-right: 2rem;
+}
+.report-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: none;
+  color: var(--text-muted);
+  background: transparent;
+  font-size: 1.75rem;
+  font-weight: 400;
+}

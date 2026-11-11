@@ -29,7 +29,7 @@ function Welcome({ notice = null, inviterName = null }: WelcomeProps) {
   if (usesEmail) return <EmailScreen onBack={() => setUsesEmail(false)} />
 
   return (
-    <main className="screen">
+    <main className="screen auth-screen">
       <ProgressDots step={1} total={2} />
       {notice && <p role="status">{notice}</p>}
       {inviterName && (
@@ -48,9 +48,6 @@ function Welcome({ notice = null, inviterName = null }: WelcomeProps) {
       <h1>Get home safe, your way</h1>
       <p>
         A friend follows your walk home. If you do not arrive, they get a link to see where you are.
-      </p>
-      <p>
-        <strong>Free. Ready in about 30 seconds.</strong>
       </p>
 
       <div className="screen-actions">

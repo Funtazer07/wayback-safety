@@ -44,6 +44,9 @@ function WalkTimer({ startedAt, deadline, now }: WalkTimerProps) {
           strokeDashoffset={1 - share}
         />
       </svg>
+      <div className="walk-timer-bar" aria-hidden="true">
+        <span style={{ width: `${(1 - share) * 100}%` }} />
+      </div>
       <div className="walk-timer-text" aria-hidden="true">
         <span className="walk-timer-count">{formatCountdown(secondsUntil(deadline, now))}</span>
         <span className="walk-timer-label">{phaseLabel[phase]}</span>

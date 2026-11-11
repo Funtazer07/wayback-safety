@@ -89,7 +89,6 @@ function AreYouOkScreen({
             I’m okay · Add {EXTEND_MINUTES} minutes
           </button>
         )}
-        <p className="small walk-centered">Choose an action to update your walk.</p>
       </div>
     </main>
   )

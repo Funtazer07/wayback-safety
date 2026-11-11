@@ -16,6 +16,8 @@ function renderPicker(minutes = 17, onChange = vi.fn()) {
 test('the slider moves the timer by the minute, within the range of the route', () => {
   const onChange = renderPicker()
 
+  expect(screen.getByText('Adjust with slider').closest('details')).not.toHaveAttribute('open')
+  fireEvent.click(screen.getByText('Adjust with slider', { selector: 'summary' }))
   const slider = screen.getByRole('slider', { name: 'Walk timer in minutes' })
   expect(slider).toHaveAttribute('min', '12')
   expect(slider).toHaveAttribute('max', '60')

@@ -61,11 +61,11 @@ test('a walk without contacts has no contacts card', async () => {
   expect(screen.queryByRole('region', { name: 'Your contacts' })).not.toBeInTheDocument()
 })
 
-test('Back to your places closes the screen', () => {
+test('Back to Home closes the screen', () => {
   const onDone = vi.fn()
   renderScreen(onDone)
 
-  fireEvent.click(screen.getByRole('button', { name: 'Back to your places' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }))
 
   expect(onDone).toHaveBeenCalledOnce()
 })

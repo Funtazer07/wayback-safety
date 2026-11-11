@@ -12,11 +12,11 @@ const icons: Record<Tab, string> = {
   places: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
   contacts:
     'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-3.5-5.8',
-  account: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 21a7 7 0 0 1 14 0',
+  account: 'M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5.5 20a6.5 6.5 0 0 1 13 0',
 }
 
 const labels: Record<Tab, string> = {
-  places: 'Places',
+  places: 'Home',
   contacts: 'Contacts',
   account: 'Account',
 }
@@ -25,7 +25,7 @@ const labels: Record<Tab, string> = {
 function TabBar({ current, onChange }: TabBarProps) {
   return (
     <nav className="tab-bar" aria-label="Main">
-      {(Object.keys(labels) as Tab[]).map((tab) => (
+      {(['contacts', 'places', 'account'] as Tab[]).map((tab) => (
         <button
           key={tab}
           type="button"

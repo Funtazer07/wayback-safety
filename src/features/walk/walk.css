@@ -489,3 +489,244 @@
   color: var(--green-text);
   font-weight: 700;
 }
+
+.walk-live {
+  max-width: 27.5rem;
+  background: var(--surface);
+}
+
+.walk-live > .map-area {
+  min-height: 22rem;
+}
+
+.walk-live .walk-panel {
+  position: relative;
+  z-index: 3;
+  gap: 1rem;
+  margin-top: -1.5rem;
+  padding: 1.5rem 1.75rem max(1.75rem, env(safe-area-inset-bottom));
+  border-radius: 2.1875rem 2.1875rem 0 0;
+  box-shadow: none;
+}
+
+.walk-panel-top {
+  justify-content: space-between;
+}
+
+.walk-panel .walk-destination {
+  font-size: 1.875rem;
+}
+
+.walk-panel .walk-small {
+  font-size: 1rem;
+}
+
+.walk-panel .check-in-actions {
+  flex: none;
+  width: auto;
+  max-width: 47%;
+}
+
+.walk-panel .check-in-button {
+  min-height: 3rem;
+  padding: 0.625rem 1.125rem;
+  border-radius: 1rem;
+  font-size: 1.125rem;
+}
+
+.walk-panel .walk-timer-ring {
+  width: 100%;
+  height: auto;
+  padding-bottom: 1.25rem;
+}
+
+.walk-panel .walk-timer-ring svg {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 0.625rem;
+  transform: none;
+  overflow: visible;
+}
+
+.walk-panel .walk-timer-ring circle {
+  display: none;
+}
+
+.walk-panel .walk-timer-text {
+  position: static;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.walk-panel .walk-timer-count {
+  font-size: 2rem;
+}
+
+.walk-panel .walk-timer-label {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.walk-panel .walk-more-time-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.walk-panel .walk-extend-row {
+  gap: 0.625rem;
+}
+
+.walk-panel .walk-extend {
+  min-height: 3rem;
+  border-radius: 1.125rem;
+  font-size: 1rem;
+  font-weight: 700;
+  background: var(--day-selected);
+}
+
+.walk-panel > .button-danger {
+  margin-top: 0.5rem;
+  min-height: 2.75rem;
+  border: none;
+  border-radius: 2rem;
+  color: white;
+  background: var(--danger);
+}
+
+.walk-live .map-actions {
+  right: 1rem;
+  bottom: 3rem;
+  gap: 0.5rem;
+}
+
+.walk-live .map-locate,
+.walk-live .map-report {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  min-height: 4rem;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  border-radius: 1.25rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.walk-live .map-report img {
+  flex: none;
+  width: 5.65rem;
+  height: 5.65rem;
+  max-width: none;
+}
+
+.walk-start .walk-estimate {
+  padding: 1.25rem 1rem;
+}
+
+.walk-start .walk-stepper {
+  border-radius: 1.5rem;
+}
+
+.walk-start .walk-step {
+  width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+@media (max-width: 22rem) {
+  .walk-live .walk-panel {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .walk-panel .walk-destination {
+    font-size: 1.5rem;
+  }
+
+  .walk-panel .check-in-button {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+}
+
+.walk-timer-bar {
+  display: none;
+}
+
+.walk-panel .walk-timer-bar {
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 0.625rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--day-grey);
+}
+
+.walk-panel .walk-timer-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--day-red);
+  transition: width 1s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walk-panel .walk-timer-bar span {
+    transition: none;
+  }
+}
+
+.walk-panel-heading {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+}
+
+.walk-panel-heading .walk-timer-ring {
+  position: static;
+  padding-bottom: 0;
+}
+
+.walk-panel-heading .walk-timer-ring svg {
+  display: none;
+}
+
+.walk-panel-heading .walk-timer-text {
+  flex-wrap: wrap;
+}
+
+.walk-panel-heading .walk-watchers.is-compact {
+  max-width: 9rem;
+  margin-top: 0.25rem;
+  padding: 0;
+  gap: 0.375rem;
+  border-radius: 0;
+  font-size: 0.875rem;
+  color: var(--text);
+  background: transparent;
+}
+
+.walk-watchers.is-compact span {
+  overflow-wrap: anywhere;
+}
+
+.walk-start-destination {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
