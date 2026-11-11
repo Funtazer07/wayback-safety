@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
 import { isInEindhoven } from './geometry.ts'
 import MapView from './MapView.tsx'
 import type { CameraMove } from './moveCamera.ts'
@@ -7,18 +9,24 @@ import DestinationSearch from './DestinationSearch.tsx'
 import PlannerPanel from './PlannerPanel.tsx'
 import ReportSheets from './ReportSheets.tsx'
 import RouteList from './RouteList.tsx'
+import RouteDrawer from './RouteDrawer.tsx'
+import { reportsAlongRoutes } from './routeReports.ts'
 import RouteSummary from './RouteSummary.tsx'
 import { usePlanner } from './usePlanner.ts'
 import { useReporting } from './useReporting.ts'
 import type { PlannedRoute } from './walkRoute.ts'
 import { useUserPosition } from './useUserPosition.ts'
+import locationIcon from '../../assets/day/location.png'
+import reportIcon from '../../assets/day/report.png'
 import './map.css'
 
 type RoutePlannerProps = {
   onRouteChange: (route: PlannedRoute | null) => void
+  onStartWalk?: () => void
 }
 
-function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
+function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
+  const [isReportingPlace, setIsReportingPlace] = useState(false)
   const location = useUserPosition()
   const planner = usePlanner(location.position)
   const reporting = useReporting((lights, thankYou) => planner.replan(lights, thankYou))
@@ -55,6 +63,11 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
     })
   }, [newRoutes])
 
+  const routeReports = reportsAlongRoutes(
+    planner.routes,
+    reporting.placeReports,
+    reporting.brokenLights,
+  )
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
   const { destinationLabel } = planner
   useEffect(
@@ -127,6 +140,11 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
               }
               planner.goTo(coordinates, label, reporting.brokenLights)
             }}
+            onStartOver={() => {
+              reporting.closeAll()
+              setSearchKey((key) => key + 1)
+              planner.reset()
+            }}
           />
         }
         hint={plannerHint({
@@ -135,28 +153,85 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
           hasStart: planner.start !== null,
         })}
         status={status}
-        onLocate={locate}
-        onStartOver={() => {
-          reporting.closeAll()
-          setSearchKey((key) => key + 1)
-          planner.reset()
-        }}
       />
+      {!reporting.isSheetOpen && !planner.destination && (
+        <div className="map-actions planner-actions">
+          <button
+            type="button"
+            className="map-locate"
+            aria-label="My location"
+            title="Get my location"
+            onClick={locate}
+          >
+            <img src={locationIcon} alt="" />
+          </button>
+          <button
+            type="button"
+            className="map-report"
+            aria-label="Report"
+            onClick={() => setIsReportingPlace(true)}
+          >
+            <img src={reportIcon} alt="" />
+          </button>
+        </div>
+      )}
+      {isReportingPlace &&
+        createPortal(
+          <ReportPlaceSheet
+            position={position?.coordinates ?? null}
+            isLocationOff={location.isUnavailable}
+            onClose={() => setIsReportingPlace(false)}
+            onSent={reporting.reloadPlaceReports}
+          />,
+          document.body,
+        )}
       <div ref={bottomRef} className="map-bottom">
         {reporting.isSheetOpen ? (
           <ReportSheets reporting={reporting} />
-        ) : hasRoutes && planner.isChoosing ? (
-          <RouteList
-            routes={planner.routes}
-            selectedIndex={planner.selectedIndex}
-            onSelect={planner.selectRoute}
-          />
         ) : hasRoutes ? (
-          <RouteSummary
-            routes={planner.routes}
-            selectedIndex={planner.selectedIndex}
-            onShowAll={planner.showAllRoutes}
-          />
+          <RouteDrawer>
+            {planner.isChoosing ? (
+              <RouteList
+                routes={planner.routes}
+                selectedIndex={planner.selectedIndex}
+                reports={routeReports}
+                onSelect={planner.selectRoute}
+              />
+            ) : (
+              <RouteSummary
+                routes={planner.routes}
+                selectedIndex={planner.selectedIndex}
+                reports={routeReports}
+                onShowAll={planner.showAllRoutes}
+              />
+            )}
+            {routeReports.some(
+              (report) =>
+                report.quietCount +
+                  report.darkCount +
+                  report.unsafeCount +
+                  report.otherCount +
+                  report.brokenCount >
+                0,
+            ) && <p className="route-source-note">Based on nearby user reports.</p>}
+            {onStartWalk && (
+              <div className="map-route-actions">
+                <button
+                  type="button"
+                  className="map-route-cancel"
+                  onClick={() => {
+                    reporting.closeAll()
+                    planner.reset()
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="button" className="button-primary" onClick={onStartWalk}>
+                  Start walk
+                </button>
+              </div>
+            )}
+          </RouteDrawer>
         ) : null}
       </div>
     </div>

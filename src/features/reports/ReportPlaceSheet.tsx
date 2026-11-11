@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LngLat } from '../map/geometry.ts'
 import ReportCategoryPicker from './ReportCategoryPicker.tsx'
-import { NOTE_MAX_LENGTH, type ReportCategory } from './reports.ts'
+import { NOTE_MAX_LENGTH, quietReportingAvailable, type ReportCategory } from './reports.ts'
 import { useSendReport } from './useSendReport.ts'
 import './reports.css'
 
@@ -18,6 +18,18 @@ type ReportPlaceSheetProps = {
 function ReportPlaceSheet({ position, isLocationOff, onClose, onSent }: ReportPlaceSheetProps) {
   const [category, setCategory] = useState<ReportCategory | null>(null)
   const [note, setNote] = useState('')
+  const [canReportQuiet, setCanReportQuiet] = useState(false)
+  useEffect(() => {
+    let isCurrent = true
+    quietReportingAvailable()
+      .then((available) => {
+        if (isCurrent) setCanReportQuiet(available)
+      })
+      .catch(() => {})
+    return () => {
+      isCurrent = false
+    }
+  }, [])
   const { send, isSending, isSent, error } = useSendReport(onSent)
 
   function handleSend() {
@@ -48,39 +60,46 @@ function ReportPlaceSheet({ position, isLocationOff, onClose, onSent }: ReportPl
           </>
         ) : (
           <>
-            <h2 id="report-place-title">Report a problem here</h2>
-            <ReportCategoryPicker chosen={category} onChoose={setCategory} />
-            <label className="report-note">
-              Add a short note (optional)
-              <textarea
-                value={note}
-                maxLength={NOTE_MAX_LENGTH}
-                rows={2}
-                onChange={(event) => setNote(event.target.value)}
-              />
-              <span className="report-note-help">
-                Do not write names or describe people. {note.length} of {NOTE_MAX_LENGTH}{' '}
-                characters.
-              </span>
-            </label>
-            {!position && (
-              <p className="small" role="status">
-                {isLocationOff
-                  ? 'Turn on location to report the spot where you are.'
-                  : 'Looking for where you are…'}
-              </p>
-            )}
-            {error && <p role="alert">{error}</p>}
-            <button
-              type="button"
-              className="button-primary"
-              disabled={!category || !position || isSending}
-              onClick={handleSend}
-            >
-              {isSending ? 'Sending…' : 'Send report'}
-            </button>
-            <button type="button" className="button-link" onClick={onClose}>
-              Cancel
+            <h2 id="report-place-title">Report this spot</h2>
+            <p className="report-subtitle">Anonymous · one approximate location</p>
+            <ReportCategoryPicker
+              chosen={category}
+              onChoose={setCategory}
+              canReportQuiet={canReportQuiet}
+            />
+            <div className="report-details" hidden={!category}>
+              <label className="report-note">
+                Add a short note (optional)
+                <textarea
+                  value={note}
+                  maxLength={NOTE_MAX_LENGTH}
+                  rows={2}
+                  onChange={(event) => setNote(event.target.value)}
+                />
+                <span className="report-note-help">
+                  Do not write names or describe people. {note.length} of {NOTE_MAX_LENGTH}{' '}
+                  characters.
+                </span>
+              </label>
+              {!position && (
+                <p className="small" role="status">
+                  {isLocationOff
+                    ? 'Turn on location to report the spot where you are.'
+                    : 'Looking for where you are…'}
+                </p>
+              )}
+              {error && <p role="alert">{error}</p>}
+              <button
+                type="button"
+                className="button-primary"
+                disabled={!category || !position || isSending}
+                onClick={handleSend}
+              >
+                {isSending ? 'Sending…' : 'Send report'}
+              </button>
+            </div>
+            <button type="button" className="report-close" aria-label="Cancel" onClick={onClose}>
+              <span aria-hidden="true">×</span>
             </button>
           </>
         )}

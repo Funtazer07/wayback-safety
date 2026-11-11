@@ -4,10 +4,12 @@ import { usePlaceSearch } from './usePlaceSearch.ts'
 
 type PlaceSearchProps = {
   onChoose: (place: Place) => void
+  /** The × empties the field and clears the planned routes too. */
+  onStartOver: () => void
 }
 
 /** "Where are you going?": type an address, street or postcode, like in a maps app. */
-function PlaceSearch({ onChoose }: PlaceSearchProps) {
+function PlaceSearch({ onChoose, onStartOver }: PlaceSearchProps) {
   const [text, setText] = useState('')
   const [chosenLabel, setChosenLabel] = useState<string | null>(null)
   // After a choice the field shows the place's name; that is no new search.
@@ -42,19 +44,18 @@ function PlaceSearch({ onChoose }: PlaceSearchProps) {
           onChange={(event) => setText(event.target.value)}
         />
       </label>
-      {text !== '' && (
-        <button
-          type="button"
-          className="place-search-clear"
-          aria-label="Clear search"
-          onClick={() => {
-            setText('')
-            setChosenLabel(null)
-          }}
-        >
-          ×
-        </button>
-      )}
+      <button
+        type="button"
+        className="place-search-clear"
+        aria-label="Start over"
+        onClick={() => {
+          setText('')
+          setChosenLabel(null)
+          onStartOver()
+        }}
+      >
+        <span aria-hidden="true">×</span>
+      </button>
       {isOpen && (
         <div className="place-results">
           {search.isSearching && <p role="status">Searching…</p>}

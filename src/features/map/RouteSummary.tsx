@@ -1,21 +1,19 @@
 import { formatDistance, formatMinutes } from './formatRoute.ts'
 import type { MeasuredRoute } from './lamps.ts'
 import RouteBadges from './RouteBadges.tsx'
+import RouteDescription from './RouteDescription.tsx'
+import type { RouteReports } from './routeReports.ts'
 import { fastestIndex, mostLightsIndex } from './routeChoice.ts'
 
 type RouteSummaryProps = {
   routes: MeasuredRoute[]
   selectedIndex: number
+  reports?: RouteReports[]
   onShowAll: () => void
 }
 
-function RouteSummary({ routes, selectedIndex, onShowAll }: RouteSummaryProps) {
+function RouteSummary({ routes, selectedIndex, onShowAll, reports = [] }: RouteSummaryProps) {
   const route = routes[selectedIndex]
-  const details = [
-    formatDistance(route.length),
-    `${route.lampCount} lights`,
-    ...(route.brokenCount > 0 ? [`${route.brokenCount} broken`] : []),
-  ].join(' · ')
 
   return (
     <section className="map-sheet route-summary" aria-label="Your route">
@@ -25,7 +23,13 @@ function RouteSummary({ routes, selectedIndex, onShowAll }: RouteSummaryProps) {
           isFastest={selectedIndex === fastestIndex(routes)}
         />
         <span className="route-time">{formatMinutes(route.duration)}</span>
-        <span className="route-muted">{details}</span>
+        <span className="route-distance">{formatDistance(route.length)}</span>
+        <RouteDescription
+          isMostLights={selectedIndex === mostLightsIndex(routes)}
+          isFastest={selectedIndex === fastestIndex(routes)}
+          brokenCount={route.brokenCount}
+          reports={reports[selectedIndex]}
+        />
       </p>
       <button type="button" onClick={onShowAll}>
         Other routes

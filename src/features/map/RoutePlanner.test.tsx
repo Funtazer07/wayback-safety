@@ -6,6 +6,7 @@ import RoutePlanner from './RoutePlanner.tsx'
 
 const services = vi.hoisted(() => ({
   fetchRoutes: vi.fn(),
+  fetchPlaceReports: vi.fn(),
   measureRouteLamps: vi.fn(),
   findLampNear: vi.fn(),
   fetchBrokenLights: vi.fn(),
@@ -17,6 +18,10 @@ vi.mock('./routes.ts', () => ({ fetchRoutes: services.fetchRoutes }))
 vi.mock('./places.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./places.ts')>()),
   searchPlaces: services.searchPlaces,
+}))
+vi.mock('../reports/reports.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../reports/reports.ts')>()),
+  fetchPlaceReports: services.fetchPlaceReports,
 }))
 vi.mock('./brokenLights.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./brokenLights.ts')>()),
@@ -85,6 +90,7 @@ const vestdijkLamp = {
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  services.fetchPlaceReports.mockResolvedValue([])
   services.fetchBrokenLights.mockResolvedValue([])
   services.reportBrokenLight.mockImplementation(async (lamp: typeof vestdijkLamp) => ({
     lampId: lamp.lampId,
@@ -364,4 +370,41 @@ test('tells which route is on the map, so the walk can show it', async () => {
 
   click('Start over')
   expect(onRouteChange).toHaveBeenLastCalledWith(null)
+})
+
+test('Cancel clears the chosen route without starting a walk', async () => {
+  const onStartWalk = vi.fn()
+  render(<RoutePlanner onRouteChange={onRouteChange} onStartWalk={onStartWalk} />)
+  click('Tap Stratumseind')
+  click('Tap the station')
+  await screen.findByRole('region', { name: 'Choose a route' })
+  expect(screen.getByRole('button', { name: 'Start walk' })).toBeInTheDocument()
+  click('Cancel')
+  expect(screen.queryByRole('region', { name: 'Choose a route' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument()
+  expect(onRouteChange).toHaveBeenLastCalledWith(null)
+  expect(onStartWalk).not.toHaveBeenCalled()
+  expect(screen.getByRole('button', { name: 'My location' })).toBeInTheDocument()
+})
+
+test('route reports appear on the matching route and remain in its selected summary', async () => {
+  services.fetchPlaceReports.mockResolvedValue([
+    { id: 'quiet', category: 'quiet', coordinates: [5.4813, 51.4408], reportedAt: new Date() },
+    { id: 'dark', category: 'dark_area', coordinates: [5.4813, 51.4408], reportedAt: new Date() },
+    { id: 'unsafe', category: 'unsafe', coordinates: [5.4791, 51.4408], reportedAt: new Date() },
+  ])
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+  click('Tap the station')
+  const list = await screen.findByRole('region', { name: 'Choose a route' })
+  await waitFor(() => expect(within(list).getByText('Quiet')).toBeInTheDocument())
+  const [first, second] = within(list).getAllByRole('button')
+  expect(first).toHaveTextContent('Reported unsafe')
+  expect(first).not.toHaveTextContent('Quiet')
+  expect(second).toHaveTextContent('Quiet')
+  expect(second).toHaveTextContent('Less light reported')
+  fireEvent.click(second)
+  const summary = screen.getByRole('region', { name: 'Your route' })
+  expect(summary).toHaveTextContent('Quiet')
+  expect(summary).toHaveTextContent('Less light reported')
 })

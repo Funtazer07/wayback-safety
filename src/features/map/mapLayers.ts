@@ -21,6 +21,8 @@ const categoryColour: ExpressionSpecification = [
   reportCategories.broken_light.colour,
   'dark_area',
   reportCategories.dark_area.colour,
+  'quiet',
+  reportCategories.quiet.colour,
   'unsafe',
   reportCategories.unsafe.colour,
   reportCategories.other.colour,
@@ -39,7 +41,7 @@ const reportAreaRadius: ExpressionSpecification = [
   322,
 ]
 
-const routeColour = '#2563eb'
+const routeColour = '#a15cff'
 const empty: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 export type MapData = {
@@ -211,7 +213,7 @@ export function drawMapData(map: MapLibreMap, data: MapData): void {
     features: data.brokenLights.map((light) => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: light.coordinates },
-      properties: { lampId: light.lampId },
+      properties: { lampId: light.lampId, street: light.street },
     })),
   })
   const position = data.position

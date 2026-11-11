@@ -54,7 +54,9 @@ const routeViaStratumseind = vi.hoisted((): [number, number][] => [
 vi.mock('./features/map/RoutePlanner.tsx', () => ({
   default: ({
     onRouteChange,
+    onStartWalk,
   }: {
+    onStartWalk: () => void
     onRouteChange: (route: {
       coordinates: [number, number][]
       seconds: number
@@ -62,19 +64,24 @@ vi.mock('./features/map/RoutePlanner.tsx', () => ({
       destinationLabel: string
     }) => void
   }) => (
-    <button
-      type="button"
-      onClick={() =>
-        onRouteChange({
-          coordinates: routeViaStratumseind,
-          seconds: 1500,
-          metres: 1900,
-          destinationLabel: 'Stationsplein 17, 5611AC Eindhoven',
-        })
-      }
-    >
-      Choose the route via Stratumseind
-    </button>
+    <>
+      <button type="button" onClick={onStartWalk}>
+        Start walk
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onRouteChange({
+            coordinates: routeViaStratumseind,
+            seconds: 1500,
+            metres: 1900,
+            destinationLabel: 'Stationsplein 17, 5611AC Eindhoven',
+          })
+        }
+      >
+        Choose the route via Stratumseind
+      </button>
+    </>
   ),
 }))
 vi.mock('./features/map/WalkMap.tsx', () => ({
@@ -150,8 +157,8 @@ test('after the first sign-in the user gives a name and lands on Home', async ()
   fireEvent.click(screen.getByLabelText('I am 16 or older'))
   click('Continue')
 
-  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument()
   expect(profile.completeProfile).toHaveBeenCalledWith('user-1', 'Sam')
 })
 
@@ -170,7 +177,7 @@ test('a returning user goes straight to Home', async () => {
 
   renderApp(loggedIn)
 
-  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
 })
 
 test('shows a message when the profile cannot be loaded', async () => {
@@ -185,10 +192,11 @@ test('a user starts a walk home with the timer they picked', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(25))
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Start walk')
   expect(screen.getByRole('heading', { name: 'Set your check-in' })).toBeInTheDocument()
+  fireEvent.click(screen.getByText('Adjust with slider', { selector: 'summary' }))
   fireEvent.change(screen.getByRole('slider', { name: 'Walk timer in minutes' }), {
     target: { value: '25' },
   })
@@ -208,10 +216,11 @@ test('a user starts a walk home with the timer they picked', async () => {
 test('a timer from an hour up is shown in hours and minutes', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Start walk')
   // From the default 20 minutes to 65.
+  fireEvent.click(screen.getByText('Adjust with slider', { selector: 'summary' }))
   fireEvent.change(screen.getByRole('slider', { name: 'Walk timer in minutes' }), {
     target: { value: '65' },
   })
@@ -223,7 +232,7 @@ test('the walk goes to the place chosen on the Home map', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(20))
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Choose the route via Stratumseind')
   click('Start walk')
@@ -243,7 +252,7 @@ test('shows a message when the walk cannot be started', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockRejectedValue(new Error('network'))
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Start walk')
   click('Start walk')
@@ -258,7 +267,7 @@ test('a walk that is still running is shown again when the app is reopened', asy
   renderApp(loggedIn)
 
   expect(await screen.findByRole('timer')).toHaveAccessibleName('14 min left')
-  expect(screen.queryByText('Hi Sam')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Home' })).not.toBeInTheDocument()
 })
 
 test('a user checks in with "I’m home" and is back on Home after the "You’re home" screen', async () => {
@@ -274,9 +283,9 @@ test('a user checks in with "I’m home" and is back on Home after the "You’re
   expect(await screen.findByRole('heading', { name: 'You’re home.' })).toBeInTheDocument()
   expect(walks.checkInWalk).toHaveBeenCalledWith('walk-1')
 
-  click('Back to your places')
+  click('Back to Home')
 
-  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
   expect(screen.queryByRole('timer')).not.toBeInTheDocument()
 })
 
@@ -284,7 +293,7 @@ test('the route chosen on Home is on the walk map after the walk starts', async 
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(20))
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Choose the route via Stratumseind')
   click('Start walk')
@@ -303,7 +312,7 @@ test('a walk still starts when sharing the route with the contacts fails', async
   walks.startWalk.mockResolvedValue(walkEndingIn(20))
   walks.shareWalkRoute.mockRejectedValue(new Error('network'))
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Choose the route via Stratumseind')
   click('Start walk')
@@ -317,7 +326,7 @@ test('a walk started without a route shows no route', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(20))
   renderApp(loggedIn)
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Start walk')
   click('Start walk')
@@ -353,9 +362,9 @@ test('the route of a walk is erased once the user is home', async () => {
 
   click('I’m home')
   await screen.findByRole('heading', { name: 'You’re home.' })
-  click('Back to your places')
+  click('Back to Home')
 
-  await screen.findByText('Hi Sam')
+  await screen.findByRole('button', { name: 'Home' })
   expect(localStorage.getItem('wayback.walkRoute')).toBeNull()
 })
 
@@ -409,7 +418,7 @@ test('an overdue walk in Activity opens, and Back leads to Activity again', asyn
     lastLocation: null,
   })
   renderApp(loggedIn)
-  await screen.findByRole('heading', { name: 'Ready when you are' })
+  await screen.findByRole('button', { name: 'Home' })
 
   click('Contacts')
   fireEvent.click(await screen.findByRole('button', { name: /Anna hasn’t checked in/ }))
@@ -420,10 +429,10 @@ test('an overdue walk in Activity opens, and Back leads to Activity again', asyn
   expect(await screen.findByRole('heading', { name: 'Activity' })).toBeInTheDocument()
 })
 
-test('the bottom bar switches between Places, Contacts and Account', async () => {
+test('the bottom bar switches between Home, Contacts and Account', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Anna' })
   renderApp(loggedIn)
-  expect(await screen.findByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
 
   click('Contacts')
   expect(await screen.findByRole('heading', { name: 'Activity' })).toBeInTheDocument()
@@ -437,8 +446,8 @@ test('the bottom bar switches between Places, Contacts and Account', async () =>
   click('Account')
   expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
 
-  click('Places')
-  expect(screen.getByRole('heading', { name: 'Ready when you are' })).toBeInTheDocument()
+  click('Home')
+  expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument()
 })
 
 test('opening an invite link asks the contact to accept, then shows their contacts', async () => {
@@ -473,7 +482,7 @@ test('a walk is started with the contacts who are switched on', async () => {
   walks.startWalk.mockResolvedValue(walkEndingIn(20))
   renderApp(loggedIn)
 
-  await screen.findByRole('heading', { name: 'Ready when you are' })
+  await screen.findByRole('button', { name: 'Home' })
   click('Start walk')
   fireEvent.click(await screen.findByRole('switch', { name: 'Alex' }))
   click('Start walk')
@@ -497,11 +506,10 @@ test('cancelling a walk asks first, then goes back Home and forgets the route', 
   renderApp(loggedIn)
   await screen.findByRole('timer')
 
-  click('More time or cancel')
   click('Cancel walk')
   fireEvent.click(screen.getByRole('button', { name: 'Confirm cancel' }))
 
-  expect(await screen.findByText('Hi Sam')).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
   expect(walks.cancelWalk).toHaveBeenCalledWith('walk-1')
   expect(localStorage.getItem('wayback.walkRoute')).toBeNull()
 })

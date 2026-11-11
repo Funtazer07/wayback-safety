@@ -19,3 +19,9 @@ test('nothing is shown while nobody is watching', () => {
 
   expect(screen.queryByRole('status')).not.toBeInTheDocument()
 })
+
+test('the compact watcher indicator shows the real name with an accessible watching status', () => {
+  render(<WatchersLine names={['Alex']} compact />)
+  expect(screen.getByRole('status')).toHaveAccessibleName('Alex is watching your walk.')
+  expect(screen.getByRole('status')).toHaveTextContent('Alex')
+})

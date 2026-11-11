@@ -11,6 +11,12 @@ export const reportCategories: Record<
     colour: '#c2410c',
     icon: 'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5M9 18h6M10 22h4M3 3l18 18',
   },
+  quiet: {
+    title: 'Quiet / empty',
+    text: 'Someone reported this place as quiet or with few people.',
+    colour: '#b39ae8',
+    icon: 'M4 12h16M5 12v8M19 12v8M7 12V8h10v4M4 16h16',
+  },
   dark_area: {
     title: 'Dark or unlit area',
     text: 'A street, cycle path or footpath feels too dark because there is too little light.',
@@ -31,4 +37,10 @@ export const reportCategories: Record<
   },
 }
 
-export const categoryOrder: ReportCategory[] = ['broken_light', 'dark_area', 'unsafe', 'other']
+export const categoryOrder: ReportCategory[] = [
+  'broken_light',
+  'quiet',
+  'dark_area',
+  'unsafe',
+  'other',
+]

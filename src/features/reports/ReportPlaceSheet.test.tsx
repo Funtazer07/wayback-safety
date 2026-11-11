@@ -44,7 +44,7 @@ test('the form offers the four categories', () => {
 test('a report cannot be sent before a category is chosen', () => {
   renderSheet()
 
-  expect(screen.getByRole('button', { name: 'Send report' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Send report' })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: /Dark or unlit area/ }))
 
   expect(screen.getByRole('button', { name: /Dark or unlit area/ })).toHaveAttribute(
@@ -101,5 +101,20 @@ test('Cancel closes the form without sending anything', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
   expect(onClose).toHaveBeenCalledOnce()
-  expect(rpc).not.toHaveBeenCalled()
+  expect(rpc).not.toHaveBeenCalledWith('report_place', expect.anything())
+})
+
+test('Quiet becomes available only when the server supports that separate category', async () => {
+  rpc.mockImplementation(async (name: string) =>
+    name === 'quiet_reporting_available'
+      ? { data: true, error: null }
+      : { data: 'report-quiet', error: null },
+  )
+  renderSheet()
+  const quiet = screen.getByRole('button', { name: /Quiet \/ empty/ })
+  await act(async () => {})
+  expect(quiet).toBeEnabled()
+  fireEvent.click(quiet)
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Send report' })))
+  expect(rpc).toHaveBeenCalledWith('report_place', expect.objectContaining({ category: 'quiet' }))
 })

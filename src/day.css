@@ -1,0 +1,291 @@
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./assets/day/inter.ttf') format('truetype');
+}
+
+:root {
+  --day-tab-height: 4.5rem;
+  --day-text: #18352d;
+  --day-muted: #5e746b;
+  --day-page: #f8fbf8;
+  --day-mint: #ebf7f0;
+  --day-selected: #cdebd9;
+  --day-green: #10a345;
+  --day-red: #e94d50;
+  --day-grey: #d9d9d9;
+  --day-route: #a15cff;
+
+  font-family: Inter, system-ui, sans-serif;
+  --page: var(--day-page);
+  --page-tint: var(--day-mint);
+  --surface: #fff;
+  --border: #dce7df;
+  --text: var(--day-text);
+  --text-muted: var(--day-muted);
+  --green: #15803d;
+  --green-button: var(--day-green);
+  --green-soft: var(--day-mint);
+  --green-text: var(--day-text);
+  --radius: 1.125rem;
+  --tab-bar-height: var(--day-tab-height);
+}
+
+.home-screen,
+.walk-live,
+.walk-start,
+.account-screen,
+.contacts-screen,
+.followed,
+.tab-bar,
+.report-sheet {
+  --text: var(--day-text);
+  --text-muted: var(--day-muted);
+  --page: var(--day-page);
+  --green-button: var(--day-green);
+  --green-soft: var(--day-mint);
+  --radius: 1.125rem;
+
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--text);
+}
+
+.walk-start,
+.account-screen,
+.contacts-screen,
+.followed {
+  max-width: 27.5rem;
+  padding: 1.25rem;
+  background: var(--page);
+}
+
+.walk-start .top-bar-back,
+.contacts-screen .top-bar-back,
+.followed .top-bar-back {
+  border-radius: 0.875rem;
+}
+
+/* Small phones and larger text can scroll vertically, without horizontal overflow. */
+.home-screen,
+.walk-live,
+.walk-start,
+.account-screen,
+.contacts-screen,
+.followed,
+.report-sheet {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.home-screen .planner {
+  min-height: calc(100dvh - var(--day-tab-height) - env(safe-area-inset-bottom));
+}
+
+.walk-panel-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.walk-panel .walk-destination {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.report-category {
+  min-width: 0;
+}
+
+.report-sheet {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+.sheet {
+  max-height: 95dvh;
+  overflow-y: auto;
+}
+
+@media (max-width: 23rem) {
+  .home-screen .planner-panel {
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .home-screen .map-sheet {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .tab-bar {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+
+  .report-sheet {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .report-category {
+    min-height: 7rem;
+  }
+}
+
+.walk-live > .map-area {
+  min-height: 12rem;
+}
+
+.walk-live .walk-panel {
+  flex: none;
+}
+
+@media (max-width: 23rem) {
+  .planner-search input[type='search'] {
+    padding-left: 2.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .planner-search-icon {
+    width: 1.0625rem;
+    height: 1.0625rem;
+    top: 0.6875rem;
+  }
+}
+
+/* Shared foundations also cover sign-in, invitations, alerts, and loading states. */
+.screen {
+  max-width: 27.5rem;
+  gap: 1rem;
+  padding-top: max(1.25rem, env(safe-area-inset-top));
+  color: var(--text);
+}
+.card {
+  padding: 1rem;
+  gap: 0.75rem;
+  border-radius: 1.25rem;
+}
+button {
+  min-height: 2.75rem;
+  border-radius: 1rem;
+  font-size: 0.9375rem;
+}
+.button-primary,
+.check-in-button,
+.screen-actions > button:not(.button-link) {
+  min-height: 3.25rem;
+  font-size: 1rem;
+}
+input:not([type='checkbox'], [type='range']),
+textarea {
+  border-radius: 0.875rem;
+  font-size: 1rem;
+}
+.sheet {
+  max-width: 27.5rem;
+  padding: 1.5rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  border-radius: 1.75rem 1.75rem 0 0;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--text);
+}
+.sheet h2 {
+  font-size: 1.375rem;
+}
+.top-bar-back {
+  border-radius: 0.875rem;
+}
+.screen-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+.initial,
+.contacts-initial {
+  background: var(--day-mint);
+  color: var(--day-text);
+}
+.screen details {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.screen summary {
+  cursor: pointer;
+}
+.auth-screen {
+  gap: 1.25rem;
+}
+.auth-screen .onboarding-hero {
+  height: 10rem;
+  border-radius: 1.5rem;
+}
+.auth-screen > p {
+  color: var(--text-muted);
+}
+.activity-screen {
+  gap: 1rem;
+}
+.activity-screen .activity-card,
+.activity-screen .activity-circle {
+  border-radius: 1.25rem;
+  padding: 1rem;
+}
+.activity-screen .activity-card-top {
+  align-items: center;
+}
+.activity-screen .activity-eyebrow {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+.activity-screen .activity-circle {
+  background: var(--surface);
+}
+.activity-screen .activity-circle strong {
+  font-size: 0.9375rem;
+}
+.contacts-invited {
+  gap: 1.25rem;
+}
+.contacts-next-steps {
+  font-size: 0.875rem;
+}
+.walk-home {
+  gap: 1.25rem;
+}
+.walk-home .walk-home-mark {
+  margin-top: clamp(1.5rem, 10dvh, 6rem);
+  background: var(--day-selected);
+}
+.walk-home .walk-home-steps {
+  padding: 1.25rem 1rem;
+  gap: 1rem;
+}
+.walk-alert .walk-alert-icon {
+  margin-top: clamp(1rem, 8dvh, 4rem);
+}
+.walk-alert .walk-alert-box {
+  border-radius: 1.25rem;
+}
+.walk-home .screen-actions,
+.walk-alert .screen-actions {
+  padding-top: 1.25rem;
+}
+@media (max-width: 23rem) {
+  .screen:not(.home-screen, .walk-live) {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+  .screen:not(.home-screen, .walk-live) > .screen-actions,
+  .screen:not(.home-screen, .walk-live) > .screen-fill > .screen-actions {
+    margin-right: -1rem;
+    margin-left: -1rem;
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+  .sheet {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+}

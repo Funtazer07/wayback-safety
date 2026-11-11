@@ -7,10 +7,11 @@ import { clearHome, loadHome, saveHome, type SavedHome } from './savedHome.ts'
 
 type DestinationSearchProps = {
   onGo: (coordinates: LngLat, label: string) => void
+  onStartOver: () => void
 }
 
 /** The search bar with the Home button under it. Saving a home also plans the walk there. */
-function DestinationSearch({ onGo }: DestinationSearchProps) {
+function DestinationSearch({ onGo, onStartOver }: DestinationSearchProps) {
   const [home, setHome] = useState(loadHome)
   const [isSettingHome, setIsSettingHome] = useState(false)
   // A new key empties the search field.
@@ -36,6 +37,7 @@ function DestinationSearch({ onGo }: DestinationSearchProps) {
           setIsSettingHome(false)
           goHome(saved)
         }}
+        onStartOver={onStartOver}
       />
       <HomeShortcut
         home={home}

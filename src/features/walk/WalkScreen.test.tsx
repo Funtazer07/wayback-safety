@@ -106,7 +106,7 @@ test('a walk that is checked in shows the "You’re home" screen, which leads ba
 
   expect(screen.getByRole('heading', { name: 'You’re home.' })).toBeInTheDocument()
   expect(screen.getByText('Your walk ended at 22:16.')).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Back to your places' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }))
 
   expect(onDone).toHaveBeenCalledOnce()
 })
@@ -184,15 +184,14 @@ test('without a planned route the app never asks "Are you home?"', () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
-test('more time and Cancel walk wait behind one button, so the walk screen stays calm', () => {
+test('extra time and cancel are visible in the walk panel without an extra tap', () => {
   render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onDone={vi.fn()} />)
-  expect(screen.queryByRole('button', { name: 'Cancel walk' })).not.toBeInTheDocument()
-
-  fireEvent.click(screen.getByRole('button', { name: 'More time or cancel' }))
-
-  expect(screen.getByText('Need more time?')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Add 5 minutes' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Add 10 minutes' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Add 15 minutes' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Cancel walk' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel walk' }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
 test('in the last 5 minutes the walk screen says the walk is almost over', () => {

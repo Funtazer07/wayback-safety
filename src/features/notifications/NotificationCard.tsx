@@ -4,6 +4,7 @@ import './notifications.css'
 
 type NotificationCardProps = {
   reason: string
+  compact?: boolean
 }
 
 const explanations: Partial<Record<NotificationState, string>> = {
@@ -14,8 +15,8 @@ const explanations: Partial<Record<NotificationState, string>> = {
   'dev-server': 'Notifications only work in a build: run npm run build, then npm run preview.',
 }
 
-function NotificationCard({ reason }: NotificationCardProps) {
-  return <NotificationCardView reason={reason} {...useNotifications()} />
+function NotificationCard({ reason, compact = true }: NotificationCardProps) {
+  return <NotificationCardView reason={reason} compact={compact} {...useNotifications()} />
 }
 
 type NotificationCardViewProps = NotificationCardProps & ReturnType<typeof useNotifications>
@@ -23,6 +24,7 @@ type NotificationCardViewProps = NotificationCardProps & ReturnType<typeof useNo
 /** For a screen that already uses useNotifications, so both share one state. */
 export function NotificationCardView({
   reason,
+  compact = true,
   notificationState,
   isLoading,
   error,
@@ -37,7 +39,14 @@ export function NotificationCardView({
       <h2 id="notification-card-title" className="notifications-title">
         Turn on notifications
       </h2>
-      <p>{reason}</p>
+      {compact ? (
+        <details>
+          <summary>Why allow notifications?</summary>
+          <p>{reason}</p>
+        </details>
+      ) : (
+        <p>{reason}</p>
+      )}
       {explanation ? (
         <p>{explanation}</p>
       ) : (
