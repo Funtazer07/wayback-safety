@@ -84,6 +84,7 @@ const vestdijkLamp = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   services.fetchBrokenLights.mockResolvedValue([])
   services.reportBrokenLight.mockImplementation(async (lamp: typeof vestdijkLamp) => ({
     lampId: lamp.lampId,
@@ -160,6 +161,65 @@ test('the search says so when the service cannot be reached', async () => {
   typeSearch('Vestdijk')
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not search.')
+})
+
+test('a home is saved with the search bar, and from then on one tap plans the walk home', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+
+  click('Set home')
+  typeSearch('stationsplein 17')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  await screen.findByRole('region', { name: 'Choose a route' })
+  expect(JSON.parse(localStorage.getItem('wayback.home')!)).toEqual({
+    label: station.label,
+    coordinates: station.coordinates,
+  })
+  await waitFor(() =>
+    expect(onRouteChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ destinationLabel: 'Home' }),
+    ),
+  )
+
+  click('Start over')
+  services.fetchRoutes.mockClear()
+  click('Tap Stratumseind')
+  click('Home')
+
+  await screen.findByRole('region', { name: 'Choose a route' })
+  expect(services.fetchRoutes).toHaveBeenCalledWith(
+    [5.4791, 51.4385],
+    station.coordinates,
+    expect.any(AbortSignal),
+  )
+})
+
+test('a saved home can be removed again', () => {
+  localStorage.setItem(
+    'wayback.home',
+    JSON.stringify({ label: station.label, coordinates: station.coordinates }),
+  )
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  click('Change home')
+  click('Remove saved home')
+
+  expect(screen.getByRole('button', { name: 'Set home' })).toBeInTheDocument()
+  expect(localStorage.getItem('wayback.home')).toBeNull()
+})
+
+test('a searched address is the walk’s destination name', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+  typeSearch('stationsplein')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  await waitFor(() =>
+    expect(onRouteChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ destinationLabel: station.label }),
+    ),
+  )
 })
 
 test('Start over empties the search bar', async () => {

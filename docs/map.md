@@ -10,11 +10,18 @@ prototype (`maplibre-prototype-v3.html`), which was tested with the client first
 1. Tap the map where you start, or tap **My location**.
 2. Type where you want to go in the search bar ("Where are you going?") and pick a result, or press
    Enter for the first one. Tapping the map still works too, for a spot without an address. A place
-   searched before the start is known is planned as soon as there is a start. The app finds up to
-   three walking routes and counts the registered street lights along each one. A route that runs for more than 70% along one already shown is
+   searched before the start is known is planned as soon as there is a start. Under the search bar,
+   **Home** plans the walk home in one tap. The first time it says **Set home**: the user searches
+   their address once and it is saved on this phone (see Privacy). The app finds up to three
+   walking routes and counts the registered street lights along each one.
+
+   The place chosen here is also the walk's destination ("Walking to …" on the walk screen and for
+   the contacts): "Home", the address from the search bar, or "Your pin on the map". The "Set your
+   check-in" screen no longer has its own place picker. A route that runs for more than 70% along one already shown is
    left out (`routes.ts`), because testers saw routes that differ in a street or two as no real
    choice (_Assumption:_ 70%, to check again with users). So sometimes only one or two routes are
    shown.
+
 3. A list shows the routes, the one with the most street lights first, labelled **Most street
    lights** and **Fastest**. Choosing a route closes the list and leaves a short bar with
    **Other routes**.
@@ -106,6 +113,10 @@ note and who reported it are never shown. A new report appears on the map as soo
   stores the position. This is written down in [backend.md](backend.md) as well.
 - What the user types in the search bar goes straight from the phone to PDOK, without anything
   about the user. PDOK does see the phone's internet address, like every website does.
+- The saved home (address and spot) is kept on this phone only (`savedHome.ts`, `localStorage`) and
+  never sent to our server. Decided on 11 Nov: a home address is too personal for the shared
+  database, and the app only needs it on the phone. On a new phone the user sets it again. **Change
+  home → Remove saved home** deletes it. A walk home sends only the word "Home" as its destination.
 - The route of a running walk is kept on the phone (`walkRoute.ts`), so the walk screen can show it
   after the app was closed. It includes the start, which is often where the user was. It is erased
   when the user leaves the "You're home" screen. A walk that is never checked in keeps it

@@ -3,7 +3,7 @@ import { isInEindhoven } from './geometry.ts'
 import MapView from './MapView.tsx'
 import type { CameraMove } from './moveCamera.ts'
 import { locationMessage, plannerHint } from './plannerHint.ts'
-import PlaceSearch from './PlaceSearch.tsx'
+import DestinationSearch from './DestinationSearch.tsx'
 import PlannerPanel from './PlannerPanel.tsx'
 import ReportSheets from './ReportSheets.tsx'
 import RouteList from './RouteList.tsx'
@@ -56,6 +56,7 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
   }, [newRoutes])
 
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
+  const { destinationLabel } = planner
   useEffect(
     () =>
       onRouteChange(
@@ -63,9 +64,10 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
           coordinates: shownRoute.coordinates,
           seconds: shownRoute.duration,
           metres: shownRoute.length,
+          destinationLabel,
         },
       ),
-    [shownRoute, onRouteChange],
+    [shownRoute, destinationLabel, onRouteChange],
   )
 
   function locate() {
@@ -114,16 +116,16 @@ function RoutePlanner({ onRouteChange }: RoutePlannerProps) {
       <PlannerPanel
         panelRef={panelRef}
         search={
-          <PlaceSearch
+          <DestinationSearch
             // A new key empties the field, after Start over or a destination tapped on the map.
             key={searchKey}
-            onChoose={(place) => {
+            onGo={(coordinates, label) => {
               reporting.closeAll()
               // With a start the new routes move the map; without one, show the place itself.
               if (!planner.start) {
-                setCamera({ id: Date.now(), kind: 'centre', centre: place.coordinates, zoom: 16 })
+                setCamera({ id: Date.now(), kind: 'centre', centre: coordinates, zoom: 16 })
               }
-              planner.goTo(place.coordinates, reporting.brokenLights)
+              planner.goTo(coordinates, label, reporting.brokenLights)
             }}
           />
         }

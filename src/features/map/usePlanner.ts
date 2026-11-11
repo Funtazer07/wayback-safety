@@ -14,6 +14,8 @@ type PlanOptions = {
 export function usePlanner(position: UserPosition | null) {
   const [chosenStart, setChosenStart] = useState<LngLat | null>(null)
   const [destination, setDestination] = useState<LngLat | null>(null)
+  // Shown on the walk screen and to the contacts: "Walking to …".
+  const [destinationLabel, setDestinationLabel] = useState('')
   const [routes, setRoutes] = useState<MeasuredRoute[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isChoosing, setIsChoosing] = useState(false)
@@ -82,11 +84,13 @@ export function usePlanner(position: UserPosition | null) {
       return
     }
     setDestination(point)
+    setDestinationLabel('Your pin on the map')
     plan(start, point, lights)
   }
 
-  function goTo(point: LngLat, lights: BrokenLight[]) {
+  function goTo(point: LngLat, label: string, lights: BrokenLight[]) {
     setDestination(point)
+    setDestinationLabel(label)
     if (start) {
       plan(start, point, lights)
       return
@@ -120,6 +124,7 @@ export function usePlanner(position: UserPosition | null) {
     waitingLights.current = null
     setChosenStart(null)
     setDestination(null)
+    setDestinationLabel('')
     setRoutes([])
     setIsChoosing(false)
     setStatus('')
@@ -129,6 +134,7 @@ export function usePlanner(position: UserPosition | null) {
     chosenStart,
     start,
     destination,
+    destinationLabel,
     routes,
     selectedIndex,
     isChoosing,
