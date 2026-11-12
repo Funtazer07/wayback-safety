@@ -41,6 +41,27 @@ test('the form offers the four categories', () => {
   }
 })
 
+test('the two light categories say what causes the darkness, so they are not mixed up', () => {
+  renderSheet()
+
+  expect(
+    screen.getByRole('button', { name: /There is a lamp here, but it is broken/ }),
+  ).toHaveTextContent('Broken light')
+  expect(
+    screen.getByRole('button', { name: /No lamp is broken, but there are too few lamps/ }),
+  ).toHaveTextContent('Dark area')
+})
+
+test('choosing a category shows what it means, and points to Dark area for a dark street', () => {
+  renderSheet()
+
+  fireEvent.click(screen.getByRole('button', { name: /Broken or flickering light/ }))
+
+  expect(screen.getByText(/There is a lamp here, but it is broken/)).toHaveTextContent(
+    /Choose Dark area under More report categories/,
+  )
+})
+
 test('a report cannot be sent before a category is chosen', () => {
   renderSheet()
 
