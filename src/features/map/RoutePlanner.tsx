@@ -5,6 +5,7 @@ import { isInEindhoven } from './geometry.ts'
 import MapView from './MapView.tsx'
 import type { CameraMove } from './moveCamera.ts'
 import { locationMessage, plannerHint } from './plannerHint.ts'
+import DestinationSearch from './DestinationSearch.tsx'
 import PlannerPanel from './PlannerPanel.tsx'
 import ReportSheets from './ReportSheets.tsx'
 import RouteList from './RouteList.tsx'
@@ -31,6 +32,7 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
   const reporting = useReporting((lights, thankYou) => planner.replan(lights, thankYou))
   const [camera, setCamera] = useState<CameraMove | null>(null)
   const [isLocating, setIsLocating] = useState(false)
+  const [searchKey, setSearchKey] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const { position } = location
@@ -67,6 +69,7 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
     reporting.brokenLights,
   )
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
+  const { destinationLabel } = planner
   useEffect(
     () =>
       onRouteChange(
@@ -74,9 +77,10 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
           coordinates: shownRoute.coordinates,
           seconds: shownRoute.duration,
           metres: shownRoute.length,
+          destinationLabel,
         },
       ),
-    [shownRoute, onRouteChange],
+    [shownRoute, destinationLabel, onRouteChange],
   )
 
   function locate() {
@@ -109,11 +113,14 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
         destination={planner.destination}
         foundLamp={reporting.menu?.state === 'found' ? reporting.menu.lamp.coordinates : null}
         camera={camera}
-        onTap={(point) =>
-          reporting.isSheetOpen
-            ? reporting.closeAll()
-            : planner.tapPlace(point, reporting.brokenLights)
-        }
+        onTap={(point) => {
+          if (reporting.isSheetOpen) {
+            reporting.closeAll()
+            return
+          }
+          if (planner.start) setSearchKey((key) => key + 1)
+          planner.tapPlace(point, reporting.brokenLights)
+        }}
         onHold={reporting.startReport}
         onSelectRoute={(index) => !reporting.isSheetOpen && planner.selectRoute(index)}
         onBrokenLightTap={reporting.showLight}
@@ -121,16 +128,31 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
       />
       <PlannerPanel
         panelRef={panelRef}
+        search={
+          <DestinationSearch
+            // A new key empties the field, after Start over or a destination tapped on the map.
+            key={searchKey}
+            onGo={(coordinates, label) => {
+              reporting.closeAll()
+              // With a start the new routes move the map; without one, show the place itself.
+              if (!planner.start) {
+                setCamera({ id: Date.now(), kind: 'centre', centre: coordinates, zoom: 16 })
+              }
+              planner.goTo(coordinates, label, reporting.brokenLights)
+            }}
+            onStartOver={() => {
+              reporting.closeAll()
+              setSearchKey((key) => key + 1)
+              planner.reset()
+            }}
+          />
+        }
         hint={plannerHint({
           hasRoutes,
           isChoosing: planner.isChoosing,
           hasStart: planner.start !== null,
         })}
         status={status}
-        onStartOver={() => {
-          reporting.closeAll()
-          planner.reset()
-        }}
       />
       {!reporting.isSheetOpen && !planner.destination && (
         <div className="map-actions planner-actions">

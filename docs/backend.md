@@ -697,6 +697,9 @@ Written down here because the app handles location and personal data.
   does not copy it into our own tables. The privacy statement must mention this.
 - **Age:** the user confirms being 16 or older, and the time of that confirmation is stored. This
   is the user's own statement; the age is not verified.
+- **Home address:** the saved home is kept on the user's phone only, never in the database. A walk
+  home stores just the word "Home" as its destination name. A walk to a searched address stores
+  that address as the name, which the walk's contacts see. See "Privacy" in [map.md](map.md).
 - **Location:** a walk stores the destination and one last known location. Each update
   overwrites the previous one, so there is no trail of where someone walked. Only the user can
   read their own walks. A walk started with a planned route also stores that route (the plan, not

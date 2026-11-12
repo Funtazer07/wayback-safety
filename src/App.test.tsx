@@ -61,6 +61,7 @@ vi.mock('./features/map/RoutePlanner.tsx', () => ({
       coordinates: [number, number][]
       seconds: number
       metres: number
+      destinationLabel: string
     }) => void
   }) => (
     <>
@@ -70,7 +71,12 @@ vi.mock('./features/map/RoutePlanner.tsx', () => ({
       <button
         type="button"
         onClick={() =>
-          onRouteChange({ coordinates: routeViaStratumseind, seconds: 1500, metres: 1900 })
+          onRouteChange({
+            coordinates: routeViaStratumseind,
+            seconds: 1500,
+            metres: 1900,
+            destinationLabel: 'Stationsplein 17, 5611AC Eindhoven',
+          })
         }
       >
         Choose the route via Stratumseind
@@ -222,26 +228,23 @@ test('a timer from an hour up is shown in hours and minutes', async () => {
   expect(screen.getByText('1 h 5 min')).toBeInTheDocument()
 })
 
-test('a user can walk to a typed address instead of Home', async () => {
+test('the walk goes to the place chosen on the Home map', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(20))
   renderApp(loggedIn)
   await screen.findByRole('button', { name: 'Home' })
 
+  click('Choose the route via Stratumseind')
   click('Start walk')
-  click('Change')
-  fireEvent.change(screen.getByLabelText('Or type an address'), {
-    target: { value: 'Kruisstraat 12, Eindhoven' },
-  })
-  click('Use this place')
+  expect(screen.getByText('Stationsplein 17, 5611AC Eindhoven')).toBeInTheDocument()
+  // The place is chosen on the map only, so this screen has no second way to pick one.
+  expect(screen.queryByRole('button', { name: 'Change' })).not.toBeInTheDocument()
   click('Start walk')
 
   await vi.waitFor(() =>
-    expect(walks.startWalk).toHaveBeenCalledWith({
-      destinationLabel: 'Kruisstraat 12, Eindhoven',
-      minutes: 20,
-      contactIds: [],
-    }),
+    expect(walks.startWalk).toHaveBeenCalledWith(
+      expect.objectContaining({ destinationLabel: 'Stationsplein 17, 5611AC Eindhoven' }),
+    ),
   )
 })
 

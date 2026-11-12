@@ -7,6 +7,8 @@ export type PlannedRoute = {
   coordinates: LngLat[]
   seconds: number
   metres: number
+  /** "Home", an address from the search bar, or a pin tapped on the map. */
+  destinationLabel: string
 }
 
 type SavedRoute = {

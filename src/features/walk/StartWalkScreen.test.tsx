@@ -14,7 +14,7 @@ test.each([14 * 60, 17 * 60, 17 * 60 + 10])(
     render(
       <StartWalkScreen
         userId="test"
-        plannedRoute={{ coordinates: [], seconds, metres: 1400 }}
+        plannedRoute={{ coordinates: [], seconds, metres: 1400, destinationLabel: 'Home' }}
         onStart={onStart}
         onBack={vi.fn()}
       />,

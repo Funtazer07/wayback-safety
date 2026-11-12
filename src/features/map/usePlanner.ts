@@ -14,6 +14,8 @@ type PlanOptions = {
 export function usePlanner(position: UserPosition | null) {
   const [chosenStart, setChosenStart] = useState<LngLat | null>(null)
   const [destination, setDestination] = useState<LngLat | null>(null)
+  // Shown on the walk screen and to the contacts: "Walking to …".
+  const [destinationLabel, setDestinationLabel] = useState('')
   const [routes, setRoutes] = useState<MeasuredRoute[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isChoosing, setIsChoosing] = useState(false)
@@ -21,6 +23,7 @@ export function usePlanner(position: UserPosition | null) {
   // Planning again after a report does not change this, so the map does not move.
   const [newRoutes, setNewRoutes] = useState<MeasuredRoute[] | null>(null)
   const request = useRef<AbortController | null>(null)
+  const waitingLights = useRef<BrokenLight[] | null>(null)
 
   useEffect(() => () => request.current?.abort(), [])
 
@@ -81,8 +84,30 @@ export function usePlanner(position: UserPosition | null) {
       return
     }
     setDestination(point)
+    setDestinationLabel('Your pin on the map')
     plan(start, point, lights)
   }
+
+  function goTo(point: LngLat, label: string, lights: BrokenLight[]) {
+    setDestination(point)
+    setDestinationLabel(label)
+    if (start) {
+      plan(start, point, lights)
+      return
+    }
+    // The hint above already asks for the start.
+    waitingLights.current = lights
+    setStatus('')
+  }
+
+  // A destination searched before the start was known is planned as soon as there is a start:
+  // a tap on the map, or the phone's location coming in.
+  useEffect(() => {
+    const lights = waitingLights.current
+    if (!lights || !start || !destination) return
+    waitingLights.current = null
+    plan(start, destination, lights)
+  })
 
   function replan(lights: BrokenLight[], thankYou: string) {
     if (start && destination) plan(start, destination, lights, { keepChoice: true, thankYou })
@@ -96,8 +121,10 @@ export function usePlanner(position: UserPosition | null) {
 
   function reset() {
     request.current?.abort()
+    waitingLights.current = null
     setChosenStart(null)
     setDestination(null)
+    setDestinationLabel('')
     setRoutes([])
     setIsChoosing(false)
     setStatus('')
@@ -107,12 +134,14 @@ export function usePlanner(position: UserPosition | null) {
     chosenStart,
     start,
     destination,
+    destinationLabel,
     routes,
     selectedIndex,
     isChoosing,
     status,
     newRoutes,
     tapPlace,
+    goTo,
     replan,
     selectRoute,
     showAllRoutes: () => setIsChoosing(true),

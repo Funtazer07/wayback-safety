@@ -11,9 +11,14 @@ const services = vi.hoisted(() => ({
   findLampNear: vi.fn(),
   fetchBrokenLights: vi.fn(),
   reportBrokenLight: vi.fn(),
+  searchPlaces: vi.fn(),
 }))
 
 vi.mock('./routes.ts', () => ({ fetchRoutes: services.fetchRoutes }))
+vi.mock('./places.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./places.ts')>()),
+  searchPlaces: services.searchPlaces,
+}))
 vi.mock('../reports/reports.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../reports/reports.ts')>()),
   fetchPlaceReports: services.fetchPlaceReports,
@@ -84,6 +89,7 @@ const vestdijkLamp = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   services.fetchPlaceReports.mockResolvedValue([])
   services.fetchBrokenLights.mockResolvedValue([])
   services.reportBrokenLight.mockImplementation(async (lamp: typeof vestdijkLamp) => ({
@@ -100,6 +106,137 @@ beforeEach(() => {
       : measured(viaCityCentre, 91 - brokenPlaces.size, brokenPlaces.size),
   )
   services.findLampNear.mockResolvedValue(vestdijkLamp)
+  services.searchPlaces.mockResolvedValue([station])
+})
+
+const station = {
+  id: 'adr-station',
+  label: 'Stationsplein 17, 5611AC Eindhoven',
+  coordinates: [5.4797, 51.4433] as LngLat,
+}
+
+function typeSearch(text: string) {
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Where are you going?' }), {
+    target: { value: text },
+  })
+}
+
+test('a destination typed in the search bar gets its routes, like a tap on the map', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+
+  typeSearch('stationsplein 17')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  expect(await screen.findByRole('region', { name: 'Choose a route' })).toBeInTheDocument()
+  expect(services.searchPlaces).toHaveBeenCalledWith('stationsplein 17', expect.any(AbortSignal))
+  expect(services.fetchRoutes).toHaveBeenCalledWith(
+    [5.4791, 51.4385],
+    station.coordinates,
+    expect.any(AbortSignal),
+  )
+  expect(screen.getByRole('searchbox')).toHaveValue(station.label)
+})
+
+test('a destination searched before the start is planned once the start is tapped', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  typeSearch('stationsplein')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+  expect(screen.getByText('Tap the map where you start, or use My location.')).toBeInTheDocument()
+  expect(services.fetchRoutes).not.toHaveBeenCalled()
+
+  click('Tap Stratumseind')
+
+  expect(await screen.findByRole('region', { name: 'Choose a route' })).toBeInTheDocument()
+})
+
+test('the search says so when nothing is found', async () => {
+  services.searchPlaces.mockResolvedValue([])
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  typeSearch('Amsterdam')
+
+  expect(await screen.findByText(/No address found in Eindhoven/)).toBeInTheDocument()
+})
+
+test('the search says so when the service cannot be reached', async () => {
+  services.searchPlaces.mockRejectedValue(new Error('network'))
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  typeSearch('Vestdijk')
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not search.')
+})
+
+test('a home is saved with the search bar, and from then on one tap plans the walk home', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+
+  click('Set home')
+  typeSearch('stationsplein 17')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  await screen.findByRole('region', { name: 'Choose a route' })
+  expect(JSON.parse(localStorage.getItem('wayback.home')!)).toEqual({
+    label: station.label,
+    coordinates: station.coordinates,
+  })
+  await waitFor(() =>
+    expect(onRouteChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ destinationLabel: 'Home' }),
+    ),
+  )
+
+  click('Start over')
+  services.fetchRoutes.mockClear()
+  click('Tap Stratumseind')
+  click('Home')
+
+  await screen.findByRole('region', { name: 'Choose a route' })
+  expect(services.fetchRoutes).toHaveBeenCalledWith(
+    [5.4791, 51.4385],
+    station.coordinates,
+    expect.any(AbortSignal),
+  )
+})
+
+test('a saved home can be removed again', () => {
+  localStorage.setItem(
+    'wayback.home',
+    JSON.stringify({ label: station.label, coordinates: station.coordinates }),
+  )
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  click('Change home')
+  click('Remove saved home')
+
+  expect(screen.getByRole('button', { name: 'Set home' })).toBeInTheDocument()
+  expect(localStorage.getItem('wayback.home')).toBeNull()
+})
+
+test('a searched address is the walk’s destination name', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+  typeSearch('stationsplein')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  await waitFor(() =>
+    expect(onRouteChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ destinationLabel: station.label }),
+    ),
+  )
+})
+
+test('Start over empties the search bar', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+  typeSearch('stationsplein')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  click('Start over')
+
+  expect(screen.getByRole('searchbox')).toHaveValue('')
 })
 
 test('a user picks a start and a destination and gets the routes, most street lights first', async () => {
@@ -107,7 +244,7 @@ test('a user picks a start and a destination and gets the routes, most street li
   expect(screen.getByText('Tap the map where you start, or use My location.')).toBeInTheDocument()
 
   click('Tap Stratumseind')
-  expect(screen.getByText(/Tap where you want to go/)).toBeInTheDocument()
+  expect(screen.getByText(/You can also tap where you want to go/)).toBeInTheDocument()
   click('Tap the station')
 
   const list = await screen.findByRole('region', { name: 'Choose a route' })

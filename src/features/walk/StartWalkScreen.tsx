@@ -6,7 +6,6 @@ import { formatDistance, formatMinutes } from '../map/formatRoute.ts'
 import type { PlannedRoute } from '../map/walkRoute.ts'
 import NotificationCard from '../notifications/NotificationCard.tsx'
 import { HOME } from './destination.ts'
-import DestinationSheet from './DestinationSheet.tsx'
 import { addMinutes, formatClock } from './time.ts'
 import TimerPicker from './TimerPicker.tsx'
 import { suggestedMinutes, timerPresets, timerRange } from './timerSuggestion.ts'
@@ -23,10 +22,10 @@ type StartWalkScreenProps = {
 }
 
 function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: StartWalkScreenProps) {
-  const [destination, setDestination] = useState(HOME)
+  // Chosen on the Home map. A walk started without a route keeps the old default.
+  const destination = plannedRoute?.destinationLabel || HOME
   const routeSeconds = plannedRoute?.seconds ?? null
   const [minutes, setMinutes] = useState(() => suggestedMinutes(routeSeconds))
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const now = useNow()
@@ -57,9 +56,6 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
         <p>
           <span className="small">Going to</span> <strong>{destination}</strong>
         </p>
-        <button type="button" className="button-link" onClick={() => setIsSheetOpen(true)}>
-          Change
-        </button>
       </div>
 
       {plannedRoute && (
@@ -106,17 +102,6 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
         </button>
         <p className="small walk-centered">Location is used only while the walk runs.</p>
       </div>
-
-      {isSheetOpen && (
-        <DestinationSheet
-          destination={destination}
-          onUse={(place) => {
-            setDestination(place)
-            setIsSheetOpen(false)
-          }}
-          onClose={() => setIsSheetOpen(false)}
-        />
-      )}
     </main>
   )
 }
