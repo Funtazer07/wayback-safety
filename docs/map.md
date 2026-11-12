@@ -7,7 +7,8 @@ prototype (`maplibre-prototype-v3.html`), which was tested with the client first
 
 **On Home** (`RoutePlanner.tsx`):
 
-1. Tap the map where you start, or tap **My location**.
+1. The map asks for the phone's location as soon as it opens, and uses it as the start. Without
+   location (not allowed, or outside Eindhoven) the user taps the map where they start.
 2. Type where you want to go in the search bar ("Where are you going?") and pick a result, or press
    Enter for the first one. Tapping the map still works too, for a spot without an address. A place
    searched before the start is known is planned as soon as there is a start. Under the search bar,

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { LngLat } from './geometry.ts'
 import type { MeasuredRoute } from './lamps.ts'
 import RoutePlanner from './RoutePlanner.tsx'
@@ -87,6 +87,10 @@ const vestdijkLamp = {
   number: '002',
 }
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
@@ -136,6 +140,33 @@ test('a destination typed in the search bar gets its routes, like a tap on the m
     expect.any(AbortSignal),
   )
   expect(screen.getByRole('searchbox')).toHaveValue(station.label)
+})
+
+test('the phone’s location is the start as soon as the map opens', async () => {
+  vi.stubGlobal('navigator', {
+    geolocation: {
+      watchPosition: (success: PositionCallback) => {
+        success({
+          coords: { latitude: 51.4385, longitude: 5.4791, accuracy: 10 },
+        } as GeolocationPosition)
+        return 1
+      },
+      clearWatch: vi.fn(),
+    },
+  })
+  const { unmount } = render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  typeSearch('stationsplein')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  expect(await screen.findByRole('region', { name: 'Choose a route' })).toBeInTheDocument()
+  expect(services.fetchRoutes).toHaveBeenCalledWith(
+    [5.4791, 51.4385],
+    station.coordinates,
+    expect.any(AbortSignal),
+  )
+  // Closed while the fake location still exists, because closing stops watching it.
+  unmount()
 })
 
 test('a destination searched before the start is planned once the start is tapped', async () => {

@@ -38,6 +38,10 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
   const { position } = location
   const isOutside = position !== null && !isInEindhoven(position.coordinates)
 
+  // Ask for the location as soon as the map opens, so the user's position is the start right away.
+  const { start: startLocating } = location
+  useEffect(() => startLocating(), [startLocating])
+
   const hasCentred = useRef(false)
   useEffect(() => {
     if (!position || isOutside || hasCentred.current || planner.destination) return
