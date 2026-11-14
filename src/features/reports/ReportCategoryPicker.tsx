@@ -3,7 +3,7 @@ import type { ReportCategory } from './reports.ts'
 import artwork from '../../assets/day/report-artwork.png'
 
 const shortLabels = {
-  broken_light: 'No light',
+  broken_light: 'Broken light',
   quiet: 'Quiet / empty',
   dark_area: 'Dark area',
   unsafe: 'Feels unsafe',
@@ -66,6 +66,12 @@ function ReportCategoryPicker({
         <summary>More report categories</summary>
         {categoryOrder.filter((category) => category === 'dark_area').map(categoryButton)}
       </details>
+      {/* Screen readers already hear this text in the button's name. */}
+      {chosen && (
+        <p className="report-category-hint" aria-hidden="true">
+          {reportCategories[chosen].text}
+        </p>
+      )}
     </>
   )
 }

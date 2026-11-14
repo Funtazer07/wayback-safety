@@ -2,7 +2,7 @@ import type { Map as MapLibreMap, StyleImageInterface } from 'maplibre-gl'
 import { categoryOrder, reportCategories } from '../reports/reportCategories.ts'
 import type { ReportCategory } from '../reports/reports.ts'
 
-export const brokenColour = '#dc2626'
+export const brokenColour = reportCategories.broken_light.colour
 export const locationColour = '#16a34a'
 
 // Drawn at twice the size, so it stays sharp. Bulb shape from Lucide (ISC licence).

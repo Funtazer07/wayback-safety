@@ -217,6 +217,12 @@
 .report-quiet:disabled {
   opacity: 1;
 }
+.report-category-hint {
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--green-soft);
+  font-size: 0.9375rem;
+}
 .report-extra-categories {
   font-size: 0.8125rem;
   color: var(--text-muted);

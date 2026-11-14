@@ -105,6 +105,15 @@ a soft circle of about 60 m. The circle is there because the spot is rounded: it
 not where the reporter stood. Tapping the icon shows the category and when it was reported. The
 note and who reported it are never shown. A new report appears on the map as soon as it is saved.
 
+Only broken lights are red: a broken-light report from the form uses the same red and bulb as a
+lamp reported on the map, because it is the same problem. Unsafe situations are amber, quiet places
+lilac, dark areas indigo and other hazards grey. The picture differs too, so colour is never the
+only difference.
+
+A user test with 3 people (SCRUM-93, SCRUM-129) showed two problems, fixed here: the two light
+categories were mixed up, and the red markers could not be told apart. The light categories now say
+the cause: "there is a lamp, but it is broken" against "no lamp is broken, there are too few lamps".
+
 ## Privacy
 
 - The user's position is drawn on the map and used as the start of a route. To plan a route, the
