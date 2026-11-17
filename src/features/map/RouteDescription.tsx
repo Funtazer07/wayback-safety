@@ -1,9 +1,11 @@
+import { darkStretchLength } from './lamps.ts'
 import type { RouteReports } from './routeReports.ts'
 
 type RouteDescriptionProps = {
   isMostLights: boolean
   isFastest: boolean
   brokenCount: number
+  darkStretchCount: number
   reports?: RouteReports
 }
 
@@ -11,6 +13,7 @@ function RouteDescription({
   isMostLights,
   isFastest,
   brokenCount,
+  darkStretchCount,
   reports,
 }: RouteDescriptionProps) {
   const description = isMostLights
@@ -25,6 +28,14 @@ function RouteDescription({
     <>
       <span className="route-description">{description}</span>
       <span className="route-tags">
+        {darkStretchCount > 0 && (
+          <span
+            className="route-tag is-dark-stretch"
+            title={`More than ${darkStretchLength} m without a registered street light. Marked with a moon on the map when this route is chosen.`}
+          >
+            {darkStretchCount === 1 ? '1 dark stretch' : `${darkStretchCount} dark stretches`}
+          </span>
+        )}
         {reports?.quietLabel && (
           <span
             className="route-tag is-quiet"

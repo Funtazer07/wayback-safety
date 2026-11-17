@@ -350,3 +350,9 @@
     font-size: 0.875rem;
   }
 }
+/* The same moon as on the map, so the tag and the marked stretch belong together. */
+.route-tag.is-dark-stretch::before {
+  width: 0.875rem;
+  height: 0.875rem;
+  background-image: url('../../assets/day/route-dark-stretch.svg');
+}
