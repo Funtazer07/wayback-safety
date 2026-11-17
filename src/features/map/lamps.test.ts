@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import type { LngLat } from './geometry.ts'
-import { describeLamp, lampsInUrl, measureRoute, nearestLamp } from './lamps.ts'
+import { describeLamp, isOffAtNight, lampsInUrl, measureRoute, nearestLamp } from './lamps.ts'
 
 // A straight walk of 200 m due north from Stratumseind.
 const metresNorth = (metres: number) => metres / 110540
@@ -39,6 +39,47 @@ test('finds the longest piece without a street light, also at the start and the 
   const answer = { features: [lampAt(0, 20), lampAt(0, 60)] }
 
   expect(measureRoute(route, answer, new Set()).longestDark).toBeCloseTo(140, 0)
+})
+
+test('marks every piece of more than 50 m without a street light as a dark stretch', () => {
+  const answer = { features: [lampAt(0, 30), lampAt(0, 60), lampAt(0, 130)] }
+
+  const { darkStretches } = measureRoute(route, answer, new Set())
+
+  expect(darkStretches.map((stretch) => Math.round(stretch.length))).toEqual([70, 70])
+  expect(darkStretches[0].coordinates[0][1]).toBeCloseTo(51.4385 + metresNorth(60), 6)
+  expect(darkStretches[1].coordinates.at(-1)).toEqual(route.coordinates[1])
+})
+
+test('a route with lights close together has no dark stretches', () => {
+  const answer = { features: [0, 40, 80, 120, 160, 200].map((north) => lampAt(0, north)) }
+
+  expect(measureRoute(route, answer, new Set()).darkStretches).toEqual([])
+})
+
+test('a light the municipality switches off at night does not count', () => {
+  const allNight = { schakelschema_lamp: 'in15lux 100% - 22:00 50% - 7:00 100% - uit15lux' }
+  const offAtNight = { schakelschema_lamp: 'in15lux 0% - 19:00 0% - 22:00 0% - 7:00 0% - uit15lux' }
+  const answer = { features: [lampAt(0, 50, allNight), lampAt(0, 150, offAtNight)] }
+
+  const measured = measureRoute(route, answer, new Set())
+
+  expect(measured.lampCount).toBe(1)
+  expect(measured.brokenCount).toBe(0)
+})
+
+test('reads from the switching schedule which lamps are off at night', () => {
+  expect(isOffAtNight('in15lux 0% - 19:00 0% - 22:00 0% - 7:00 0% - uit15lux')).toBe(true)
+  expect(isOffAtNight('in15lux 100% - 00:00 B15')).toBe(true)
+  expect(isOffAtNight('in15lux 100% - 23:00 0% - 7:00 100% - uit15lux')).toBe(true)
+  expect(isOffAtNight('uit15lux 100% - in15lux Dag')).toBe(true)
+  expect(isOffAtNight('Sport (op aanvraag gebruiker)')).toBe(true)
+
+  expect(isOffAtNight('in15lux 100% - 19:00 100% - 22:00 50% - 7:00 100% - uit15lux')).toBe(false)
+  expect(isOffAtNight('in15lux 100% - uit15lux B21')).toBe(false)
+  expect(isOffAtNight('In 15lux 10% - bij beweging 45% - uit 15lux')).toBe(false)
+  expect(isOffAtNight('100%')).toBe(false)
+  expect(isOffAtNight(null)).toBe(false)
 })
 
 test('a light reported as broken does not count, but is told apart', () => {

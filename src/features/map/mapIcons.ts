@@ -4,6 +4,7 @@ import type { ReportCategory } from '../reports/reports.ts'
 
 export const brokenColour = reportCategories.broken_light.colour
 export const locationColour = '#16a34a'
+export const darkStretchColour = '#1e1b4b'
 
 // Drawn at twice the size, so it stays sharp. Bulb shape from Lucide (ISC licence).
 const brokenLightSvg = `
@@ -57,6 +58,21 @@ export function loadReportIcons(): Promise<[ReportCategory, HTMLImageElement][]>
     }),
   )
   return reportImages
+}
+
+// Moon shape from Lucide (ISC licence). Repeated along a dark stretch, so it is not colour alone.
+const darkStretchSvg = reportSvg(darkStretchColour, 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z')
+
+let darkStretchImage: Promise<HTMLImageElement> | undefined
+
+export function loadDarkStretchIcon(): Promise<HTMLImageElement> {
+  darkStretchImage ??= (async () => {
+    const image = new Image()
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(darkStretchSvg)}`
+    await image.decode()
+    return image
+  })()
+  return darkStretchImage
 }
 
 /** Pulses, except for people who asked their phone for less motion. */

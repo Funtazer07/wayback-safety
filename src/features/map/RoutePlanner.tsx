@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
+import { withDarkStretchesAfterDusk } from './daylight.ts'
 import { isInEindhoven } from './geometry.ts'
 import MapView from './MapView.tsx'
 import type { CameraMove } from './moveCamera.ts'
@@ -12,6 +13,7 @@ import RouteList from './RouteList.tsx'
 import RouteDrawer from './RouteDrawer.tsx'
 import { reportsAlongRoutes } from './routeReports.ts'
 import RouteSummary from './RouteSummary.tsx'
+import { useIsAfterDusk } from './useIsAfterDusk.ts'
 import { usePlanner } from './usePlanner.ts'
 import { useReporting } from './useReporting.ts'
 import type { PlannedRoute } from './walkRoute.ts'
@@ -69,6 +71,11 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
     reporting.brokenLights,
   )
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
+  const isAfterDusk = useIsAfterDusk()
+  const routesNow = useMemo(
+    () => withDarkStretchesAfterDusk(planner.routes, isAfterDusk),
+    [planner.routes, isAfterDusk],
+  )
   const { destinationLabel } = planner
   useEffect(
     () =>
@@ -107,7 +114,7 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
         position={position}
         brokenLights={reporting.brokenLights}
         placeReports={reporting.placeReports}
-        routes={planner.routes}
+        routes={routesNow}
         selectedIndex={planner.selectedIndex}
         start={planner.chosenStart}
         destination={planner.destination}
@@ -192,14 +199,14 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
           <RouteDrawer>
             {planner.isChoosing ? (
               <RouteList
-                routes={planner.routes}
+                routes={routesNow}
                 selectedIndex={planner.selectedIndex}
                 reports={routeReports}
                 onSelect={planner.selectRoute}
               />
             ) : (
               <RouteSummary
-                routes={planner.routes}
+                routes={routesNow}
                 selectedIndex={planner.selectedIndex}
                 reports={routeReports}
                 onShowAll={planner.showAllRoutes}

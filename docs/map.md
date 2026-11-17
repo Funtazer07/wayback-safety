@@ -54,12 +54,55 @@ Code: `lamps.ts`, `routeChoice.ts`, `geometry.ts`.
   streets dropped out, because a route often follows the middle of the road.
 - Two lamps at exactly the same spot (the register has some) count once.
 - A light reported as broken does not count.
+- A light the municipality switches off at night does not count either (see "Lamps at night"
+  below).
 - Per route the app shows the number of lights, the lights per km and the **longest gap between
   lights**, from the start, between lamps and to the end.
 - **Most street lights** is the route with the most lights per km; on a tie, the shortest gap.
 
 The register says where lamps stand, not whether they are on. The app says "registered street
 lights" and never that a light is on.
+
+### Dark stretches
+
+A **dark stretch** is a piece of the route of more than **50 m** without a counted light, also at
+the start or the end (_Assumption:_ 50 m, to check again with users). Each route card shows a tag
+such as "2 dark stretches" with a moon. On the map, the dark stretches of the chosen route are drawn
+as a dark line over the route with the same moon in the middle of each, so the shape tells them
+apart and not only the colour. The walk screen does not show them: it only keeps the route's line.
+
+The tags and moons are shown only **after dusk**, from sunset to sunrise in Eindhoven
+(`daylight.ts`, worked out from the position of the sun, checked every minute). By day they would
+say "dark" about a street in full daylight. The score, the light counts and the broken lights stay
+the same at every hour, so the best-lit route is the same by day and at night.
+_Assumption:_ the lamps switch on at 15 or 20 lux, which is about sunset.
+
+### Lamps at night
+
+The register has a switching schedule per lamp (`schakelschema_lamp`), for example
+`in15lux 100% - 22:00 50% - 7:00 100% - uit15lux`: on at dusk (15 lux) at full power, dimmed to 50%
+from 22:00 to 7:00, off at dawn. What we found in November 2026, for all 58,507 lamps:
+
+| How the lamp behaves at night                                            | Lamps  | Share |
+| ------------------------------------------------------------------------ | ------ | ----- |
+| Dimmed late at night, mostly to 50% from 22:00 to 7:00                   | 31,505 | 54%   |
+| The same level all night                                                 | 24,330 | 42%   |
+| 0% all night: in the register, but kept off                              | 2,305  | 3.9%  |
+| Off for part of the night: at 21:30, 22:00, 23:00 or 00:00               | 109    | 0.2%  |
+| Lit by day only (for example in a tunnel), or sports lighting on request | 89     | 0.2%  |
+| Lit at 10%, brighter when someone moves                                  | 34     | 0.1%  |
+| No schedule                                                              | 135    | 0.2%  |
+
+What this changes (`isOffAtNight` in `lamps.ts`):
+
+- The three rows of lamps that are off (0% all night, off for part of the night, day or sports
+  only), about 2,500 lamps (4.3%), do not count for a route. They are not
+  treated as broken: they are simply left out, like a lamp that is not there.
+- Dimming does not change the score. A dimmed lamp still gives light, and the dataset does not say
+  how much a dimmed lamp still lights the pavement.
+- A lamp that turns off at 00:00 is left out at every hour. _Assumption:_ most walks home that need
+  this app are late; reading the time of the walk would make the score change during the evening.
+- Motion-sensor lamps and lamps without a schedule still count.
 
 ## Outside services
 

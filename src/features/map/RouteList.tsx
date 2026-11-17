@@ -50,6 +50,7 @@ function RouteList({ routes, selectedIndex, onSelect, reports = [] }: RouteListP
               isMostLights={index === mostLights}
               isFastest={index === fastest}
               brokenCount={route.brokenCount}
+              darkStretchCount={route.darkStretches.length}
               reports={reports[index]}
             />
             <span className="route-line route-measurements">
@@ -69,7 +70,9 @@ function RouteList({ routes, selectedIndex, onSelect, reports = [] }: RouteListP
       </div>
       <p className="route-register-note" id="route-register-note">
         Counted from the municipality's register of street lights: where lamps stand, not whether
-        they are on. Lights reported as broken do not count.
+        they are on. Lights reported as broken, and lights the municipality switches off at night,
+        do not count. After dusk, dark stretches of the chosen route are marked with a moon on the
+        map.
       </p>
     </section>
   )
