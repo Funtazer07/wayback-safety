@@ -5,47 +5,37 @@ export function compareRoute(
   route: MeasuredRoute,
   fastestRoute: MeasuredRoute,
 ) {
-  // is this the route we're comparing everything against?
+  // check if this is the fastest route
   const isBaseline = route === fastestRoute
 
-  // how many extra seconds does this route take?
+  // get the extra walking time compared to the fastest route
   const extraSeconds = Math.max(
     0,
     route.duration - fastestRoute.duration,
   )
 
-  // convert seconds into minutes.
+  // convert the extra time to minutes
   const extraMinutes = Math.ceil(extraSeconds / 60)
 
-  // Find the difference in streetlights per kilometre.
+  // calculate the difference in lights per km
   const lightingDifference =
     route.lampsPerKm - fastestRoute.lampsPerKm
 
-  // calculate the percentage difference.
-  // we cannot divide by zero.
-  const lightingPercent =
-    fastestRoute.lampsPerKm > 0
-      ? Math.round(
-          (lightingDifference / fastestRoute.lampsPerKm) * 100,
-        )
-      : null
+  // round the number so it looks cleaner
+  const lightDifference = Math.round(lightingDifference)
 
-  // make the result easy to read.
+  // show if the route has more or fewer lights
   let lightingText = 'Same number of lights/km'
 
   if (isBaseline) {
     lightingText = 'Baseline'
-  } else if (lightingPercent === null) {
-    lightingText =
-      route.lampsPerKm > 0
-        ? 'More lights (percentage unavailable)'
-        : 'Both have 0 lights/km'
-  } else if (lightingPercent > 0) {
-    lightingText = `+${lightingPercent}% lights/km`
-  } else if (lightingPercent < 0) {
-    lightingText = `${lightingPercent}% lights/km`
+  } else if (lightDifference > 0) {
+    lightingText = `+${lightDifference} lights/km`
+  } else if (lightDifference < 0) {
+    lightingText = `${Math.abs(lightDifference)} fewer lights/km`
   }
 
+  // show how many extra minutes the route takes
   const timeText = isBaseline
     ? 'Baseline'
     : extraSeconds === 0
@@ -54,7 +44,7 @@ export function compareRoute(
 
   return {
     isBaseline,
-    lightingPercent,
+    lightDifference,
     lightingText,
     timeText,
     lightsPerKm: Math.round(route.lampsPerKm),

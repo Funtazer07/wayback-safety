@@ -51,6 +51,9 @@ function RouteList({
           // new feature Calculate the comparison.
           const comparison = compareRoute(route, baseline)
 
+          // SCRUM-137: Show the comparison on alternative routes.
+          const isAlternative = index !== fastest
+
           return (
             <button
               key={index}
@@ -82,46 +85,38 @@ function RouteList({
                 isMostLights={index === mostLights}
                 isFastest={index === fastest}
                 brokenCount={route.brokenCount}
+                darkStretchCount={route.darkStretches.length}
                 reports={reports[index]}
               />
 
-              {/* new feature Our side-by-side comparison */}
-              <span className="route-comparison">
-                <span className="route-comparison-box">
-                  <span className="comparison-label">
-                    Streetlights
+              {/* SCRUM-137: Compact lighting and time comparison */}
+              {isAlternative && (
+                <span className="route-compare">
+                  <span className="route-compare-item">
+                    <span aria-hidden="true">💡</span>
+                    <span>{comparison.lightingText}</span>
                   </span>
 
-                  <strong
-                    className={
-                      comparison.lightingPercent !== null &&
-                      comparison.lightingPercent > 0
-                        ? 'comparison-positive'
-                        : ''
-                    }
-                  >
-                    {comparison.lightingText}
-                  </strong>
-
-                  <span className="comparison-detail">
-                    {comparison.lightsPerKm} lights/km
-                  </span>
-                </span>
-
-                <span className="route-comparison-box">
-                  <span className="comparison-label">
-                    Extra walking
-                  </span>
-
-                  <strong>
-                    {comparison.timeText}
-                  </strong>
-
-                  <span className="comparison-detail">
-                    vs fastest route
+                  <span className="route-compare-item">
+                    <svg
+                      className="route-compare-clock"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </svg>
+                    <span>{comparison.timeText}</span>
                   </span>
                 </span>
-              </span>
+              )}
 
               {/* existing streetlight measurements */}
               <span className="route-line route-measurements">
@@ -158,11 +153,13 @@ function RouteList({
         className="route-register-note"
         id="route-register-note"
       >
-        Streetlight counts come from the municipality's
-        register. They show where streetlights are recorded,
-        not how bright the road actually is. Reported broken
-        lights are excluded. Comparisons use the fastest
-        route as the baseline.
+        Counted from the municipality's register of street
+        lights: where lamps stand, not whether they are on.
+        Lights reported as broken, and lights the
+        municipality switches off at night, do not count.
+        After dusk, dark stretches of the chosen route are
+        marked with a moon on the map. Comparisons use the
+        fastest route.
       </p>
     </section>
   )

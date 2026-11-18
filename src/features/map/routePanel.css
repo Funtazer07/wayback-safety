@@ -1,3 +1,4 @@
+
 .route-drawer {
   --route-heading: #000;
   --route-description: #606060;
@@ -46,6 +47,7 @@
   content: none;
   display: none;
 }
+
 .route-drawer > div[hidden] {
   display: none;
 }
@@ -91,6 +93,7 @@
 .route-card .route-top {
   display: contents;
 }
+
 .route-shown {
   display: none;
 }
@@ -124,11 +127,13 @@
   width: max-content;
   max-width: 10rem;
 }
+
 .route-card .route-badges {
   position: absolute;
   top: 1rem;
   right: 0;
 }
+
 .route-badge {
   padding: 0 0.625rem;
   border: 0.125rem solid #16a34a;
@@ -141,6 +146,7 @@
   white-space: nowrap;
   overflow-wrap: normal;
 }
+
 .route-badge + .route-badge {
   display: none;
 }
@@ -154,6 +160,7 @@
   font-weight: 400;
   color: var(--route-description);
 }
+
 .route-tags {
   grid-column: 1 / -1;
   grid-row: 3;
@@ -166,11 +173,13 @@
   line-height: 1.4;
   color: var(--route-caption);
 }
+
 .route-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
+
 .route-tag::before {
   content: '';
   flex: none;
@@ -186,27 +195,33 @@
   column-gap: 0.75rem;
   padding: 0.25rem 1.5rem 1rem;
 }
+
 .route-summary-text {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.125rem;
   min-width: 0;
 }
+
 .route-summary-text > .route-badges {
   display: none;
 }
+
 .route-summary .route-distance {
   grid-column: 1;
   grid-row: 3;
 }
+
 .route-summary .route-tags {
   grid-row: 4;
   min-height: 0;
   padding-right: 0;
 }
+
 .route-summary .route-tags:empty {
   display: none;
 }
+
 .home-screen .route-summary button {
   position: static;
   align-self: center;
@@ -227,6 +242,7 @@
   border-top: 1px solid var(--route-divider);
   background: var(--surface);
 }
+
 .map-route-actions button {
   min-width: 0;
   min-height: 2.8125rem;
@@ -236,9 +252,11 @@
   font-size: 1.125rem;
   font-weight: 500;
 }
+
 .map-route-actions .button-primary {
   background: #16a34a;
 }
+
 .map-route-cancel {
   color: #000;
   background: #d9d9d9;
@@ -290,141 +308,128 @@
   font-weight: 650;
   line-height: 1.3;
 }
+
 .route-description {
   font-size: 0.9375rem;
   line-height: 1.4;
 }
+
 .route-card .route-top > .route-muted,
 .route-distance {
   font-size: 0.75rem;
 }
+
 .route-drawer .route-card {
   min-height: 4.75rem;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
+
 .route-card .route-badges {
   top: 0.5rem;
 }
+
 .route-badge {
   padding: 0.125rem 0.5rem;
   border-width: 1px;
   font-size: 0.6875rem;
 }
+
 .route-tags {
   font-size: 0.75rem;
   line-height: 1.4;
   color: #736e6e;
   gap: 0.5rem 0.75rem;
 }
+
 .route-tag.is-unsafe::before {
   background-image: url('../../assets/day/route-unsafe-dot.svg');
 }
+
 .route-tag.is-other::before {
   background-image: none;
   border-radius: 50%;
   background-color: #949494;
 }
+
 .route-source-note {
   padding: 0.25rem 2rem 0.5rem;
   font-size: 0.6875rem;
   color: #736e6e;
 }
+
 .map-route-actions {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
 }
+
 .map-route-actions button {
   min-height: 2.75rem;
   font-size: 0.9375rem;
 }
+
 .route-drawer-grip {
   width: 3.5rem;
   height: 0.25rem;
 }
+
 @media (max-width: 23rem) {
   .route-drawer .route-time {
     font-size: 1.375rem;
   }
+
   .route-description {
     font-size: 0.875rem;
   }
 }
 
-/* route comparisson */
+/* SCRUM-137: NEW - Compact route comparison */
 
-/* make room for our comparison boxes */
-.route-drawer .route-card {
-  min-height: 8.5rem;
-  row-gap: 0.375rem;
-}
-
-/* two boxes next to each other */
-.route-comparison {
+.route-card .route-compare {
   grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  text-align: left;
-}
-
-/* each individual box */
-.route-comparison-box {
+  grid-row: 3;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-  padding: 0.625rem;
-  border-radius: 0.625rem;
-  background: #f3f5f3;
-}
-
-/* small text above the numbers */
-.comparison-label {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.875rem;
+  padding-top: 0.25rem;
   font-size: 0.75rem;
+  line-height: 1.4;
   color: #555;
 }
 
-/* the comparison number */
-.route-comparison-box strong {
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
+.route-compare-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
 }
 
-/* small explanation below the numbers */
-.comparison-detail {
-  font-size: 0.75rem;
-  color: #555;
+.route-compare-clock {
+  flex: none;
+  width: 0.9375rem;
+  height: 0.9375rem;
 }
 
-/* green text when a route has more lights */
-.comparison-positive {
-  color: #15803d;
+/* SCRUM-137: NEW - Keep report tags below comparison */
+.route-card:has(.route-compare) .route-tags {
+  grid-row: 4;
 }
 
-/* highlight the selected route */
-.route-card[aria-pressed='true']
-.route-comparison-box {
-  background: #e9f5e9;
+.route-card[aria-pressed='true'] .route-compare {
+  color: #333;
 }
 
-/* keep the explanation accessible but
-   don't take up extra screen space. */
-
-/* make boxes fit on small phones */
 @media (max-width: 23rem) {
-  .route-comparison {
-    gap: 0.375rem;
+  .route-card .route-compare {
+    font-size: 0.6875rem;
+    column-gap: 0.75rem;
   }
+}
 
-  .route-comparison-box {
-    padding: 0.5rem;
-  }
-
-  .route-comparison-box strong {
-    font-size: 0.8125rem;
-  }
+/* The same moon as on the map, so the tag and the marked stretch belong together. */
+.route-tag.is-dark-stretch::before {
+  width: 0.875rem;
+  height: 0.875rem;
+  background-image: url('../../assets/day/route-dark-stretch.svg');
 }

@@ -1,11 +1,18 @@
 import type { FeatureCollection } from 'geojson'
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import type { BrokenLight } from './brokenLights.ts'
-import type { LngLat } from './geometry.ts'
+import { sliceLine, type LngLat } from './geometry.ts'
 import type { MeasuredRoute } from './lamps.ts'
 import { reportCategories } from '../reports/reportCategories.ts'
 import type { PlaceReport } from '../reports/reports.ts'
-import { loadBrokenLightIcon, loadReportIcons, locationColour, youAreHereIcon } from './mapIcons.ts'
+import {
+  darkStretchColour,
+  loadBrokenLightIcon,
+  loadDarkStretchIcon,
+  loadReportIcons,
+  locationColour,
+  youAreHereIcon,
+} from './mapIcons.ts'
 import type { UserPosition } from './useUserPosition.ts'
 
 export const routeHitLayer = 'route-hit'
@@ -45,7 +52,7 @@ const routeColour = '#a15cff'
 const empty: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 export type MapData = {
-  routes: Pick<MeasuredRoute, 'coordinates'>[]
+  routes: (Pick<MeasuredRoute, 'coordinates'> & Partial<Pick<MeasuredRoute, 'darkStretches'>>)[]
   selectedIndex: number
   brokenLights: BrokenLight[]
   placeReports: PlaceReport[]
@@ -54,8 +61,13 @@ export type MapData = {
 
 /** A new base map style removes everything, so this runs after every style change. */
 export async function addOurLayers(map: MapLibreMap): Promise<void> {
-  const [brokenLight, reportIcons] = await Promise.all([loadBrokenLightIcon(), loadReportIcons()])
+  const [brokenLight, darkStretch, reportIcons] = await Promise.all([
+    loadBrokenLightIcon(),
+    loadDarkStretchIcon(),
+    loadReportIcons(),
+  ])
   if (!map.hasImage('broken-light')) map.addImage('broken-light', brokenLight, { pixelRatio: 2 })
+  if (!map.hasImage('dark-stretch')) map.addImage('dark-stretch', darkStretch, { pixelRatio: 2 })
   for (const [category, image] of reportIcons) {
     if (!map.hasImage(`report-${category}`)) {
       map.addImage(`report-${category}`, image, { pixelRatio: 2 })
@@ -96,6 +108,28 @@ export async function addOurLayers(map: MapLibreMap): Promise<void> {
     filter: ['get', 'isSelected'],
     layout: rounded,
     paint: { 'line-color': routeColour, 'line-width': 6 },
+  })
+  // Dark stretches of the chosen route: a dark line with a moon in its middle.
+  map.addSource('dark-stretches', { type: 'geojson', data: empty })
+  map.addLayer({
+    id: 'dark-stretches',
+    type: 'line',
+    source: 'dark-stretches',
+    filter: ['==', ['geometry-type'], 'LineString'],
+    layout: rounded,
+    paint: { 'line-color': darkStretchColour, 'line-width': 6 },
+  })
+  map.addLayer({
+    id: 'dark-stretch-moons',
+    type: 'symbol',
+    source: 'dark-stretches',
+    filter: ['==', ['geometry-type'], 'Point'],
+    layout: {
+      'icon-image': 'dark-stretch',
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 17, 0.85],
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
   })
   map.addLayer({
     id: routeHitLayer,
@@ -199,6 +233,24 @@ export function drawMapData(map: MapLibreMap, data: MapData): void {
       geometry: { type: 'LineString', coordinates: route.coordinates },
       properties: { index, isSelected: index === data.selectedIndex },
     })),
+  })
+  setData(map, 'dark-stretches', {
+    type: 'FeatureCollection',
+    features: (data.routes[data.selectedIndex]?.darkStretches ?? []).flatMap((stretch) => [
+      {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: stretch.coordinates },
+        properties: {},
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: sliceLine(stretch.coordinates, stretch.length / 2, stretch.length / 2)[0],
+        },
+        properties: {},
+      },
+    ]),
   })
   setData(map, 'place-reports', {
     type: 'FeatureCollection',

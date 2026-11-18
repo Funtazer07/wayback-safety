@@ -9,6 +9,7 @@ import {
   placeOf,
   rectanglesAlong,
   sharedPart,
+  sliceLine,
   type LngLat,
 } from './geometry.ts'
 
@@ -80,6 +81,16 @@ test('covers a long line with one rectangle per piece of about 250 m', () => {
     )
     expect(isCovered).toBe(true)
   }
+})
+
+test('cuts the piece between two distances out of a line', () => {
+  const north300m: LngLat = [5.4791, 51.4385 + 300 / 110540]
+  const piece = sliceLine([stratumseind, north100m, north300m], 50, 150)
+
+  expect(piece).toHaveLength(3)
+  expect(distanceInMetres(stratumseind, piece[0])).toBeCloseTo(50, 0)
+  expect(piece[1]).toEqual(north100m)
+  expect(distanceInMetres(stratumseind, piece[2])).toBeCloseTo(150, 0)
 })
 
 test('two lamps at the same spot get the same place', () => {
