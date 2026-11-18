@@ -7,6 +7,7 @@ import {
   fetchWalkContactNames,
   fetchWalkContacts,
   fetchWalkWatchers,
+  sendSos,
   startWalk,
   updateWalkLocation,
 } from './walk.ts'
@@ -40,6 +41,7 @@ const row = {
   deadline: '2026-10-06T22:25:00+00:00',
   status: 'active',
   warned_at: null,
+  sos_at: null,
   checked_in_at: null,
 }
 
@@ -73,6 +75,7 @@ test('starting a walk sends the duration and returns the deadline the server set
     deadline: new Date('2026-10-06T22:25:00Z'),
     status: 'active',
     warnedAt: null,
+    sosAt: null,
     checkedInAt: null,
   })
 })
@@ -108,6 +111,39 @@ test('a location update is sent for the given walk and returns its current statu
     lng: 5.4752,
   })
   expect(walk.status).toBe('overdue')
+})
+
+test('an SOS sends the current position and returns the walk as overdue with the SOS time', async () => {
+  rpc.mockResolvedValue({
+    data: {
+      ...row,
+      status: 'overdue',
+      warned_at: '2026-10-06T22:10:00+00:00',
+      sos_at: '2026-10-06T22:10:00+00:00',
+    },
+    error: null,
+  })
+
+  const walk = await sendSos('walk-1', [5.4791, 51.4385])
+
+  expect(rpc).toHaveBeenCalledWith('send_sos', { walk_id: 'walk-1', lat: 51.4385, lng: 5.4791 })
+  expect(walk.status).toBe('overdue')
+  expect(walk.sosAt).toEqual(new Date('2026-10-06T22:10:00Z'))
+})
+
+test('an SOS without a position leaves the last saved location to the server', async () => {
+  rpc.mockResolvedValue({ data: { ...row, status: 'overdue' }, error: null })
+
+  await sendSos('walk-1', null)
+
+  expect(rpc).toHaveBeenCalledWith('send_sos', { walk_id: 'walk-1', lat: null, lng: null })
+})
+
+test('an SOS fails when the server refuses it, for example after the walk ended', async () => {
+  const error = new Error('No walk in progress with this id')
+  rpc.mockResolvedValue({ data: null, error })
+
+  await expect(sendSos('walk-1', null)).rejects.toBe(error)
 })
 
 test('checking in ends the given walk and returns it as safe', async () => {

@@ -7,6 +7,7 @@ export type WalkEvent =
   | 'cancelled'
   | 'are_you_ok'
   | 'overdue'
+  | 'sos'
   | 'reminder'
   | 'deadline_extended'
 
@@ -16,6 +17,7 @@ const walkEvents: WalkEvent[] = [
   'cancelled',
   'are_you_ok',
   'overdue',
+  'sos',
   'reminder',
   'deadline_extended',
 ]
@@ -32,6 +34,8 @@ export type WalkFacts = {
   checkedInAt: Date | null
   cancelledAt: Date | null
   overdueAt: Date | null
+  /** When the walker pressed SOS; the walk is then overdue too. */
+  sosAt: Date | null
   lastLocationAt: Date | null
 }
 
@@ -49,7 +53,7 @@ export function audienceOf(event: WalkEvent): 'walker' | 'contacts' {
 }
 
 /**
- * Seconds the push service keeps trying a phone that is off. The alert lasts a day, as long as the
+ * Seconds the push service keeps trying a phone that is off. The alerts last a day, as long as the
  * last location is kept. Assumption: an hour is enough for other walk news.
  */
 export function timeToLive(event: WalkEvent, deadline?: Date, now = new Date()): number {
@@ -64,7 +68,7 @@ export function timeToLive(event: WalkEvent, deadline?: Date, now = new Date()):
       : 60 * 60
   }
   if (event === 'are_you_ok') return GRACE_MINUTES * 60
-  if (event === 'overdue') return 24 * 60 * 60
+  if (event === 'overdue' || event === 'sos') return 24 * 60 * 60
   return 60 * 60
 }
 
@@ -105,6 +109,13 @@ export function messageFor(
       }
     case 'home_safe':
       // After an alert the contacts may already be searching.
+      if (walk.sosAt) {
+        return {
+          title: `${name} is safe`,
+          body: `${name} checked in at ${formatClock(walk.checkedInAt ?? new Date())}, after asking for help. No need to look any further.`,
+          url: walkUrl,
+        }
+      }
       if (walk.overdueAt) {
         return {
           title: `${name} is safe`,
@@ -122,6 +133,17 @@ export function messageFor(
         title: `${name} hasn't checked in yet`,
         body: [
           `${name} was expected home at ${formatClock(walk.deadline)} but hasn't confirmed arriving safely. This does not necessarily mean something is wrong.`,
+          walk.lastLocationAt
+            ? `Last known location from ${formatClock(walk.lastLocationAt)}, not live. Open WayBack to see it.`
+            : 'No location was shared during this walk.',
+        ].join(' '),
+        url: walkUrl,
+      }
+    case 'sos':
+      return {
+        title: `${name} asked for help`,
+        body: [
+          `${name} pressed SOS at ${formatClock(walk.sosAt ?? new Date())} during the walk home.`,
           walk.lastLocationAt
             ? `Last known location from ${formatClock(walk.lastLocationAt)}, not live. Open WayBack to see it.`
             : 'No location was shared during this walk.',
