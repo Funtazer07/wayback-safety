@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
@@ -18,6 +19,16 @@ import type { PlannedRoute } from './walkRoute.ts'
 import { useUserPosition } from './useUserPosition.ts'
 import locationIcon from '../../assets/day/location.png'
 import reportIcon from '../../assets/day/report.png'
+
+// list for nearby recent reports
+import RecentReportsList from './RecentReportsList.tsx'
+
+// filter for recent reports
+import {
+  getRecentReports,
+  type RecentReport,
+} from './recentReports.ts'
+
 import './map.css'
 
 type RoutePlannerProps = {
@@ -37,6 +48,18 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const { position } = location
   const isOutside = position !== null && !isInEindhoven(position.coordinates)
+
+  // keep the time updated for the recent reports filter
+  const [now, setNow] = useState(() => new Date())
+
+  // refresh the time every minute
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(new Date())
+    }, 60_000)
+
+    return () => window.clearInterval(interval)
+  }, [])
 
   const hasCentred = useRef(false)
   useEffect(() => {
@@ -69,6 +92,32 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
     reporting.brokenLights,
   )
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
+
+  // get recent reports near the user or the selected route
+  const recentReports = getRecentReports(
+    reporting.placeReports,
+    reporting.brokenLights,
+    !isOutside ? (position?.coordinates ?? null) : null,
+    shownRoute?.coordinates ?? null,
+    now,
+  )
+
+  // open the report on the map when someone selects it
+  function selectRecentReport(report: RecentReport) {
+    setCamera({
+      id: Date.now(),
+      kind: 'centre',
+      centre: report.coordinates,
+      zoom: 17,
+    })
+
+    if (report.kind === 'broken_light') {
+      reporting.showLight(report.id)
+    } else {
+      reporting.showPlaceReport(report.id)
+    }
+  }
+
   const { destinationLabel } = planner
   useEffect(
     () =>
@@ -154,6 +203,18 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
         })}
         status={status}
       />
+
+      {/* show the list when we have a location or route and no report sheet is open */}
+      {!reporting.isSheetOpen &&
+        !isReportingPlace &&
+        ((!isOutside && position !== null) || shownRoute !== null) && (
+          <RecentReportsList
+            reports={recentReports}
+            now={now}
+            onSelect={selectRecentReport}
+          />
+        )}
+
       {!reporting.isSheetOpen && !planner.destination && (
         <div className="map-actions planner-actions">
           <button

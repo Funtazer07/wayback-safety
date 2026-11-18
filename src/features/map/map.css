@@ -561,3 +561,170 @@
   font-size: 0.875rem;
   text-align: left;
 }
+
+
+/* recent reports */
+
+/* container for recent reports */
+.recent-reports {
+  position: relative;
+  grid-row: 2;
+  justify-self: start;
+  align-self: end;
+  z-index: 3;
+
+  margin: 0 0 0.75rem 0.75rem;
+  width: max-content;
+  max-width: calc(100% - 1.5rem);
+}
+
+/* button to open the reports list */
+.recent-reports-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+
+  border: 1px solid #d1d5db;
+  border-radius: 1.5rem;
+
+  background: #fff;
+  color: #26352d;
+
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* expandable reports list */
+.recent-reports-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.5rem);
+
+  width: min(19rem, calc(100vw - 2rem));
+  max-height: min(17rem, 45vh);
+
+  overflow-y: auto;
+  padding: 0.75rem;
+
+  border-radius: 0.875rem;
+  background: #fff;
+  color: #26352d;
+
+  box-shadow: 0 4px 20px rgb(0 0 0 / 18%);
+}
+
+/* list title */
+.recent-reports-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+/* remove default list styling */
+.recent-reports-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* separate each report */
+.recent-reports-list li + li {
+  border-top: 1px solid #e5e7eb;
+}
+
+/* individual report button */
+.recent-report-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.625rem 0.25rem;
+
+  border: 0;
+  background: transparent;
+  color: inherit;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+/* hover effect */
+.recent-report-item:hover {
+  background: #f3f5f3;
+}
+
+/* coloured report indicator */
+.recent-report-dot {
+  flex-shrink: 0;
+
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-top: 0.25rem;
+
+  border-radius: 50%;
+}
+
+/* report text */
+.recent-report-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+/* report name */
+.recent-report-content strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* report time and location */
+.recent-report-content small {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #666;
+}
+
+/* empty list message */
+.recent-reports-empty {
+  margin: 0;
+  padding: 0.5rem 0;
+
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* keyboard accessibility */
+.recent-report-item:focus-visible,
+.recent-reports-toggle:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
+}
+
+/* small mobile screens */
+@media (max-width: 400px) {
+  .recent-reports {
+    margin-left: 0.5rem;
+    margin-bottom: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+
+  .recent-reports-panel {
+    width: min(17rem, calc(100vw - 1rem));
+    max-height: 40vh;
+  }
+
+  .recent-reports-toggle {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
