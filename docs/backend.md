@@ -43,11 +43,13 @@ database looks like.
 | `contacts`           | One row per trusted contact or open invite: who invited, who accepted, the name the   |
 |                      | user gave them, status, and while open, a fingerprint of the invite link              |
 | `walk_contacts`      | Which contacts follow which walk, and when one tapped "I'm watching" (SCRUM-114)      |
-| `reports`            | Place reports and broken street lights: category, a rounded spot or the lamp, time    |
+| `reports`            | Place reports and broken street lights: category, a rounded spot or the lamp, time.   |
+|                      | Not who made it                                                                       |
+| `report_counts`      | How many reports a user made today, for the daily limit. Not which reports            |
 | `push_subscriptions` | One row per phone that allowed notifications: the push address and its keys           |
 
-Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
-reference `profiles.id`.
+Supabase keeps the login details in its own `auth.users` table. New tables (contacts,
+report_counts) reference `profiles.id`.
 
 ### Walks and the timer
 
@@ -344,9 +346,13 @@ SCRUM-10: every signed-in user can see reports, so the map can show them. Since 
 place reports too, with their category and time (see "Place reports" in [map.md](map.md)). Hidden
 from other users:
 
-- **who** reported it. The table keeps `user_id` only to delete a user's reports with their
-  account and to limit how many reports one person makes. Column rights stop the app from reading
-  it.
+- **who** reported it. Since `0028_anonymous_reports.sql` this is not stored at all, so not even
+  the team can trace a report to its reporter. Before, the table kept a hidden `user_id`. The daily
+  limit is now counted in `report_counts`: per user and day only the number of reports, not which
+  ones. The app cannot read it, and yesterday's counts are deleted. Because a report has no owner
+  any more, it is not deleted with the account; it expires by itself (at most 30 days). Tested by
+  `supabase/tests/report_privacy_test.sql`. To set it up: run `0028_anonymous_reports.sql` after
+  `0027_report_lifetimes.sql`.
 - **where the reporter was.** A place report is rounded to 3 decimals before it leaves the phone,
   and the server rounds it again. A broken-light report uses the lamp's spot, which is public data.
 - **the note**, until reports can be flagged (SCRUM-32). A note could name or describe someone. The
@@ -367,7 +373,7 @@ Assumptions until SCRUM-90 (research) decides, all in `0008_reports.sql`:
 
 - The spot is rounded to 3 decimals: about 110 m north–south and 70 m east–west in Eindhoven.
 - A report is kept 30 days. Expired reports are not shown, and the next new report deletes them.
-- One person can make at most 20 reports a day.
+- One person can make at most 20 reports a day (per calendar day, UTC).
 
 ### Notifications
 
@@ -714,11 +720,12 @@ Written down here because the app handles location and personal data.
   (HeiGIT, Germany). OpenRouteService sees our server, not the user's phone, and gets no name or
   account. The function stores and logs nothing about the trip. The privacy statement must mention
   OpenRouteService. See "Planning a route" and [map.md](map.md).
-- **Reports:** every signed-in user sees the category, the spot and the time, never who reported
-  it. A place report is stored rounded (about 100 m), never at the GPS position; a broken light at
-  the lamp's own spot. Notes are hidden from other users until flagging exists (SCRUM-32). No
-  photos and no link to a walk or route. Reports are deleted after 30 days, and with the account.
-  See Reports above.
+- **Reports:** every signed-in user sees the category, the spot and how old it is. Who reported it
+  is not stored at all, so it cannot be shown or leaked. A place report is stored rounded (about
+  100 m), never at the GPS position; a broken light at the lamp's own spot. Notes are hidden from
+  other users until flagging exists (SCRUM-32). No photos and no link to a walk, a route or an
+  account. Reports expire by themselves, after at most 30 days. Like all our data, they are kept in
+  our Supabase project in an EU region. See Reports above.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
   does the last location of a walk without a check-in. Decide this before real users sign up.

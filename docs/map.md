@@ -39,8 +39,8 @@ visible in the bottom panel. The yellow **Report** button on the map
 opens the report form for the spot where the user is (SCRUM-96, see "Place reports" below).
 
 The street lights themselves are not drawn on the map; they only count for the routes. Only lights
-someone reported as broken are drawn, with a red icon. Tapping one shows when it was reported and a
-button **It works again**.
+someone reported as broken are drawn, with a red icon. Tapping one shows the street, how long ago it
+was reported ("2 hours ago") and a button **It works again**.
 
 The map credits ("i") sit bottom left and are closed when the map opens. They cannot be removed:
 the licence of the OpenStreetMap data asks for them to be on the map.
@@ -145,8 +145,9 @@ signed-in user, earlier than SCRUM-8 planned (it waited for SCRUM-10).
 
 On the map each report is a round icon in the colour of its category, with its own picture, inside
 a soft circle of about 60 m. The circle is there because the spot is rounded: it shows the area,
-not where the reporter stood. Tapping the icon shows the category and when it was reported. The
-note and who reported it are never shown. A new report appears on the map as soon as it is saved.
+not where the reporter stood. Tapping the icon shows only the category and how long ago it was
+reported ("yesterday"). The note is never shown, and who reported it is not even stored (see
+"Reports" in [backend.md](backend.md)). A new report appears on the map as soon as it is saved.
 
 Only broken lights are red: a broken-light report from the form uses the same red and bulb as a
 lamp reported on the map, because it is the same problem. Unsafe situations are amber, quiet places
