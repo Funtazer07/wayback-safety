@@ -366,8 +366,27 @@ Code: `src/features/reports/reports.ts` (place reports) and `src/features/map/br
 Assumptions until SCRUM-90 (research) decides, all in `0008_reports.sql`:
 
 - The spot is rounded to 3 decimals: about 110 m north–south and 70 m east–west in Eindhoven.
-- A report is kept 30 days. Expired reports are not shown, and the next new report deletes them.
 - One person can make at most 20 reports a day.
+
+#### How long a report stays
+
+Each category stays as long as the problem usually lasts (SCRUM-142, `0027_report_lifetimes.sql`).
+Before that, every report stayed 30 days, so a situation that was over the same night still warned
+people for a month. A short lifetime is also better for privacy: nothing is kept longer than it
+helps.
+
+| Category       | Stays    | Why                                                                                                                     |
+| -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `broken_light` | 14 days  | _Assumption:_ the BuitenBeter open data shows reported lamps fixed within one to two weeks. "It works again" is earlier |
+| `dark_area`    | 30 days  | A dark street does not get lighter by itself. 30 days is the longest any report is kept                                 |
+| `unsafe`       | 24 hours | _Assumption:_ a situation with people is usually over the same night. A day warns the people walking home after         |
+| `quiet`        | 7 days   | _Assumption:_ how busy a street is changes with the week; a week covers the same night once                             |
+| `other`        | 7 days   | _Assumption:_ an obstacle or blocked path is usually gone within a week                                                 |
+
+The server sets the expiry (`report_lifetime`), never the app. After it, the report is not shown
+any more (the read policy), and the next new report deletes it. Reports made before the migration
+got the new lifetime too, counted from when they were made. Tested by
+`supabase/tests/report_lifetimes_test.sql`. To set it up: run `0027_report_lifetimes.sql`.
 
 ### Notifications
 
@@ -717,7 +736,8 @@ Written down here because the app handles location and personal data.
 - **Reports:** every signed-in user sees the category, the spot and the time, never who reported
   it. A place report is stored rounded (about 100 m), never at the GPS position; a broken light at
   the lamp's own spot. Notes are hidden from other users until flagging exists (SCRUM-32). No
-  photos and no link to a walk or route. Reports are deleted after 30 days, and with the account.
+  photos and no link to a walk or route. Reports are deleted after 24 hours to 30 days, depending
+  on the category (see "How long a report stays"), and with the account.
   See Reports above.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
