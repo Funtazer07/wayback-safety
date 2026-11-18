@@ -20,6 +20,7 @@ const row = {
   status: 'overdue',
   deadline: '2026-10-15T20:36:00Z',
   overdue_at: '2026-10-15T20:42:00Z',
+  sos_at: null,
   checked_in_at: null,
   cancelled_at: null,
   last_lat: 51.4385,
@@ -47,6 +48,7 @@ test('a contact gets the walk with the last location and when it was saved', asy
     status: 'overdue',
     deadline: new Date('2026-10-15T20:36:00Z'),
     overdueAt: new Date('2026-10-15T20:42:00Z'),
+    sosAt: null,
     checkedInAt: null,
     cancelledAt: null,
     lastLocation: { coordinates: [5.4791, 51.4385], savedAt: new Date('2026-10-15T20:31:00Z') },
@@ -90,6 +92,12 @@ test('other failures are passed on as they are', async () => {
   await expect(fetchFollowedWalk(walkId)).rejects.toBe(error)
 })
 
+test('a contact sees when the walker asked for help', async () => {
+  single.mockResolvedValue({ data: { ...row, sos_at: '2026-10-15T20:42:00Z' }, error: null })
+
+  expect((await fetchFollowedWalk(walkId)).sosAt).toEqual(new Date('2026-10-15T20:42:00Z'))
+})
+
 test('the latest walk of each contact comes with its status and the row to show it next to', async () => {
   rpc.mockResolvedValue({
     data: [
@@ -101,6 +109,7 @@ test('the latest walk of each contact comes with its status and the row to show 
         started_at: '2026-10-15T20:16:00Z',
         deadline: '2026-10-15T20:36:00Z',
         overdue_at: null,
+        sos_at: null,
         checked_in_at: '2026-10-15T20:31:00Z',
         cancelled_at: null,
       },
@@ -112,6 +121,7 @@ test('the latest walk of each contact comes with its status and the row to show 
         started_at: '2026-10-15T20:30:00Z',
         deadline: '2026-10-15T20:50:00Z',
         overdue_at: '2026-10-15T21:00:00Z',
+        sos_at: '2026-10-15T21:00:00Z',
         checked_in_at: null,
         cancelled_at: null,
       },
@@ -128,6 +138,7 @@ test('the latest walk of each contact comes with its status and the row to show 
       startedAt: new Date('2026-10-15T20:16:00Z'),
       deadline: new Date('2026-10-15T20:36:00Z'),
       overdueAt: null,
+      sosAt: null,
       checkedInAt: new Date('2026-10-15T20:31:00Z'),
       cancelledAt: null,
     },
@@ -139,6 +150,7 @@ test('the latest walk of each contact comes with its status and the row to show 
       startedAt: new Date('2026-10-15T20:30:00Z'),
       deadline: new Date('2026-10-15T20:50:00Z'),
       overdueAt: new Date('2026-10-15T21:00:00Z'),
+      sosAt: new Date('2026-10-15T21:00:00Z'),
       checkedInAt: null,
       cancelledAt: null,
     },

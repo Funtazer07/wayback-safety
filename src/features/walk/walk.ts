@@ -10,6 +10,8 @@ export type Walk = {
   status: 'active' | 'safe' | 'overdue' | 'cancelled'
   /** When the server sent "Are you OK?". The grace period counts from here. */
   warnedAt?: Date | null
+  /** When the user pressed SOS. The walk is then overdue: the contacts were alerted. */
+  sosAt?: Date | null
   checkedInAt?: Date | null
 }
 
@@ -29,10 +31,12 @@ type WalkRow = {
   deadline: string
   status: Walk['status']
   warned_at: string | null
+  sos_at: string | null
   checked_in_at: string | null
 }
 
-const walkColumns = 'id, destination_label, started_at, deadline, status, warned_at, checked_in_at'
+const walkColumns =
+  'id, destination_label, started_at, deadline, status, warned_at, sos_at, checked_in_at'
 
 function client() {
   if (!supabase) throw new Error('The backend is not set up. See docs/backend.md.')
@@ -47,6 +51,7 @@ function toWalk(row: WalkRow): Walk {
     deadline: new Date(row.deadline),
     status: row.status,
     warnedAt: row.warned_at ? new Date(row.warned_at) : null,
+    sosAt: row.sos_at ? new Date(row.sos_at) : null,
     checkedInAt: row.checked_in_at ? new Date(row.checked_in_at) : null,
   }
 }
@@ -97,6 +102,20 @@ export async function checkInWalk(walkId: string): Promise<Walk> {
 /** Fails when the walk is over or the deadline would be more than 3 hours away. */
 export async function extendWalk(walkId: string, minutes: number): Promise<Walk> {
   const { data, error } = await client().rpc('extend_walk', { walk_id: walkId, minutes })
+  if (error) throw error
+  return toWalk(data)
+}
+
+/**
+ * Alerts the walk's contacts at once. The walk becomes overdue. position is where the user is now;
+ * without one, the contacts see the last saved location.
+ */
+export async function sendSos(walkId: string, position: LngLat | null): Promise<Walk> {
+  const { data, error } = await client().rpc('send_sos', {
+    walk_id: walkId,
+    lat: position?.[1] ?? null,
+    lng: position?.[0] ?? null,
+  })
   if (error) throw error
   return toWalk(data)
 }

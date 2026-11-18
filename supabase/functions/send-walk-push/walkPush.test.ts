@@ -48,6 +48,7 @@ const walk: WalkFacts = {
   checkedInAt: null,
   cancelledAt: null,
   overdueAt: null,
+  sosAt: null,
   lastLocationAt: null,
 }
 
@@ -238,4 +239,41 @@ test('"arrival time updated" is only delivered until the new time, and at most a
     60 * 60,
   )
   expect(timeToLive('deadline_extended', walk.deadline, walk.deadline)).toBe(0)
+})
+
+// SOS at 22:20, before the deadline of 22:36, with a location sent at 22:20.
+const sosWalk: WalkFacts = {
+  ...walk,
+  overdueAt: new Date('2026-10-15T20:20:00Z'),
+  sosAt: new Date('2026-10-15T20:20:00Z'),
+  lastLocationAt: new Date('2026-10-15T20:20:00Z'),
+}
+
+test('an SOS tells the contacts who asked for help and when, and lasts as long as the alert', () => {
+  const message = messageFor('sos', 'Anna', sosWalk)
+
+  expect(isWalkEvent('sos')).toBe(true)
+  expect(audienceOf('sos')).toBe('contacts')
+  expect(timeToLive('sos')).toBe(24 * 60 * 60)
+  expect(message.title).toBe('Anna asked for help')
+  expect(message.body).toContain('Anna pressed SOS at 22:20')
+  expect(message.body).toContain('Last known location from 22:20, not live.')
+  expect(message.url).toBe('?walk=walk-1')
+})
+
+test('an SOS never carries the location itself, and says so when there is none', () => {
+  const body = messageFor('sos', 'Anna', { ...sosWalk, lastLocationAt: null }).body
+
+  expect(body).toContain('No location was shared during this walk.')
+  expect(body).not.toMatch(/51\.|5\.4/)
+})
+
+test('a check-in after an SOS tells the contacts the person is safe after asking for help', () => {
+  const message = messageFor('home_safe', 'Anna', {
+    ...sosWalk,
+    checkedInAt: new Date('2026-10-15T20:30:00Z'),
+  })
+
+  expect(message.title).toBe('Anna is safe')
+  expect(message.body).toContain('checked in at 22:30, after asking for help')
 })
