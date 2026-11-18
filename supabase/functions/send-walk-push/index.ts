@@ -55,7 +55,9 @@ async function sendWalkPush(request: Request): Promise<Response> {
 
   const { data: walk, error: walkError } = await database
     .from('walks')
-    .select('user_id, status, deadline, checked_in_at, cancelled_at, overdue_at, last_location_at')
+    .select(
+      'user_id, status, deadline, checked_in_at, cancelled_at, overdue_at, sos_at, last_location_at',
+    )
     .eq('id', walkId)
     .single()
   if (walkError) return new Response(walkError.message, { status: 404 })
@@ -95,6 +97,7 @@ async function sendWalkPush(request: Request): Promise<Response> {
     checkedInAt: toDate(walk.checked_in_at),
     cancelledAt: toDate(walk.cancelled_at),
     overdueAt: toDate(walk.overdue_at),
+    sosAt: toDate(walk.sos_at),
     lastLocationAt: toDate(walk.last_location_at),
   })
 

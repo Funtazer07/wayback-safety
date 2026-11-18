@@ -128,7 +128,9 @@ again; `plan-route` gives each OpenRouteService request 12 seconds itself.
 Reports are saved in the `reports` table in Supabase (SCRUM-92), so every signed-in user sees the
 same broken lights. `brokenLights.ts` loads them when the map opens and saves a new report or "It
 works again" straight away. A light can be reported once; anyone can say it works again. A report
-disappears by itself after 30 days. See "Reports" in [backend.md](backend.md).
+disappears by itself after a time that depends on its category: 14 days for a broken light, 24
+hours for an unsafe situation, up to 30 days for a dark area. See "How long a report stays" in
+[backend.md](backend.md).
 
 If the reports cannot be loaded, the map and the routes still work, counting every light as
 working. If a report or "It works again" cannot be saved, the user sees "Could not save this".

@@ -56,7 +56,7 @@ function toPlaceReport(row: PlaceReportRow): PlaceReport {
   }
 }
 
-/** The place reports of the last 30 days. Broken lights from the map are fetched separately. */
+/** The place reports that have not expired. Broken lights from the map are fetched separately. */
 export async function fetchPlaceReports(): Promise<PlaceReport[]> {
   // RLS leaves out expired reports, and the column rights leave out who reported and the note.
   const { data, error } = await client()
