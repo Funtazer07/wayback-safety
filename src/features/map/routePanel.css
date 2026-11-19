@@ -350,81 +350,9 @@
     font-size: 0.875rem;
   }
 }
-
-/* route comparisson */
-
-/* make room for our comparison boxes */
-.route-drawer .route-card {
-  min-height: 8.5rem;
-  row-gap: 0.375rem;
-}
-
-/* two boxes next to each other */
-.route-comparison {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  text-align: left;
-}
-
-/* each individual box */
-.route-comparison-box {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-  padding: 0.625rem;
-  border-radius: 0.625rem;
-  background: #f3f5f3;
-}
-
-/* small text above the numbers */
-.comparison-label {
-  font-size: 0.75rem;
-  color: #555;
-}
-
-/* the comparison number */
-.route-comparison-box strong {
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-/* small explanation below the numbers */
-.comparison-detail {
-  font-size: 0.75rem;
-  color: #555;
-}
-
-/* green text when a route has more lights */
-.comparison-positive {
-  color: #15803d;
-}
-
-/* highlight the selected route */
-.route-card[aria-pressed='true']
-.route-comparison-box {
-  background: #e9f5e9;
-}
-
-/* keep the explanation accessible but
-   don't take up extra screen space. */
-
-/* make boxes fit on small phones */
-@media (max-width: 23rem) {
-  .route-comparison {
-    gap: 0.375rem;
-  }
-
-  .route-comparison-box {
-    padding: 0.5rem;
-  }
-
-  .route-comparison-box strong {
-    font-size: 0.8125rem;
-  }
+/* The same moon as on the map, so the tag and the marked stretch belong together. */
+.route-tag.is-dark-stretch::before {
+  width: 0.875rem;
+  height: 0.875rem;
+  background-image: url('../../assets/day/route-dark-stretch.svg');
 }

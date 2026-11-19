@@ -11,6 +11,7 @@ function route(duration: number, lampsPerKm: number, longestDark = 100): Measure
     brokenCount: 0,
     lampsPerKm,
     longestDark,
+    darkStretches: [],
   }
 }
 

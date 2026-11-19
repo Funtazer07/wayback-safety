@@ -7,6 +7,7 @@ import {
   placeOf,
   rectangleAround,
   rectanglesAlong,
+  sliceLine,
   type LngLat,
   type Rectangle,
 } from './geometry.ts'
@@ -20,6 +21,8 @@ const lampExportUrl =
 export const lampReach = 5
 // Assumption: forgiving, because the user cannot see the lamps on the map.
 export const reportReach = 30
+// Assumption: 50 m without a counted lamp, to check again with users.
+export const darkStretchLength = 50
 
 export type Lamp = {
   lampId: string
@@ -29,6 +32,12 @@ export type Lamp = {
   number: string
 }
 
+export type DarkStretch = {
+  /** In metres. */
+  length: number
+  coordinates: LngLat[]
+}
+
 export type MeasuredRoute = Route & {
   length: number
   lampCount: number
@@ -36,11 +45,31 @@ export type MeasuredRoute = Route & {
   lampsPerKm: number
   /** In metres. */
   longestDark: number
+  darkStretches: DarkStretch[]
 }
 
 type LampFeature = {
   geometry?: { coordinates?: unknown }
-  properties?: { objectid?: unknown; straatnaam?: unknown; identificatie?: unknown }
+  properties?: {
+    objectid?: unknown
+    straatnaam?: unknown
+    identificatie?: unknown
+    schakelschema_lamp?: unknown
+  }
+}
+
+/**
+ * The register's switching schedule, for example "in15lux 100% - 22:00 50% - 7:00 100% - uit15lux".
+ * True for lamps the municipality keeps off for (part of) the night: 0% at some time, switched off
+ * at a clock time instead of at daylight, lit only by day, or sports lighting on request.
+ * Dimming alone is not "off": a dimmed lamp still gives light.
+ */
+export function isOffAtNight(schedule: unknown): boolean {
+  if (typeof schedule !== 'string') return false
+  const text = schedule.toLowerCase()
+  if (text.includes('sport') || text.includes('dag')) return true
+  if ([...text.matchAll(/(\d+)\s*%/g)].some(([, level]) => Number(level) === 0)) return true
+  return /\bin\s*\d+\s*lux/.test(text) && !text.includes('uit')
 }
 
 function featuresOf(answer: unknown): LampFeature[] {
@@ -82,7 +111,7 @@ export function measureRoute(
 
   for (const feature of featuresOf(answer)) {
     const coordinates = coordinatesOf(feature)
-    if (!coordinates) continue
+    if (!coordinates || isOffAtNight(feature.properties?.schakelschema_lamp)) continue
     const place = placeOf(coordinates)
     if (working.has(place) || broken.has(place)) continue
 
@@ -96,8 +125,16 @@ export function measureRoute(
   const length = lineLength(routeInMetres)
   const spots = [0, ...[...working.values()].sort((first, second) => first - second), length]
   let longestDark = 0
+  const darkStretches: DarkStretch[] = []
   for (let index = 1; index < spots.length; index++) {
-    longestDark = Math.max(longestDark, spots[index] - spots[index - 1])
+    const gap = spots[index] - spots[index - 1]
+    longestDark = Math.max(longestDark, gap)
+    if (gap > darkStretchLength) {
+      darkStretches.push({
+        length: gap,
+        coordinates: sliceLine(route.coordinates, spots[index - 1], spots[index]),
+      })
+    }
   }
 
   return {
@@ -107,6 +144,7 @@ export function measureRoute(
     brokenCount: broken.size,
     lampsPerKm: length > 0 ? working.size / (length / 1000) : 0,
     longestDark,
+    darkStretches,
   }
 }
 
@@ -115,7 +153,10 @@ export async function measureRouteLamps(
   brokenPlaces: Set<string>,
   signal: AbortSignal,
 ): Promise<MeasuredRoute> {
-  const url = lampsInUrl(rectanglesAlong(route.coordinates, lampReach + 5), 'geo_point_2d')
+  const url = lampsInUrl(
+    rectanglesAlong(route.coordinates, lampReach + 5),
+    'geo_point_2d,schakelschema_lamp',
+  )
   return measureRoute(route, await fetchJson(url, signal), brokenPlaces)
 }
 

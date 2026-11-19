@@ -28,6 +28,7 @@ function RouteSummary({ routes, selectedIndex, onShowAll, reports = [] }: RouteS
           isMostLights={selectedIndex === mostLightsIndex(routes)}
           isFastest={selectedIndex === fastestIndex(routes)}
           brokenCount={route.brokenCount}
+          darkStretchCount={route.darkStretches.length}
           reports={reports[selectedIndex]}
         />
       </p>

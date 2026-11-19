@@ -6,9 +6,6 @@ import RouteDescription from './RouteDescription.tsx'
 import type { RouteReports } from './routeReports.ts'
 import { fastestIndex, mostLightsIndex } from './routeChoice.ts'
 
-// our new comparison calculator
-import { compareRoute } from './routeComparison.ts'
-
 type RouteListProps = {
   routes: MeasuredRoute[]
   selectedIndex: number
@@ -35,9 +32,6 @@ function RouteList({
   const fastest = fastestIndex(routes)
   const mostLights = mostLightsIndex(routes)
 
-  // use the fastest route as our starting point.
-  const baseline = routes[fastest]
-
   return (
     <section
       className="map-sheet route-sheet"
@@ -48,9 +42,6 @@ function RouteList({
 
       <div className="route-list">
         {routes.map((route, index) => {
-          // new feature Calculate the comparison.
-          const comparison = compareRoute(route, baseline)
-
           return (
             <button
               key={index}
@@ -76,52 +67,14 @@ function RouteList({
                   isFastest={index === fastest}
                 />
               </span>
-
               {/* existing route description and reports */}
               <RouteDescription
                 isMostLights={index === mostLights}
                 isFastest={index === fastest}
                 brokenCount={route.brokenCount}
+                darkStretchCount={route.darkStretches.length}
                 reports={reports[index]}
               />
-
-              {/* new feature Our side-by-side comparison */}
-              <span className="route-comparison">
-                <span className="route-comparison-box">
-                  <span className="comparison-label">
-                    Streetlights
-                  </span>
-
-                  <strong
-                    className={
-                      comparison.lightingPercent !== null &&
-                      comparison.lightingPercent > 0
-                        ? 'comparison-positive'
-                        : ''
-                    }
-                  >
-                    {comparison.lightingText}
-                  </strong>
-
-                  <span className="comparison-detail">
-                    {comparison.lightsPerKm} lights/km
-                  </span>
-                </span>
-
-                <span className="route-comparison-box">
-                  <span className="comparison-label">
-                    Extra walking
-                  </span>
-
-                  <strong>
-                    {comparison.timeText}
-                  </strong>
-
-                  <span className="comparison-detail">
-                    vs fastest route
-                  </span>
-                </span>
-              </span>
 
               {/* existing streetlight measurements */}
               <span className="route-line route-measurements">
@@ -153,16 +106,14 @@ function RouteList({
           )
         })}
       </div>
-
       <p
         className="route-register-note"
         id="route-register-note"
       >
-        Streetlight counts come from the municipality's
-        register. They show where streetlights are recorded,
-        not how bright the road actually is. Reported broken
-        lights are excluded. Comparisons use the fastest
-        route as the baseline.
+        Counted from the municipality's register of street lights: where lamps stand, not whether
+        they are on. Lights reported as broken, and lights the municipality switches off at night,
+        do not count. After dusk, dark stretches of the chosen route are marked with a moon on the
+        map. Comparisons use the fastest route as the baseline.
       </p>
     </section>
   )

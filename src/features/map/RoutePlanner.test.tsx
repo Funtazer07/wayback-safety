@@ -71,6 +71,7 @@ function measured(route: typeof viaCityCentre, lampsPerKm: number, brokenCount =
     brokenCount,
     lampsPerKm,
     longestDark: 90,
+    darkStretches: [],
   } as MeasuredRoute
 }
 

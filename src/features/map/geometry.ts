@@ -72,6 +72,32 @@ export function lineLength(lineInMetres: [number, number][]): number {
   return length
 }
 
+function between([ax, ay]: LngLat, [bx, by]: LngLat, share: number): LngLat {
+  const clamped = Math.min(1, Math.max(0, share))
+  return [ax + (bx - ax) * clamped, ay + (by - ay) * clamped]
+}
+
+/** The part of a line between two distances along it, in metres from its start. */
+export function sliceLine(line: LngLat[], from: number, to: number): LngLat[] {
+  const piece: LngLat[] = []
+  let walked = 0
+  for (let index = 0; index < line.length - 1; index++) {
+    const [a, b] = [line[index], line[index + 1]]
+    const length = distanceInMetres(a, b)
+    const shareOf = (metres: number) => (length === 0 ? 0 : (metres - walked) / length)
+    if (piece.length === 0 && walked + length >= from) piece.push(between(a, b, shareOf(from)))
+    if (piece.length > 0) {
+      if (walked + length >= to) {
+        piece.push(between(a, b, shareOf(to)))
+        return piece
+      }
+      piece.push(b)
+    }
+    walked += length
+  }
+  return piece
+}
+
 /** How much of the second line (0 to 1) runs along the first one, within 15 m. */
 export function sharedPart(first: LngLat[], second: LngLat[]): number {
   if (first.length < 2 || second.length === 0) return 0

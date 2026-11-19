@@ -14,6 +14,7 @@ const route = (latitude: number, length = 1000): MeasuredRoute => ({
   brokenCount: 0,
   lampsPerKm: 20,
   longestDark: 80,
+  darkStretches: [],
 })
 const report = (
   category: PlaceReport['category'],
