@@ -567,13 +567,11 @@
 
 /* container for recent reports */
 .recent-reports {
-  position: relative;
-  grid-row: 2;
-  justify-self: start;
-  align-self: end;
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
   z-index: 3;
 
-  margin: 0 0 0.75rem 0.75rem;
   width: max-content;
   max-width: calc(100% - 1.5rem);
 }
@@ -605,9 +603,9 @@
 .recent-reports-panel {
   position: absolute;
   left: 0;
-  bottom: calc(100% + 0.5rem);
+  top: calc(100% + 0.5rem);
 
-  width: min(19rem, calc(100vw - 2rem));
+  width: min(14rem, calc(100vw - 2rem));
   max-height: min(17rem, 45vh);
 
   overflow-y: auto;
@@ -623,7 +621,7 @@
 /* list title */
 .recent-reports-panel h2 {
   margin: 0 0 0.5rem;
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 /* remove default list styling */
@@ -665,8 +663,8 @@
 .recent-report-dot {
   flex-shrink: 0;
 
-  width: 0.625rem;
-  height: 0.625rem;
+  width: 0.500rem;
+  height: 0.500rem;
   margin-top: 0.25rem;
 
   border-radius: 50%;
@@ -682,7 +680,7 @@
 
 /* report name */
 .recent-report-content strong {
-  font-size: 0.8125rem;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
@@ -712,8 +710,8 @@
 /* small mobile screens */
 @media (max-width: 400px) {
   .recent-reports {
-    margin-left: 0.5rem;
-    margin-bottom: 0.5rem;
+    left: 0.5rem;
+    top: 0.5rem;
     max-width: calc(100% - 1rem);
   }
 

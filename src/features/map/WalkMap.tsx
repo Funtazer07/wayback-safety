@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
@@ -9,6 +10,8 @@ import { useReporting } from './useReporting.ts'
 import { useUserPosition } from './useUserPosition.ts'
 import locationIcon from '../../assets/day/location.png'
 import reportIcon from '../../assets/day/report.png'
+import RecentReportsList from './RecentReportsList.tsx'
+import { getRecentReports, type RecentReport } from './recentReports.ts'
 import './map.css'
 
 type WalkMapProps = {
@@ -19,6 +22,7 @@ type WalkMapProps = {
 function WalkMap({ route, arrivalLabel }: WalkMapProps) {
   const { position, isUnavailable, start } = useUserPosition()
   const [thankYou, setThankYou] = useState('')
+  const [now, setNow] = useState(() => new Date())
   const [isReportingPlace, setIsReportingPlace] = useState(false)
   const reporting = useReporting((_lights, message) => setThankYou(message))
   const [camera, setCamera] = useState<CameraMove | null>(() =>
@@ -33,6 +37,12 @@ function WalkMap({ route, arrivalLabel }: WalkMapProps) {
   )
   const hasMoved = useRef(route !== null)
 
+  // update the report times while the walk is running
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 60_000)
+    return () => window.clearInterval(interval)
+  }, [])
+
   useEffect(() => start(), [start])
 
   useEffect(() => {
@@ -40,6 +50,22 @@ function WalkMap({ route, arrivalLabel }: WalkMapProps) {
     hasMoved.current = true
     setCamera({ id: Date.now(), kind: 'centre', centre: position.coordinates, zoom: 17 })
   }, [position])
+
+  // get reports near where the user is walking
+  const recentReports = getRecentReports(
+    reporting.placeReports,
+    reporting.brokenLights,
+    position && isInEindhoven(position.coordinates) ? position.coordinates : null,
+    route,
+    now,
+  )
+
+  // open the selected report on the map
+  function selectRecentReport(report: RecentReport) {
+    setCamera({ id: Date.now(), kind: 'centre', centre: report.coordinates, zoom: 17 })
+    if (report.kind === 'broken_light') reporting.showLight(report.id)
+    else reporting.showPlaceReport(report.id)
+  }
 
   return (
     <div className="map-area">
@@ -62,6 +88,10 @@ function WalkMap({ route, arrivalLabel }: WalkMapProps) {
         onBrokenLightTap={reporting.showLight}
         onPlaceReportTap={reporting.showPlaceReport}
       />
+      {/* only show recent reports while walking */}
+      {!reporting.isSheetOpen && !isReportingPlace && (
+        <RecentReportsList reports={recentReports} now={now} onSelect={selectRecentReport} />
+      )}
       {thankYou && (
         <p className="map-toast" role="status">
           {thankYou}
