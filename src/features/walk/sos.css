@@ -135,7 +135,7 @@ dialog.walk-sos-countdown {
 }
 
 .home-screen .map-bottom > .planner-actions {
-  bottom: 1rem;
+  bottom: calc(100% + 1rem);
 }
 
 .map-actions > button,
