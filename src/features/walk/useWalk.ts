@@ -5,7 +5,7 @@ import {
   checkInWalk,
   extendWalk,
   fetchCurrentWalk,
-  sendSos,
+  sendEmergencySos,
   startWalk,
   type NewWalk,
   type Walk,
@@ -53,9 +53,8 @@ export function useWalk(userId: string | undefined) {
     setState({ walk, isLoading: false, error: null })
   }
 
-  async function sos(position: LngLat | null) {
-    if (!state.walk) throw new Error('There is no active walk.')
-    const walk = await sendSos(state.walk.id, position)
+  async function sos(position: LngLat | null, requestId: string = crypto.randomUUID()) {
+    const walk = await sendEmergencySos(requestId, position)
     setState({ walk, isLoading: false, error: null })
   }
 

@@ -1012,3 +1012,21 @@ Redeploy `send-walk-push` with the `reminder` event before running 0020, and the
 version before 0021. Both migrations are already run on the shared project. It uses the existing
 Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
 queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).
+
+### SOS from every signed-in screen
+
+The shared SOS button stays available on Home, Contacts, Account, invitations, route setup and
+during a walk. It opens the same bottom panel everywhere. Hold for 3 seconds to send.
+Releasing early resets progress.
+
+Run the new migration `0029_sos_from_any_screen.sql` before using this version.
+The `send_emergency_sos(request_id, lat, lng)` function uses the current walk's selected contacts.
+Before a walk starts it creates an emergency record for all accepted contacts.
+Invited and paused contacts are excluded. An empty recipient list fails without showing success.
+The emergency uses the existing overdue walk retention and check-in rules, including deletion
+of its location after 24 hours. Only the latest available location is sent.
+
+Calls are serialized per account. Retrying the same request or an open SOS returns the saved
+alert. A new SOS creates one notification event. It uses the existing push delivery mechanism.
+The app shows confirmation after the server accepts the request. Push sound depends on the
+recipient's browser, notification permission and device settings.

@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 type SosCountdownProps = {
   onCancel: () => void
   onSend: () => void
+  duringWalk?: boolean
+  audience?: string
 }
 
-function SosCountdown({ onCancel, onSend }: SosCountdownProps) {
+function SosCountdown({ onCancel, onSend, audience = 'Your trusted contacts' }: SosCountdownProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const started = useRef<number | null>(null)
   const frame = useRef<number | null>(null)
@@ -100,7 +102,7 @@ function SosCountdown({ onCancel, onSend }: SosCountdownProps) {
         <strong>{seconds}s</strong>
         <span>{isHolding ? 'Keep holding' : 'Hold it'}</span>
       </button>
-      <p>Your trusted contacts can see your last known location after the alert is sent.</p>
+      <p>{audience} can see your last known location after the alert is sent.</p>
       <button
         type="button"
         onClick={() => {

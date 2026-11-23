@@ -14,6 +14,7 @@ const walks = vi.hoisted(() => ({
   fetchWalkWatchers: vi.fn(),
   shareWalkRoute: vi.fn(),
   startWalk: vi.fn(),
+  sendEmergencySos: vi.fn(),
   updateWalkLocation: vi.fn(),
 }))
 
@@ -434,6 +435,7 @@ test('the bottom bar switches between Home, Contacts and Account', async () => {
   renderApp(loggedIn)
   expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
 
+  expect(screen.getByRole('button', { name: 'SOS' })).toBeInTheDocument()
   click('Contacts')
   expect(await screen.findByRole('heading', { name: 'Activity' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Contacts' })).toHaveAttribute('aria-current', 'page')
@@ -443,9 +445,11 @@ test('the bottom bar switches between Home, Contacts and Account', async () => {
   click('Back')
   expect(screen.getByRole('heading', { name: 'Activity' })).toBeInTheDocument()
 
+  expect(screen.getByRole('button', { name: 'SOS' })).toBeInTheDocument()
   click('Account')
   expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
 
+  expect(screen.getByRole('button', { name: 'SOS' })).toBeInTheDocument()
   click('Home')
   expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument()
 })

@@ -202,3 +202,107 @@ button.walk-sos-button {
   background: #d3eddb;
   color: #18352d;
 }
+
+.walk-global-sos {
+  position: fixed;
+  left: max(1rem, calc((100vw - 27.5rem) / 2 + 1rem));
+  bottom: calc(6rem + env(safe-area-inset-bottom));
+  z-index: 80;
+}
+.walk-global-sos button.walk-sos-button {
+  width: 4.5rem;
+  height: 4.5rem;
+  min-height: 4.5rem;
+  padding: 0.5rem;
+  justify-content: center;
+  text-align: center;
+  background: #e95052;
+  border-radius: 1.125rem;
+}
+.walk-global-sos .walk-sos-icon,
+.walk-global-sos small {
+  display: none;
+}
+.walk-global-sos [role='alert'] {
+  position: absolute;
+  bottom: 5rem;
+  width: min(20rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #18352d;
+}
+dialog.walk-sos-countdown {
+  position: fixed;
+  inset: auto 0 0;
+  width: min(100%, 27.5rem);
+  max-width: 27.5rem;
+  max-height: calc(100dvh - 1rem);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 2rem 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+  border-radius: 2rem 2rem 0 0;
+  animation: walk-sos-appear 220ms ease-out;
+}
+.walk-sos-countdown::backdrop {
+  background: rgb(0 0 0 / 12%);
+}
+@keyframes walk-sos-appear {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog.walk-sos-countdown {
+    animation: none;
+  }
+}
+
+.walk-global-sos {
+  position: fixed;
+  left: max(1rem, calc((100vw - 27.5rem) / 2 + 1rem));
+  bottom: max(6.5rem, calc(env(safe-area-inset-bottom) + 6rem));
+  z-index: 60;
+}
+.walk-global-sos button.walk-sos-button {
+  width: 4.25rem;
+  min-height: 4.25rem;
+  padding: 0.5rem;
+  justify-content: center;
+  text-align: center;
+}
+.walk-global-sos .walk-sos-icon,
+.walk-global-sos .walk-sos-button small {
+  display: none;
+}
+.walk-global-sos .walk-sos-button > span {
+  font-size: 1rem;
+}
+.walk-global-sos > p[role='alert'] {
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.walk-sos-success {
+  display: block;
+  width: 6.5rem;
+  height: 6.5rem;
+  margin: 2rem auto;
+}
+.walk-sos-success circle {
+  fill: #149f4c;
+}
+.walk-sos-success path {
+  fill: none;
+  stroke: white;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

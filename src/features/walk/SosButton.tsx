@@ -5,9 +5,12 @@ import './sos.css'
 
 type SosButtonProps = {
   onSend: () => Promise<void>
+  alreadySent?: boolean
+  duringWalk?: boolean
+  audience?: string
 }
 
-function SosButton({ onSend }: SosButtonProps) {
+function SosButton({ onSend, alreadySent = false, audience }: SosButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -33,8 +36,8 @@ function SosButton({ onSend }: SosButtonProps) {
       <button
         type="button"
         className="walk-sos-button"
-        aria-label="SOS"
-        disabled={isSending}
+        aria-label={alreadySent ? 'SOS sent' : 'SOS'}
+        disabled={isSending || alreadySent}
         onClick={() => {
           setFailed(false)
           setIsOpen(true)
@@ -44,12 +47,14 @@ function SosButton({ onSend }: SosButtonProps) {
           <img src={ring} alt="" />!
         </span>
         <span>
-          {isSending ? 'Sending SOS…' : 'SOS'}
+          {alreadySent ? 'SOS sent' : isSending ? 'Sending SOS…' : 'SOS'}
           <small>Hold to send an alert</small>
         </span>
       </button>
       {failed && <p role="alert">Could not send SOS. Check your connection and try again.</p>}
-      {isOpen && <SosCountdown onCancel={() => setIsOpen(false)} onSend={send} />}
+      {isOpen && (
+        <SosCountdown onCancel={() => setIsOpen(false)} onSend={send} audience={audience} />
+      )}
     </>
   )
 }

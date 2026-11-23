@@ -179,3 +179,13 @@ export async function fetchWalkWatchers(walkId: string): Promise<string[]> {
     .sort((a, b) => (a.watching_at ?? '').localeCompare(b.watching_at ?? ''))
     .map((link) => link.contacts?.label ?? '')
 }
+
+export async function sendEmergencySos(requestId: string, position: LngLat | null): Promise<Walk> {
+  const { data, error } = await client().rpc('send_emergency_sos', {
+    request_id: requestId,
+    lat: position?.[1] ?? null,
+    lng: position?.[0] ?? null,
+  })
+  if (error) throw error
+  return toWalk(data)
+}
