@@ -236,3 +236,42 @@ test('an old push for a different walk does not open a time review', () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   window.history.replaceState(null, '', window.location.pathname)
 })
+
+test('SOS opens a confirmation without sending an alert and can be cancelled', () => {
+  const onSos = vi.fn()
+  render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onSos={onSos} onDone={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'SOS' }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(onSos).not.toHaveBeenCalled()
+})
+
+test('SOS requires three seconds of continuous holding and resets on early release', async () => {
+  const onSos = vi.fn().mockResolvedValue(undefined)
+  render(<WalkScreen walk={walk} onCheckIn={vi.fn()} onSos={onSos} onDone={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'SOS' }))
+  const hold = screen.getByRole('button', { name: 'Hold for 3 seconds to send SOS' })
+  fireEvent.keyDown(hold, { key: ' ' })
+  act(() => vi.advanceTimersByTime(2000))
+  fireEvent.keyUp(hold, { key: ' ' })
+  act(() => vi.advanceTimersByTime(4000))
+  expect(onSos).not.toHaveBeenCalled()
+  fireEvent.keyDown(hold, { key: ' ' })
+  act(() => vi.advanceTimersByTime(2990))
+  expect(onSos).not.toHaveBeenCalled()
+  await act(async () => vi.advanceTimersByTime(50))
+  expect(onSos).toHaveBeenCalledExactlyOnceWith(null)
+})
+
+test('SOS confirmation reflects a saved alert and offers check-in', () => {
+  render(
+    <WalkScreen
+      walk={{ ...walk, status: 'overdue', sosAt: new Date() }}
+      onCheckIn={vi.fn()}
+      onDone={vi.fn()}
+    />,
+  )
+  expect(screen.getByRole('heading', { name: 'SOS sent' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'I’m safe' })).toBeInTheDocument()
+})

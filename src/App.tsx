@@ -36,6 +36,7 @@ function App() {
     error: walkError,
     start: startWalk,
     checkIn,
+    sos,
     extend: extendWalk,
     cancel: cancelWalk,
     refresh: refreshWalk,
@@ -117,10 +118,12 @@ function App() {
   if (walk) {
     return (
       <WalkScreen
+        key={walk.id}
         walk={walk}
         route={loadWalkRoute(walk.id)}
         routeSeconds={loadWalkRouteSeconds(walk.id)}
         onCheckIn={checkIn}
+        onSos={sos}
         onExtend={extendWalk}
         onCancel={async () => {
           await cancelWalk()

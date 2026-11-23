@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import type { LngLat } from '../map/geometry.ts'
 import {
   cancelWalk,
   checkInWalk,
   extendWalk,
   fetchCurrentWalk,
+  sendSos,
   startWalk,
   type NewWalk,
   type Walk,
@@ -51,6 +53,12 @@ export function useWalk(userId: string | undefined) {
     setState({ walk, isLoading: false, error: null })
   }
 
+  async function sos(position: LngLat | null) {
+    if (!state.walk) throw new Error('There is no active walk.')
+    const walk = await sendSos(state.walk.id, position)
+    setState({ walk, isLoading: false, error: null })
+  }
+
   async function extend(minutes: number) {
     if (!state.walk) return
     const walk = await extendWalk(state.walk.id, minutes)
@@ -61,7 +69,13 @@ export function useWalk(userId: string | undefined) {
     try {
       const walk = await fetchCurrentWalk()
       // Null: the walk ended on another device. Do not jump away from the screen.
-      if (walk) setState({ walk, isLoading: false, error: null })
+      if (walk) {
+        setState((current) => {
+          // A grace-period refresh may have started before the SOS was sent.
+          if (current.walk?.id === walk.id && current.walk.sosAt && !walk.sosAt) return current
+          return { walk, isLoading: false, error: null }
+        })
+      }
     } catch {
       // Offline for a moment: the next refresh tries again.
     }
@@ -77,5 +91,5 @@ export function useWalk(userId: string | undefined) {
     setState({ walk: null, isLoading: false, error: null })
   }
 
-  return { ...state, start, checkIn, extend, cancel, refresh, finish }
+  return { ...state, start, checkIn, sos, extend, cancel, refresh, finish }
 }

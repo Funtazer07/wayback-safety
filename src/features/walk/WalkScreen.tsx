@@ -4,6 +4,8 @@ import WalkMap from '../map/WalkMap.tsx'
 import AreYouOkScreen from './AreYouOkScreen.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import HomeSafeScreen from './HomeSafeScreen.tsx'
+import SosButton from './SosButton.tsx'
+import SosSentScreen from './SosSentScreen.tsx'
 import { walkPhase } from './grace.ts'
 import { formatClock, formatDuration, timerPhase, isReminderDue } from './time.ts'
 import { useLocationUpdates } from './useLocationUpdates.ts'
@@ -26,6 +28,7 @@ type WalkScreenProps = {
   route?: LngLat[] | null
   routeSeconds?: number | null
   onCheckIn: () => Promise<void>
+  onSos?: (position: LngLat | null) => Promise<void>
   onExtend?: (minutes: number) => Promise<void>
   onCancel?: () => Promise<void>
   onRefresh?: () => Promise<void>
@@ -39,6 +42,7 @@ function WalkScreen({
   route = null,
   routeSeconds = null,
   onCheckIn,
+  onSos,
   onExtend = doNothing,
   onCancel = doNothing,
   onRefresh = doNothing,
@@ -76,6 +80,19 @@ function WalkScreen({
     return <HomeSafeScreen walkId={walk.id} endedAt={walk.checkedInAt ?? now} onDone={onDone} />
   }
 
+  if (walk.sosAt) {
+    return (
+      <main className="walk-live">
+        <WalkMap route={route} />
+        <SosSentScreen onCheckIn={onCheckIn} />
+      </main>
+    )
+  }
+
+  const sosButton = onSos && walk.status === 'active' && phase !== 'overdue' && (
+    <SosButton onSend={() => onSos(fixes.at(-1)?.coordinates ?? null)} />
+  )
+
   // The location keeps being sent here: this is when it matters most.
   if (isLate) {
     return (
@@ -86,6 +103,7 @@ function WalkScreen({
         contactNames={contactNames}
         onCheckIn={onCheckIn}
         onExtend={onExtend}
+        sosButton={sosButton}
       />
     )
   }
@@ -141,6 +159,7 @@ function WalkScreen({
         )}
         {error && <p role="alert">{error}</p>}
         <WalkActions onExtend={onExtend} onCancel={onCancel} />
+        {sosButton}
       </section>
 
       {prompts.isArrived && (
