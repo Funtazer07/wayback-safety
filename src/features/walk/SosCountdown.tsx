@@ -4,10 +4,10 @@ type SosCountdownProps = {
   onCancel: () => void
   onSend: () => void
   duringWalk?: boolean
-  audience?: string
+  failed?: boolean
 }
 
-function SosCountdown({ onCancel, onSend, audience = 'Your trusted contacts' }: SosCountdownProps) {
+function SosCountdown({ onCancel, onSend, failed = false }: SosCountdownProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const started = useRef<number | null>(null)
   const frame = useRef<number | null>(null)
@@ -102,7 +102,7 @@ function SosCountdown({ onCancel, onSend, audience = 'Your trusted contacts' }: 
         <strong>{seconds}s</strong>
         <span>{isHolding ? 'Keep holding' : 'Hold it'}</span>
       </button>
-      <p>{audience} can see your last known location after the alert is sent.</p>
+      {failed && <p role="alert">Could not send SOS. Check your connection and try again.</p>}
       <button
         type="button"
         onClick={() => {

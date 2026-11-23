@@ -409,3 +409,14 @@ test('route reports appear on the matching route and remain in its selected summ
   expect(summary).toHaveTextContent('Quiet')
   expect(summary).toHaveTextContent('Less light reported')
 })
+
+test('SOS stays opposite Report above the route choices', async () => {
+  render(<RoutePlanner onRouteChange={vi.fn()} sosControl={<button>SOS</button>} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Tap Stratumseind' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Tap the station' }))
+  await screen.findByText('Most street lights')
+  const report = screen.getByRole('button', { name: 'Report' })
+  const sos = screen.getByRole('button', { name: 'SOS' })
+  expect(report.parentElement).toContainElement(sos)
+  expect(report.closest('.map-bottom')).toBeInTheDocument()
+})

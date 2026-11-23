@@ -111,8 +111,8 @@ When the deadline passes, the walk screen turns into screen 06 of the SCRUM-72 p
   alert.
 
 During the grace period the app asks the server for the walk every 15 seconds and when it comes
-back on screen, so it notices the warning and the change to overdue. The SOS control is also
-available during the grace period (SCRUM-28).
+back on screen, so it notices the warning and the change to overdue. "I need help" from the
+prototype is SOS (SCRUM-28), not built yet.
 
 The overdue text says the contacts were told. That is only true once SCRUM-74 sends the alert, so
 SCRUM-101 is merged together with or after SCRUM-74.
@@ -635,11 +635,8 @@ so "Are you OK?" says 3 minutes too. Tested by `supabase/tests/late_walks_test.s
 
 The walker can ask for help at any moment of a walk, without waiting for the timer (SCRUM-78,
 `0027_sos.sql`). The app calls `sendSos(walkId, position)` from `src/features/walk/walk.ts`, which
-calls the database function `send_sos`. The walk screen shows an SOS control during the walk and
-the check-in grace period (SCRUM-131). Pressing SOS opens a confirmation panel. Hold its control continuously for 3 seconds to send
-the alert. Releasing early resets progress. Cancel closes the panel.
-At expiry the screen passes the latest
-available location fix and shows “SOS sent” once the server accepts it.
+calls the database function `send_sos`. The button and its screens are SCRUM-131; the hold and the
+cancel window before it is sent are SCRUM-132.
 
 An SOS is not a new status. To the contacts it means "come and find me here, now", which is what
 an overdue walk already means. So `send_sos`:
@@ -775,8 +772,8 @@ Written down here because the app handles location and personal data.
   walk refuses new locations afterwards. A walk that became overdue keeps it for 24 hours, so the
   contacts know where to look, and then it is erased too (assumption until SCRUM-71 and SCRUM-30
   decide). The alert itself never carries the location, only the time it was saved.
-- **SOS:** sending SOS stores the alert time and the latest position available on the phone. If no
-  position is available, the server keeps the last saved location. Nothing else is stored.
+- **SOS:** pressing SOS saves the phone's position at that moment as the last known location,
+  instead of waiting for the next update, and stores the time of the SOS. Nothing else is stored.
   The walk then follows the overdue rules above: the contacts see the location, and it is erased
   after 24 hours. The SOS message, like the alert, carries the time but never the location.
 - **Route planning:** to compare routes on the map, the start (often the user's position) and the
@@ -1013,20 +1010,16 @@ version before 0021. Both migrations are already run on the shared project. It u
 Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
 queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).
 
-### SOS from every signed-in screen
+### SOS on the two map screens
 
-The shared SOS button stays available on Home, Contacts, Account, invitations, route setup and
-during a walk. It opens the same bottom panel everywhere. Hold for 3 seconds to send.
-Releasing early resets progress.
+The SOS control appears on Home and the walk timer map, opposite Report in the same control row.
+Other screens are unchanged. Press SOS, then hold the confirmation control for 3 continuous seconds.
+Releasing early resets progress. Cancel closes the panel without sending.
+Confirmation appears only after the server accepts the alert.
 
-Run the new migration `0029_sos_from_any_screen.sql` before using this version.
-The `send_emergency_sos(request_id, lat, lng)` function uses the current walk's selected contacts.
-Before a walk starts it creates an emergency record for all accepted contacts.
-Invited and paused contacts are excluded. An empty recipient list fails without showing success.
-The emergency uses the existing overdue walk retention and check-in rules, including deletion
-of its location after 24 hours. Only the latest available location is sent.
-
-Calls are serialized per account. Retrying the same request or an open SOS returns the saved
-alert. A new SOS creates one notification event. It uses the existing push delivery mechanism.
-The app shows confirmation after the server accepts the request. Push sound depends on the
-recipient's browser, notification permission and device settings.
+The prepared `0029_sos_from_any_screen.sql` migration provides `send_emergency_sos`.
+During a walk it uses that walk's selected contacts. Before a walk it uses all accepted contacts.
+Pending invitations are excluded. The request ID prevents duplicate alerts after a retry.
+Only the latest available location is kept, under the existing 24-hour overdue retention rule.
+The migration must be applied by the team before real sending works; it has not been run here.
+Push sound depends on the recipient's notification permissions and device settings.

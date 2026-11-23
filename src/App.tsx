@@ -10,7 +10,9 @@ import { useInviterName } from './features/contacts/useInviterName.ts'
 import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
 import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
-import GlobalSos from './features/walk/GlobalSos.tsx'
+import SosControl from './features/walk/SosControl.tsx'
+import SosConfirmation from './features/walk/SosConfirmation.tsx'
+import type { LngLat } from './features/map/geometry.ts'
 
 import {
   clearWalkRoute,
@@ -43,6 +45,7 @@ function App() {
     refresh: refreshWalk,
     finish: finishWalk,
   } = useWalk(session?.user.id)
+  const [isSosConfirmed, setIsSosConfirmed] = useState(false)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
@@ -51,6 +54,11 @@ function App() {
   const [tab, setTab] = useState<Tab>('places')
   const [isCircleOpen, setIsCircleOpen] = useState(false)
   const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
+
+  async function sendSos(position: LngLat | null, requestId: string) {
+    await sos(position, requestId)
+    setIsSosConfirmed(true)
+  }
 
   if (!supabase) {
     return (
@@ -89,42 +97,39 @@ function App() {
 
   if (!profile.displayName) return <NameScreen onSave={saveName} />
 
-  const userId = session.user.id
-  const displayName = profile.displayName
+  if (inviteToken) {
+    return (
+      <AcceptInviteScreen
+        token={inviteToken}
+        onClose={() => {
+          forgetInviteToken()
+          setInviteToken(null)
+          setTab('contacts')
+          setIsCircleOpen(true)
+        }}
+      />
+    )
+  }
 
-  function renderScreen() {
-    if (inviteToken) {
-      return (
-        <AcceptInviteScreen
-          token={inviteToken}
-          onClose={() => {
-            forgetInviteToken()
-            setInviteToken(null)
-            setTab('contacts')
-            setIsCircleOpen(true)
-          }}
-        />
-      )
-    }
+  // Before the user's own walk: someone may need them now.
+  if (openedWalkId) {
+    return (
+      <FollowedWalkScreen
+        walkId={openedWalkId}
+        onClose={() => {
+          forgetOpenedWalk()
+          setOpenedWalkId(null)
+        }}
+      />
+    )
+  }
 
-    // Before the user's own walk: someone may need them now.
-    if (openedWalkId) {
-      return (
-        <FollowedWalkScreen
-          walkId={openedWalkId}
-          onClose={() => {
-            forgetOpenedWalk()
-            setOpenedWalkId(null)
-          }}
-        />
-      )
-    }
-
-    if (walk) {
-      return (
+  if (walk) {
+    return (
+      <>
         <WalkScreen
-          key={walk.id}
           walk={walk}
+          sosControl={<SosControl walk={walk} onSend={sendSos} />}
           route={loadWalkRoute(walk.id)}
           routeSeconds={loadWalkRouteSeconds(walk.id)}
           onCheckIn={checkIn}
@@ -139,83 +144,78 @@ function App() {
             finishWalk()
           }}
         />
-      )
-    }
+        {isSosConfirmed && <SosConfirmation onClose={() => setIsSosConfirmed(false)} />}
+      </>
+    )
+  }
 
-    if (isStartingWalk) {
-      return (
-        <StartWalkScreen
-          userId={userId}
-          plannedRoute={plannedRoute}
-          onStart={async (newWalk) => {
-            const startedWalk = await startWalk(newWalk)
-            if (plannedRoute) {
-              saveWalkRoute(startedWalk.id, plannedRoute.coordinates, plannedRoute.seconds)
-              // On failure the contacts just see no map.
-              shareWalkRoute(startedWalk.id, plannedRoute.coordinates).catch(() => {})
-            }
-          }}
-          onBack={() => setIsStartingWalk(false)}
-        />
-      )
-    }
-
+  if (isStartingWalk) {
     return (
-      <div className="with-tab-bar">
-        {tab === 'places' && (
-          <Home
-            userId={userId}
-            displayName={displayName}
-            onStartWalk={() => setIsStartingWalk(true)}
-            onRouteChange={setPlannedRoute}
-            onOpenContacts={() => {
-              setTab('contacts')
-              setIsCircleOpen(true)
-            }}
-          />
-        )}
-        {tab === 'contacts' &&
-          (isCircleOpen ? (
-            <ContactsScreen
-              userId={userId}
-              displayName={displayName}
-              onBack={() => setIsCircleOpen(false)}
-            />
-          ) : (
-            <ActivityScreen
-              displayName={displayName}
-              onOpenWalk={setOpenedWalkId}
-              onOpenCircle={() => setIsCircleOpen(true)}
-            />
-          ))}
-        {tab === 'account' && (
-          <AccountScreen
-            displayName={displayName}
-            onLoggingOut={(alertsStopped) =>
-              setLogOutNotice(
-                alertsStopped
-                  ? null
-                  : 'You are logged out, but WayBack could not turn off notifications on this phone. You can turn them off in your phone’s settings.',
-              )
-            }
-          />
-        )}
-        <TabBar
-          current={tab}
-          onChange={(next) => {
-            setTab(next)
-            setIsCircleOpen(false)
-          }}
-        />
-      </div>
+      <StartWalkScreen
+        userId={session.user.id}
+        plannedRoute={plannedRoute}
+        onStart={async (newWalk) => {
+          const startedWalk = await startWalk(newWalk)
+          if (plannedRoute) {
+            saveWalkRoute(startedWalk.id, plannedRoute.coordinates, plannedRoute.seconds)
+            // On failure the contacts just see no map.
+            shareWalkRoute(startedWalk.id, plannedRoute.coordinates).catch(() => {})
+          }
+        }}
+        onBack={() => setIsStartingWalk(false)}
+      />
     )
   }
 
   return (
-    <>
-      {renderScreen()}
-      <GlobalSos key={session.user.id} walk={walk} onSend={sos} />
-    </>
+    <div className="with-tab-bar">
+      {tab === 'places' && (
+        <Home
+          userId={session.user.id}
+          displayName={profile.displayName}
+          sosControl={<SosControl walk={null} onSend={sendSos} />}
+          onStartWalk={() => setIsStartingWalk(true)}
+          onRouteChange={setPlannedRoute}
+          onOpenContacts={() => {
+            setTab('contacts')
+            setIsCircleOpen(true)
+          }}
+        />
+      )}
+      {tab === 'contacts' &&
+        (isCircleOpen ? (
+          <ContactsScreen
+            userId={session.user.id}
+            displayName={profile.displayName}
+            onBack={() => setIsCircleOpen(false)}
+          />
+        ) : (
+          <ActivityScreen
+            displayName={profile.displayName}
+            onOpenWalk={setOpenedWalkId}
+            onOpenCircle={() => setIsCircleOpen(true)}
+          />
+        ))}
+      {tab === 'account' && (
+        <AccountScreen
+          displayName={profile.displayName}
+          onLoggingOut={(alertsStopped) =>
+            setLogOutNotice(
+              alertsStopped
+                ? null
+                : 'You are logged out, but WayBack could not turn off notifications on this phone. You can turn them off in your phone’s settings.',
+            )
+          }
+        />
+      )}
+      <TabBar
+        current={tab}
+        onChange={(next) => {
+          setTab(next)
+          setIsCircleOpen(false)
+        }}
+      />
+    </div>
   )
 }
 

@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import ring from './assets/sos-ring.svg'
 import SosCountdown from './SosCountdown.tsx'
 import './sos.css'
 
@@ -7,10 +6,9 @@ type SosButtonProps = {
   onSend: () => Promise<void>
   alreadySent?: boolean
   duringWalk?: boolean
-  audience?: string
 }
 
-function SosButton({ onSend, alreadySent = false, audience }: SosButtonProps) {
+function SosButton({ onSend, alreadySent = false }: SosButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -25,6 +23,7 @@ function SosButton({ onSend, alreadySent = false, audience }: SosButtonProps) {
       await onSend()
     } catch {
       setFailed(true)
+      setIsOpen(true)
     } finally {
       sending.current = false
       setIsSending(false)
@@ -43,18 +42,9 @@ function SosButton({ onSend, alreadySent = false, audience }: SosButtonProps) {
           setIsOpen(true)
         }}
       >
-        <span className="walk-sos-icon" aria-hidden="true">
-          <img src={ring} alt="" />!
-        </span>
-        <span>
-          {alreadySent ? 'SOS sent' : isSending ? 'Sending SOS…' : 'SOS'}
-          <small>Hold to send an alert</small>
-        </span>
+        <span>{alreadySent ? 'SOS sent' : isSending ? 'Sending SOS…' : 'SOS'}</span>
       </button>
-      {failed && <p role="alert">Could not send SOS. Check your connection and try again.</p>}
-      {isOpen && (
-        <SosCountdown onCancel={() => setIsOpen(false)} onSend={send} audience={audience} />
-      )}
+      {isOpen && <SosCountdown onCancel={() => setIsOpen(false)} onSend={send} failed={failed} />}
     </>
   )
 }

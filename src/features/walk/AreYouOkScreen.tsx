@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import TopBar from '../../components/TopBar.tsx'
 import CheckInButton from './CheckInButton.tsx'
 import GraceCountdown from './GraceCountdown.tsx'
@@ -14,7 +14,6 @@ type AreYouOkScreenProps = {
   contactNames: string[] | null
   onCheckIn: () => Promise<void>
   onExtend: (minutes: number) => Promise<void>
-  sosButton?: ReactNode
 }
 
 function AreYouOkScreen({
@@ -24,7 +23,6 @@ function AreYouOkScreen({
   contactNames,
   onCheckIn,
   onExtend,
-  sosButton,
 }: AreYouOkScreenProps) {
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,7 +89,6 @@ function AreYouOkScreen({
             I’m okay · Add {EXTEND_MINUTES} minutes
           </button>
         )}
-        {sosButton}
       </div>
     </main>
   )

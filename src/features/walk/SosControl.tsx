@@ -1,16 +1,14 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import SosButton from './SosButton.tsx'
-import SosConfirmation from './SosConfirmation.tsx'
 import type { LngLat } from '../map/geometry.ts'
 import type { Walk } from './walk.ts'
 
-type GlobalSosProps = {
+type SosControlProps = {
   walk: Walk | null
   onSend: (position: LngLat | null, requestId: string) => Promise<void>
 }
 
-function GlobalSos({ walk, onSend }: GlobalSosProps) {
-  const [isConfirmed, setIsConfirmed] = useState(false)
+function SosControl({ walk, onSend }: SosControlProps) {
   const requestId = useRef<string | null>(null)
 
   async function send() {
@@ -28,24 +26,20 @@ function GlobalSos({ walk, onSend }: GlobalSosProps) {
     })
     await onSend(position, requestId.current)
     requestId.current = null
-    setIsConfirmed(true)
   }
 
   return (
-    <aside className="walk-global-sos" aria-label="Emergency assistance">
+    <aside
+      className={`walk-global-sos${walk && walk.status !== 'safe' ? ' is-during-walk' : ''}`}
+      aria-label="Emergency assistance"
+    >
       <SosButton
         duringWalk={Boolean(walk && (walk.status === 'active' || walk.status === 'overdue'))}
         onSend={send}
         alreadySent={Boolean(walk?.sosAt && walk.status !== 'safe')}
-        audience={
-          walk && walk.status !== 'safe'
-            ? 'The contacts selected for this walk'
-            : 'All your accepted trusted contacts'
-        }
       />
-      {isConfirmed && <SosConfirmation onClose={() => setIsConfirmed(false)} />}
     </aside>
   )
 }
 
-export default GlobalSos
+export default SosControl
