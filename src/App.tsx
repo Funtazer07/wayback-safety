@@ -10,6 +10,9 @@ import { useInviterName } from './features/contacts/useInviterName.ts'
 import { forgetOpenedWalk, takeOpenedWalkId } from './features/followedWalk/followedWalk.ts'
 import FollowedWalkScreen from './features/followedWalk/FollowedWalkScreen.tsx'
 import Home from './features/home/Home.tsx'
+import SosControl from './features/walk/SosControl.tsx'
+import SosConfirmation from './features/walk/SosConfirmation.tsx'
+import type { LngLat } from './features/map/geometry.ts'
 
 import {
   clearWalkRoute,
@@ -36,11 +39,13 @@ function App() {
     error: walkError,
     start: startWalk,
     checkIn,
+    sos,
     extend: extendWalk,
     cancel: cancelWalk,
     refresh: refreshWalk,
     finish: finishWalk,
   } = useWalk(session?.user.id)
+  const [isSosConfirmed, setIsSosConfirmed] = useState(false)
   const [isStartingWalk, setIsStartingWalk] = useState(false)
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   const [openedWalkId, setOpenedWalkId] = useState(takeOpenedWalkId)
@@ -49,6 +54,11 @@ function App() {
   const [tab, setTab] = useState<Tab>('places')
   const [isCircleOpen, setIsCircleOpen] = useState(false)
   const [logOutNotice, setLogOutNotice] = useState<string | null>(null)
+
+  async function sendSos(position: LngLat | null, requestId: string) {
+    await sos(position, requestId)
+    setIsSosConfirmed(true)
+  }
 
   if (!supabase) {
     return (
@@ -116,22 +126,26 @@ function App() {
 
   if (walk) {
     return (
-      <WalkScreen
-        walk={walk}
-        route={loadWalkRoute(walk.id)}
-        routeSeconds={loadWalkRouteSeconds(walk.id)}
-        onCheckIn={checkIn}
-        onExtend={extendWalk}
-        onCancel={async () => {
-          await cancelWalk()
-          clearWalkRoute()
-        }}
-        onRefresh={refreshWalk}
-        onDone={() => {
-          clearWalkRoute()
-          finishWalk()
-        }}
-      />
+      <>
+        <WalkScreen
+          walk={walk}
+          sosControl={<SosControl walk={walk} onSend={sendSos} />}
+          route={loadWalkRoute(walk.id)}
+          routeSeconds={loadWalkRouteSeconds(walk.id)}
+          onCheckIn={checkIn}
+          onExtend={extendWalk}
+          onCancel={async () => {
+            await cancelWalk()
+            clearWalkRoute()
+          }}
+          onRefresh={refreshWalk}
+          onDone={() => {
+            clearWalkRoute()
+            finishWalk()
+          }}
+        />
+        {isSosConfirmed && <SosConfirmation onClose={() => setIsSosConfirmed(false)} />}
+      </>
     )
   }
 
@@ -159,6 +173,7 @@ function App() {
         <Home
           userId={session.user.id}
           displayName={profile.displayName}
+          sosControl={<SosControl walk={null} onSend={sendSos} />}
           onStartWalk={() => setIsStartingWalk(true)}
           onRouteChange={setPlannedRoute}
           onOpenContacts={() => {

@@ -8,6 +8,7 @@ import {
   fetchWalkContacts,
   fetchWalkWatchers,
   sendSos,
+  sendEmergencySos,
   startWalk,
   updateWalkLocation,
 } from './walk.ts'
@@ -265,4 +266,32 @@ test('the names of the contacts who are watching come first-tapped first', async
 
   expect(await fetchWalkWatchers('walk-1')).toEqual(['Mum', 'Alex'])
   expect(eq).toHaveBeenCalledWith('walk_id', 'walk-1')
+})
+
+test('SOS from any screen sends the same request id and coordinates to the server', async () => {
+  rpc.mockResolvedValue({
+    data: {
+      id: 'emergency-1',
+      destination_label: 'SOS',
+      started_at: '2026-11-23T20:00:00Z',
+      deadline: '2026-11-23T20:01:00Z',
+      status: 'overdue',
+      sos_at: '2026-11-23T20:00:00Z',
+      warned_at: '2026-11-23T20:00:00Z',
+      checked_in_at: null,
+    },
+    error: null,
+  })
+  const walk = await sendEmergencySos('request-1', [5.4791, 51.4385])
+  expect(rpc).toHaveBeenCalledWith('send_emergency_sos', {
+    request_id: 'request-1',
+    lat: 51.4385,
+    lng: 5.4791,
+  })
+  expect(walk.sosAt).toEqual(new Date('2026-11-23T20:00:00Z'))
+})
+
+test('SOS from any screen rejects a server failure', async () => {
+  rpc.mockResolvedValue({ data: null, error: new Error('No trusted contacts') })
+  await expect(sendEmergencySos('request-1', null)).rejects.toThrow('No trusted contacts')
 })

@@ -409,3 +409,16 @@ test('route reports appear on the matching route and remain in its selected summ
   expect(summary).toHaveTextContent('Quiet')
   expect(summary).toHaveTextContent('Less light reported')
 })
+
+test('SOS and Report share a control row anchored above the route panel', async () => {
+  render(<RoutePlanner onRouteChange={vi.fn()} sosControl={<button>SOS</button>} />)
+  expect(screen.getByRole('button', { name: 'Report' }).parentElement).toContainElement(
+    screen.getByRole('button', { name: 'SOS' }),
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Tap Stratumseind' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Tap the station' }))
+  await screen.findByText('Most street lights')
+  const controls = screen.getByRole('button', { name: 'Report' }).parentElement
+  expect(controls).toContainElement(screen.getByRole('button', { name: 'SOS' }))
+  expect(controls?.parentElement).toHaveClass('map-bottom')
+})

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
 import { withDarkStretchesAfterDusk } from './daylight.ts'
@@ -23,11 +23,12 @@ import reportIcon from '../../assets/day/report.png'
 import './map.css'
 
 type RoutePlannerProps = {
+  sosControl?: ReactNode
   onRouteChange: (route: PlannedRoute | null) => void
   onStartWalk?: () => void
 }
 
-function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
+function RoutePlanner({ onRouteChange, onStartWalk, sosControl }: RoutePlannerProps) {
   const [isReportingPlace, setIsReportingPlace] = useState(false)
   const location = useUserPosition()
   const planner = usePlanner(location.position)
@@ -161,27 +162,6 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
         })}
         status={status}
       />
-      {!reporting.isSheetOpen && !planner.destination && (
-        <div className="map-actions planner-actions">
-          <button
-            type="button"
-            className="map-locate"
-            aria-label="My location"
-            title="Get my location"
-            onClick={locate}
-          >
-            <img src={locationIcon} alt="" />
-          </button>
-          <button
-            type="button"
-            className="map-report"
-            aria-label="Report"
-            onClick={() => setIsReportingPlace(true)}
-          >
-            <img src={reportIcon} alt="" />
-          </button>
-        </div>
-      )}
       {isReportingPlace &&
         createPortal(
           <ReportPlaceSheet
@@ -193,6 +173,29 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
           document.body,
         )}
       <div ref={bottomRef} className="map-bottom">
+        {!reporting.isSheetOpen && (
+          <div className="map-actions planner-actions">
+            {sosControl && <div className="map-sos-control">{sosControl}</div>}
+            <button
+              type="button"
+              className="map-locate"
+              aria-label="My location"
+              title="Get my location"
+              onClick={locate}
+            >
+              <img src={locationIcon} alt="" />
+            </button>
+            <button
+              type="button"
+              className="map-report"
+              aria-label="Report"
+              onClick={() => setIsReportingPlace(true)}
+            >
+              <img src={reportIcon} alt="" />
+            </button>
+          </div>
+        )}
+
         {reporting.isSheetOpen ? (
           <ReportSheets reporting={reporting} />
         ) : hasRoutes ? (

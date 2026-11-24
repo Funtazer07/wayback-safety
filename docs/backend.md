@@ -1009,3 +1009,21 @@ Redeploy `send-walk-push` with the `reminder` event before running 0020, and the
 version before 0021. Both migrations are already run on the shared project. It uses the existing
 Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
 queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).
+
+### SOS on the two map screens
+
+The SOS control appears on Home and the walk timer map, opposite Report in the same control row.
+Other screens are unchanged. Press SOS, then hold the confirmation control for 3 continuous seconds.
+Releasing early resets progress. Cancel closes the panel without sending.
+Confirmation appears only after the server accepts the alert.
+
+The prepared `0029_sos_from_any_screen.sql` migration provides `send_emergency_sos`.
+An SOS reaches every accepted contact: during a walk the contacts chosen for it stay on it and the
+other accepted contacts are added, so a walk without contacts can still send SOS. Pending
+invitations are excluded. When nobody has accepted, the app says so instead of asking to retry.
+The request ID prevents duplicate alerts after a retry.
+On a walk that is already overdue, `sos_at` and `overdue_at` both move to the moment SOS was
+pressed, so the contacts see the right time. Only the latest available location is kept, and it
+is erased 24 hours after that moment, under the overdue retention rule.
+`0029` is not run on the shared project yet; run it after this change is merged.
+Push sound depends on the recipient's notification permissions and device settings.
