@@ -75,10 +75,11 @@ Without it the site works, but cannot turn on notifications. See docs/backend.md
 
 ## If something fails
 
-| Problem                               | Likely cause                                                                       |
-| ------------------------------------- | ---------------------------------------------------------------------------------- |
-| Checks are red                        | Click **Details** next to the red check and read the failing step                  |
-| Deploy job fails at "configure-pages" | Pages is not turned on, or its source is not "GitHub Actions" (step 1)             |
-| Copy job fails with "Access denied"   | `FONTYS_GITLAB_TOKEN` is missing, expired, or lacks the Maintainer role (step 3)   |
-| Copy job fails with "rejected"        | Someone changed the Fontys GitLab repository directly; it no longer matches GitHub |
-| Site loads but is blank               | A hand-written path starting with `/`; see "The subfolder path"                    |
+| Problem                               | Likely cause                                                                        |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| Checks are red                        | Click **Details** next to the red check and read the failing step                   |
+| Deploy job fails at "configure-pages" | Pages is not turned on, or its source is not "GitHub Actions" (step 1)              |
+| Copy job fails with "Access denied"   | `FONTYS_GITLAB_TOKEN` is missing, expired, or lacks the Maintainer role (step 3)    |
+| Copy job fails with "rejected"        | Someone changed the Fontys GitLab repository directly; it no longer matches GitHub  |
+| Site loads but is blank               | A hand-written path starting with `/`; see "The subfolder path"                     |
+| Deploy job fails at "deploy-pages"    | Usually a GitHub hiccup; **Re-run failed jobs** (each attempt uploads its own copy) |
