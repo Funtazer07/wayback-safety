@@ -1018,8 +1018,12 @@ Releasing early resets progress. Cancel closes the panel without sending.
 Confirmation appears only after the server accepts the alert.
 
 The prepared `0029_sos_from_any_screen.sql` migration provides `send_emergency_sos`.
-During a walk it uses that walk's selected contacts. Before a walk it uses all accepted contacts.
-Pending invitations are excluded. The request ID prevents duplicate alerts after a retry.
-Only the latest available location is kept, under the existing 24-hour overdue retention rule.
-The migration must be applied by the team before real sending works; it has not been run here.
+An SOS reaches every accepted contact: during a walk the contacts chosen for it stay on it and the
+other accepted contacts are added, so a walk without contacts can still send SOS. Pending
+invitations are excluded. When nobody has accepted, the app says so instead of asking to retry.
+The request ID prevents duplicate alerts after a retry.
+On a walk that is already overdue, `sos_at` and `overdue_at` both move to the moment SOS was
+pressed, so the contacts see the right time. Only the latest available location is kept, and it
+is erased 24 hours after that moment, under the overdue retention rule.
+`0029` is not run on the shared project yet; run it after this change is merged.
 Push sound depends on the recipient's notification permissions and device settings.

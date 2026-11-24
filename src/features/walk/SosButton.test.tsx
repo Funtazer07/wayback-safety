@@ -31,3 +31,42 @@ test('SOS requires three seconds of continuous holding and resets on release', a
   await act(async () => vi.advanceTimersByTime(50))
   expect(send).toHaveBeenCalledOnce()
 })
+
+test('a long touch that opens the context menu does not reset the SOS hold', async () => {
+  vi.useFakeTimers()
+  const send = vi.fn().mockResolvedValue(undefined)
+  render(<SosButton onSend={send} />)
+  fireEvent.click(screen.getByRole('button', { name: 'SOS' }))
+  const hold = screen.getByRole('button', { name: 'Hold for 3 seconds to send SOS' })
+  fireEvent.keyDown(hold, { key: ' ' })
+  act(() => vi.advanceTimersByTime(500))
+  fireEvent.contextMenu(hold)
+  await act(async () => vi.advanceTimersByTime(2600))
+  expect(send).toHaveBeenCalledOnce()
+})
+
+test('an SOS the server refuses for lack of contacts says how to fix it', async () => {
+  vi.useFakeTimers()
+  const send = vi
+    .fn()
+    .mockRejectedValue({ message: 'Add an accepted trusted contact before sending SOS' })
+  render(<SosButton onSend={send} />)
+  fireEvent.click(screen.getByRole('button', { name: 'SOS' }))
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Hold for 3 seconds to send SOS' }), {
+    key: ' ',
+  })
+  await act(async () => vi.advanceTimersByTime(3100))
+  expect(screen.getByRole('alert')).toHaveTextContent('Add a trusted contact')
+})
+
+test('an SOS that fails for another reason asks to check the connection', async () => {
+  vi.useFakeTimers()
+  const send = vi.fn().mockRejectedValue(new Error('Failed to fetch'))
+  render(<SosButton onSend={send} />)
+  fireEvent.click(screen.getByRole('button', { name: 'SOS' }))
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Hold for 3 seconds to send SOS' }), {
+    key: ' ',
+  })
+  await act(async () => vi.advanceTimersByTime(3100))
+  expect(screen.getByRole('alert')).toHaveTextContent('Check your connection')
+})

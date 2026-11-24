@@ -4,10 +4,10 @@ type SosCountdownProps = {
   onCancel: () => void
   onSend: () => void
   duringWalk?: boolean
-  failed?: boolean
+  failure?: string | null
 }
 
-function SosCountdown({ onCancel, onSend, failed = false }: SosCountdownProps) {
+function SosCountdown({ onCancel, onSend, failure = null }: SosCountdownProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const started = useRef<number | null>(null)
   const frame = useRef<number | null>(null)
@@ -81,10 +81,8 @@ function SosCountdown({ onCancel, onSend, failed = false }: SosCountdownProps) {
         onPointerCancel={stop}
         onLostPointerCapture={stop}
         onBlur={stop}
-        onContextMenu={(event) => {
-          event.preventDefault()
-          stop()
-        }}
+        // Android fires contextmenu on a long touch, so stopping here would cancel every hold.
+        onContextMenu={(event) => event.preventDefault()}
         onKeyDown={(event) => {
           if (event.key === ' ' || event.key === 'Enter') {
             event.preventDefault()
@@ -102,7 +100,7 @@ function SosCountdown({ onCancel, onSend, failed = false }: SosCountdownProps) {
         <strong>{seconds}s</strong>
         <span>{isHolding ? 'Keep holding' : 'Hold it'}</span>
       </button>
-      {failed && <p role="alert">Could not send SOS. Check your connection and try again.</p>}
+      {failure && <p role="alert">{failure}</p>}
       <button
         type="button"
         onClick={() => {

@@ -1,4 +1,11 @@
 -- SOS from any signed-in screen. Reuse walk alerts and their existing location retention.
+--
+-- An SOS reaches every accepted contact. During a walk the contacts chosen for it stay on it and
+-- the other accepted contacts are added, so a walk without contacts can still send SOS.
+-- On a walk that is already overdue, sos_at and overdue_at both move to the moment SOS was
+-- pressed (sos_at must equal overdue_at, 0027), so the push shows the right time.
+-- Assumption: this restarts the 24-hour location window (0012), which fits, because the walker
+-- just sent a fresh location.
 create function public.send_emergency_sos(
   request_id uuid,
   lat double precision default null,
@@ -37,12 +44,13 @@ begin
     return target;
   end if;
 
+  if not exists (
+    select 1 from public.contacts where user_id = owner_id and status = 'accepted'
+  ) then
+    raise exception 'Add an accepted trusted contact before sending SOS';
+  end if;
+
   if target.id is null then
-    if not exists (
-      select 1 from public.contacts where user_id = owner_id and status = 'accepted'
-    ) then
-      raise exception 'Add an accepted trusted contact before sending SOS';
-    end if;
     -- Insert in the final state so there is a single SOS notification.
     insert into public.walks (
       id, user_id, destination_label, deadline, status, warned_at, overdue_at, sos_at,
@@ -57,16 +65,15 @@ begin
 
     perform public.queue_walk_push(target.id, 'sos');
   else
-    if not exists (
-      select 1 from public.walk_contacts wc join public.contacts c on c.id = wc.contact_id
-      where wc.walk_id = target.id and c.status = 'accepted'
-    ) then
-      raise exception 'This walk has no accepted trusted contacts';
-    end if;
+    -- The contacts already chosen for the walk stay on it.
+    insert into public.walk_contacts (walk_id, contact_id)
+    select target.id, id from public.contacts where user_id = owner_id and status = 'accepted'
+    on conflict do nothing;
+
     if target.status = 'active' then
       target := public.send_sos(target.id, lat, lng);
     else
-      update public.walks set sos_at = overdue_at,
+      update public.walks set overdue_at = now(), sos_at = now(),
         last_lat = coalesce(lat, last_lat), last_lng = coalesce(lng, last_lng),
         last_location_at = case when lat is null then last_location_at else now() end
       where id = target.id returning * into target;

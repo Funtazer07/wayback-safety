@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import SosCountdown from './SosCountdown.tsx'
+import { sosFailureText } from './sosFailure.ts'
 import './sos.css'
 
 type SosButtonProps = {
@@ -11,7 +12,7 @@ type SosButtonProps = {
 function SosButton({ onSend, alreadySent = false }: SosButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
-  const [failed, setFailed] = useState(false)
+  const [failure, setFailure] = useState<string | null>(null)
   const sending = useRef(false)
 
   async function send() {
@@ -21,8 +22,8 @@ function SosButton({ onSend, alreadySent = false }: SosButtonProps) {
     setIsOpen(false)
     try {
       await onSend()
-    } catch {
-      setFailed(true)
+    } catch (error) {
+      setFailure(sosFailureText(error))
       setIsOpen(true)
     } finally {
       sending.current = false
@@ -38,13 +39,13 @@ function SosButton({ onSend, alreadySent = false }: SosButtonProps) {
         aria-label={alreadySent ? 'SOS sent' : 'SOS'}
         disabled={isSending || alreadySent}
         onClick={() => {
-          setFailed(false)
+          setFailure(null)
           setIsOpen(true)
         }}
       >
         <span>{alreadySent ? 'SOS sent' : isSending ? 'Sending SOS…' : 'SOS'}</span>
       </button>
-      {isOpen && <SosCountdown onCancel={() => setIsOpen(false)} onSend={send} failed={failed} />}
+      {isOpen && <SosCountdown onCancel={() => setIsOpen(false)} onSend={send} failure={failure} />}
     </>
   )
 }
