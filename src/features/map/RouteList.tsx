@@ -93,11 +93,6 @@ function RouteList({
               {isAlternative && (
                 <span className="route-compare">
                   <span className="route-compare-item">
-                    <span aria-hidden="true">💡</span>
-                    <span>{comparison.lightingText}</span>
-                  </span>
-
-                  <span className="route-compare-item">
                     <svg
                       className="route-compare-clock"
                       width="15"
