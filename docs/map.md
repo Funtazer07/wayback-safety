@@ -210,8 +210,15 @@ MapLibre needs a real browser with WebGL, so the tests replace the map with a st
 ## Day design and timer setup
 
 The day design uses the same green actions, rounded white cards and compact text on Home,
-the route panel and the timer setup screen. The route panel can be collapsed with its handle;
-the Home, Contacts and Account navigation stays visible while planning.
+the route panel and the timer setup screen. The route panel can be collapsed with its handle:
+tap it, or swipe it down or up. Only the handle takes the swipe, so scrolling the route list
+never closes the panel. The panel follows the thumb and slides open and closed (no animation
+with "reduce motion" on). The Home, Contacts and Account navigation stays visible while
+planning.
+
+During a walk the panel stays small, so the map keeps most of the screen: the time left and
+**I'm home** on one row, then where the walk goes and when to check in, the +5/+10/+15 buttons
+and **Cancel walk** as a red text button, so red stays for SOS.
 
 The chosen route supplies the timer setup screen with its duration and distance. Walking time
 is rounded up to a whole minute consistently in route cards, estimated arrival and the initial
