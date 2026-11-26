@@ -9,6 +9,9 @@ import { useReporting } from './useReporting.ts'
 import { useUserPosition } from './useUserPosition.ts'
 import locationIcon from '../../assets/day/location.png'
 import reportIcon from '../../assets/day/report.png'
+import type { RecentReport } from './recentReports.ts'
+import RecentReportsList from './RecentReportsList.tsx'
+import { useRecentReports } from './useRecentReports.ts'
 import './map.css'
 
 type WalkMapProps = {
@@ -33,6 +36,13 @@ function WalkMap({ route, arrivalLabel, sosControl }: WalkMapProps) {
       : null,
   )
   const hasMoved = useRef(route !== null)
+  const recent = useRecentReports({
+    placeReports: reporting.placeReports,
+    brokenLights: reporting.brokenLights,
+    userPosition: position?.coordinates ?? null,
+    route,
+    reload: reporting.reloadReports,
+  })
 
   useEffect(() => start(), [start])
 
@@ -41,6 +51,12 @@ function WalkMap({ route, arrivalLabel, sosControl }: WalkMapProps) {
     hasMoved.current = true
     setCamera({ id: Date.now(), kind: 'centre', centre: position.coordinates, zoom: 17 })
   }, [position])
+
+  function showRecentReport(report: RecentReport) {
+    setCamera({ id: Date.now(), kind: 'centre', centre: report.coordinates, zoom: 17 })
+    if (report.kind === 'broken_light') reporting.showLight(report.id)
+    else reporting.showPlaceReport(report.id)
+  }
 
   return (
     <div className="map-area">
@@ -63,11 +79,21 @@ function WalkMap({ route, arrivalLabel, sosControl }: WalkMapProps) {
         onBrokenLightTap={reporting.showLight}
         onPlaceReportTap={reporting.showPlaceReport}
       />
-      {thankYou && (
-        <p className="map-toast" role="status">
-          {thankYou}
-        </p>
-      )}
+      <div className="map-top">
+        {thankYou && (
+          <p className="map-toast" role="status">
+            {thankYou}
+          </p>
+        )}
+        {!reporting.isSheetOpen && !isReportingPlace && (
+          <RecentReportsList
+            reports={recent.reports}
+            canSearch={recent.canSearch}
+            now={recent.now}
+            onSelect={showRecentReport}
+          />
+        )}
+      </div>
       {arrivalLabel && !reporting.isSheetOpen && <p className="map-arrival">{arrivalLabel}</p>}
       {!reporting.isSheetOpen && (
         <div className="map-actions">

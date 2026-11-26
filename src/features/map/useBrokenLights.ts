@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   fetchBrokenLights,
   markLightWorking,
@@ -9,6 +9,7 @@ import type { Lamp } from './lamps.ts'
 
 export function useBrokenLights() {
   const [brokenLights, setBrokenLights] = useState<BrokenLight[]>([])
+  const [version, setVersion] = useState(0)
 
   useEffect(() => {
     let isCurrent = true
@@ -19,7 +20,9 @@ export function useBrokenLights() {
     return () => {
       isCurrent = false
     }
-  }, [])
+  }, [version])
+
+  const reload = useCallback(() => setVersion((current) => current + 1), [])
 
   async function add(lamp: Lamp): Promise<BrokenLight[]> {
     const light = await reportBrokenLight(lamp)
@@ -35,5 +38,5 @@ export function useBrokenLights() {
     return next
   }
 
-  return { brokenLights, add, remove }
+  return { brokenLights, reload, add, remove }
 }

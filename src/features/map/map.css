@@ -562,6 +562,133 @@
   text-align: left;
 }
 
+/* Over the walk map: the thank-you message and Recent reports share the top row, so they stack
+   instead of covering each other. */
+.map-top {
+  position: relative;
+  z-index: 3;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0.5rem 0;
+}
+
+.map-top .map-toast {
+  position: static;
+  align-self: stretch;
+}
+
+.recent-reports {
+  max-width: 100%;
+}
+
+.recent-reports-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 12%);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recent-reports-panel {
+  width: min(18rem, calc(100vw - 2rem));
+  max-height: min(18rem, 40vh);
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 18%);
+}
+
+.route-recent-reports {
+  margin-top: 0.75rem;
+}
+
+/* In the route drawer the list has the drawer's width and no shadow of its own. */
+.route-recent-reports .recent-reports-panel {
+  width: auto;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+.recent-reports-panel h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.recent-reports-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-reports-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.recent-report-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recent-report-item:hover {
+  background: var(--page-tint);
+}
+
+.recent-report-dot {
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.3rem;
+  border-radius: 50%;
+}
+
+.recent-report-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.recent-report-content strong {
+  font-size: 0.9375rem;
+}
+
+.recent-report-content small {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.recent-reports-empty {
+  margin: 0;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
 /* While routes are shown only a × stays at the top left, so the map is free. */
 .home-screen .planner-panel.is-compact,
 .planner-panel.is-compact {

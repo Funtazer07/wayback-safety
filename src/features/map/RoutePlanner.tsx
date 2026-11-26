@@ -8,6 +8,8 @@ import type { CameraMove } from './moveCamera.ts'
 import { locationMessage, plannerHint } from './plannerHint.ts'
 import DestinationSearch from './DestinationSearch.tsx'
 import PlannerPanel from './PlannerPanel.tsx'
+import type { RecentReport } from './recentReports.ts'
+import RecentReportsList from './RecentReportsList.tsx'
 import ReportSheets from './ReportSheets.tsx'
 import RouteList from './RouteList.tsx'
 import RouteDrawer from './RouteDrawer.tsx'
@@ -15,6 +17,7 @@ import { reportsAlongRoutes } from './routeReports.ts'
 import RouteSummary from './RouteSummary.tsx'
 import { useIsAfterDusk } from './useIsAfterDusk.ts'
 import { usePlanner } from './usePlanner.ts'
+import { useRecentReports } from './useRecentReports.ts'
 import { useReporting } from './useReporting.ts'
 import type { PlannedRoute } from './walkRoute.ts'
 import { useUserPosition } from './useUserPosition.ts'
@@ -78,6 +81,19 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl, banner }: RouteP
     reporting.brokenLights,
   )
   const shownRoute = planner.routes[planner.selectedIndex] ?? null
+  const recent = useRecentReports({
+    placeReports: reporting.placeReports,
+    brokenLights: reporting.brokenLights,
+    userPosition: position?.coordinates ?? null,
+    route: shownRoute?.coordinates ?? null,
+    reload: reporting.reloadReports,
+  })
+
+  function showRecentReport(report: RecentReport) {
+    setCamera({ id: Date.now(), kind: 'centre', centre: report.coordinates, zoom: 17 })
+    if (report.kind === 'broken_light') reporting.showLight(report.id)
+    else reporting.showPlaceReport(report.id)
+  }
   const isAfterDusk = useIsAfterDusk()
   const routesNow = useMemo(
     () => withDarkStretchesAfterDusk(planner.routes, isAfterDusk),
@@ -244,6 +260,14 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl, banner }: RouteP
                   report.brokenCount >
                 0,
             ) && <p className="route-source-note">Based on nearby user reports.</p>}
+            <div className="route-recent-reports">
+              <RecentReportsList
+                reports={recent.reports}
+                canSearch={recent.canSearch}
+                now={recent.now}
+                onSelect={showRecentReport}
+              />
+            </div>
             {onStartWalk && (
               <div className="map-route-actions">
                 <button

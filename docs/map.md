@@ -164,6 +164,21 @@ A user test with 3 people (SCRUM-93, SCRUM-129) showed two problems, fixed here:
 categories were mixed up, and the red markers could not be told apart. The light categories now say
 the cause: "there is a lamp, but it is broken" against "no lamp is broken, there are too few lamps".
 
+## Recent reports
+
+A **Recent reports** button lists the reports of the last 3 hours (place reports and broken lights)
+that are within 300 m of the user or 100 m of the route, newest first. During a walk the button
+sits at the top of the map, under the thank-you message when there is one. In the planner it is in
+the route drawer, under the routes, and uses the route that is shown on the map. Each item says the
+category, how long ago it was reported and whether it is near the user or the route; tapping it
+moves the map there and opens the same info sheet as tapping the icon on the map. The filter is in
+`recentReports.ts`; the hours and distances are assumptions and are marked as such there.
+
+Without a location and without a route there is nothing to search near, so the list asks the user
+to turn on their location instead of saying there are no reports. The ages update every minute and
+the reports are fetched again every 5 minutes, so a report someone else made during the walk shows
+up too.
+
 ## Privacy
 
 - The user's position is drawn on the map and used as the start of a route. To plan a route, the
