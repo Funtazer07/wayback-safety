@@ -562,167 +562,131 @@
   text-align: left;
 }
 
-/* recent reports */
-
-/* container for recent reports */
-.recent-reports {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
+/* Over the walk map: the thank-you message and Recent reports share the top row, so they stack
+   instead of covering each other. */
+.map-top {
+  position: relative;
   z-index: 3;
-
-  width: max-content;
-  max-width: calc(100% - 1.5rem);
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0.5rem 0;
 }
 
-/* button to open the reports list */
+.map-top .map-toast {
+  position: static;
+  align-self: stretch;
+}
+
+.recent-reports {
+  max-width: 100%;
+}
+
 .recent-reports-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
-
   min-height: 2.75rem;
-  padding: 0.5rem 0.875rem;
-
-  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
   border-radius: 1.5rem;
-
-  background: #fff;
-  color: #26352d;
-
-  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
-
-  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 12%);
+  font: inherit;
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-/* expandable reports list */
 .recent-reports-panel {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 0.5rem);
-
-  width: min(14rem, calc(100vw - 2rem));
-  max-height: min(17rem, 45vh);
-
+  width: min(18rem, calc(100vw - 2rem));
+  max-height: min(18rem, 40vh);
   overflow-y: auto;
+  margin-top: 0.5rem;
   padding: 0.75rem;
-
-  border-radius: 0.875rem;
-  background: #fff;
-  color: #26352d;
-
-  box-shadow: 0 4px 20px rgb(0 0 0 / 18%);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 18%);
 }
 
-/* list title */
+.route-recent-reports {
+  margin-top: 0.75rem;
+}
+
+/* In the route drawer the list has the drawer's width and no shadow of its own. */
+.route-recent-reports .recent-reports-panel {
+  width: auto;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
 .recent-reports-panel h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
 }
 
-/* remove default list styling */
 .recent-reports-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* separate each report */
 .recent-reports-list li + li {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
 }
 
-/* individual report button */
 .recent-report-item {
   display: flex;
   align-items: flex-start;
   gap: 0.625rem;
-
   width: 100%;
-  min-height: 3rem;
+  min-height: 2.75rem;
   padding: 0.625rem 0.25rem;
-
   border: 0;
   background: transparent;
   color: inherit;
-
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-/* hover effect */
 .recent-report-item:hover {
-  background: #f3f5f3;
+  background: var(--page-tint);
 }
 
-/* coloured report indicator */
 .recent-report-dot {
   flex-shrink: 0;
-
-  width: 0.5rem;
-  height: 0.5rem;
-  margin-top: 0.25rem;
-
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.3rem;
   border-radius: 50%;
 }
 
-/* report text */
 .recent-report-content {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
   min-width: 0;
 }
 
-/* report name */
 .recent-report-content strong {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
 }
 
-/* report time and location */
 .recent-report-content small {
-  font-size: 0.75rem;
-  line-height: 1.4;
-  color: #666;
+  font-size: 0.875rem;
+  color: var(--text-muted);
 }
 
-/* empty list message */
 .recent-reports-empty {
   margin: 0;
-  padding: 0.5rem 0;
-
-  font-size: 0.75rem;
-  color: #666;
-}
-
-/* keyboard accessibility */
-.recent-report-item:focus-visible,
-.recent-reports-toggle:focus-visible {
-  outline: 2px solid #16a34a;
-  outline-offset: 2px;
-}
-
-/* small mobile screens */
-@media (max-width: 400px) {
-  .recent-reports {
-    left: 0.5rem;
-    top: 0.5rem;
-    max-width: calc(100% - 1rem);
-  }
-
-  .recent-reports-panel {
-    width: min(17rem, calc(100vw - 1rem));
-    max-height: 40vh;
-  }
-
-  .recent-reports-toggle {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-  }
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
 }
 
 /* While routes are shown only a × stays at the top left, so the map is free. */

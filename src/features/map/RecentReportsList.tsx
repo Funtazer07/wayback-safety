@@ -1,25 +1,24 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import { reportAge } from '../reports/reportAge.ts'
 import { reportCategories } from '../reports/reportCategories.ts'
-import type { RecentReport } from './recentReports.ts'
+import { RECENT_HOURS, type RecentReport } from './recentReports.ts'
 
-type Props = {
+type RecentReportsListProps = {
   reports: RecentReport[]
+  /** False while there is no location and no route, so nothing could be searched. */
+  canSearch: boolean
   now: Date
   onSelect: (report: RecentReport) => void
 }
 
-function timeAgo(date: Date, now: Date): string {
-  const minutes = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 60000))
-
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes} min ago`
-
-  const hours = Math.floor(minutes / 60)
-  return `${hours} hr ago`
-}
-
-export default function RecentReportsList({ reports, now, onSelect }: Props) {
+export default function RecentReportsList({
+  reports,
+  canSearch,
+  now,
+  onSelect,
+}: RecentReportsListProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const panelId = useId()
 
   return (
     <div className="recent-reports">
@@ -27,62 +26,62 @@ export default function RecentReportsList({ reports, now, onSelect }: Props) {
         type="button"
         className="recent-reports-toggle"
         aria-expanded={isOpen}
-        aria-controls="recent-reports-panel"
-        onClick={() => setIsOpen((value) => !value)}
+        aria-controls={isOpen ? panelId : undefined}
+        onClick={() => setIsOpen((open) => !open)}
       >
         <span>
           Recent reports
-          {reports.length > 0 ? ` (${reports.length})` : ''}
+          {reports.length > 0 && ` (${reports.length})`}
         </span>
         <span aria-hidden="true">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {isOpen && (
-        <section
-          id="recent-reports-panel"
-          className="recent-reports-panel"
-          aria-label="Recent reports"
-        >
-          <h2>Last 3 hours</h2>
-
+        <section id={panelId} className="recent-reports-panel" aria-label="Recent reports">
+          <h2>Last {RECENT_HOURS} hours</h2>
           {reports.length === 0 ? (
-            <p className="recent-reports-empty">No recent reports nearby.</p>
+            <p className="recent-reports-empty">
+              {canSearch
+                ? 'No reports near you or your route.'
+                : 'Turn on your location to see reports near you.'}
+            </p>
           ) : (
             <ul className="recent-reports-list">
-              {reports.map((report) => {
-                const category = reportCategories[report.category]
-
-                return (
-                  <li key={`${report.kind}-${report.id}`}>
-                    <button
-                      type="button"
-                      className="recent-report-item"
-                      onClick={() => onSelect(report)}
-                    >
-                      <span
-                        className="recent-report-dot"
-                        style={{
-                          backgroundColor: category.colour,
-                        }}
-                        aria-hidden="true"
-                      />
-
-                      <span className="recent-report-content">
-                        <strong>{category.title}</strong>
-                        <small>
-                          {timeAgo(report.reportedAt, now)}
-                          {' · '}
-                          {report.nearRoute ? 'Near your route' : 'Near you'}
-                        </small>
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
+              {reports.map((report) => (
+                <li key={`${report.kind}-${report.id}`}>
+                  <RecentReportItem report={report} now={now} onSelect={onSelect} />
+                </li>
+              ))}
             </ul>
           )}
         </section>
       )}
     </div>
+  )
+}
+
+type RecentReportItemProps = {
+  report: RecentReport
+  now: Date
+  onSelect: (report: RecentReport) => void
+}
+
+function RecentReportItem({ report, now, onSelect }: RecentReportItemProps) {
+  const category = reportCategories[report.category]
+
+  return (
+    <button type="button" className="recent-report-item" onClick={() => onSelect(report)}>
+      <span
+        className="recent-report-dot"
+        style={{ backgroundColor: category.colour }}
+        aria-hidden="true"
+      />
+      <span className="recent-report-content">
+        <strong>{category.title}</strong>
+        <small>
+          {reportAge(report.reportedAt, now)} · {report.nearRoute ? 'Near your route' : 'Near you'}
+        </small>
+      </span>
+    </button>
   )
 }

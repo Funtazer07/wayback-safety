@@ -2,9 +2,11 @@ import type { PlaceReport } from '../reports/reports.ts'
 import type { BrokenLight } from './brokenLights.ts'
 import { distanceInMetres, measureFromLine, metresFrom, type LngLat } from './geometry.ts'
 
-// our starting settings
+// Assumption: older reports say little about the street right now.
 export const RECENT_HOURS = 3
+// Assumption: about four minutes of walking around the user.
 export const NEAR_USER_METRES = 300
+// Assumption: close enough to the route to be seen from it.
 export const NEAR_ROUTE_METRES = 100
 
 export type RecentReport = {
@@ -17,18 +19,17 @@ export type RecentReport = {
   nearRoute: boolean
 }
 
+/** Reports of the last few hours near the user or the route, newest first. */
 export function getRecentReports(
   placeReports: PlaceReport[],
   brokenLights: BrokenLight[],
   userPosition: LngLat | null,
-  selectedRoute: LngLat[] | null,
+  route: LngLat[] | null,
   now = new Date(),
 ): RecentReport[] {
-  // only accept reports from the last 3 hours.
-  const nowMs = now.getTime()
-  const earliest = nowMs - RECENT_HOURS * 60 * 60 * 1000
+  const latest = now.getTime()
+  const earliest = latest - RECENT_HOURS * 60 * 60 * 1000
 
-  // put both types of reports into one list.
   const allReports = [
     ...placeReports.map((report) => ({
       id: report.id,
@@ -37,7 +38,6 @@ export function getRecentReports(
       coordinates: report.coordinates,
       reportedAt: report.reportedAt,
     })),
-
     ...brokenLights.map((light) => ({
       id: light.lampId,
       kind: 'broken_light' as const,
@@ -47,39 +47,24 @@ export function getRecentReports(
     })),
   ]
 
-  // prepare the selected route for distance checking.
-  const routeOrigin = selectedRoute?.[0]
-  const project = routeOrigin ? metresFrom(routeOrigin) : null
-  const routeLine =
-    project && selectedRoute && selectedRoute.length >= 2 ? selectedRoute.map(project) : null
+  const project = route && route.length >= 2 ? metresFrom(route[0]) : null
+  const routeInMetres = project && route ? route.map(project) : null
 
-  return (
-    allReports
-      .flatMap((report): RecentReport[] => {
-        const timestamp = report.reportedAt.getTime()
+  return allReports
+    .flatMap((report): RecentReport[] => {
+      const time = report.reportedAt.getTime()
+      // NaN fails both checks, so a broken date is left out too.
+      if (!(time >= earliest && time <= latest)) return []
 
-        // ignore old, future, or invalid dates.
-        if (!Number.isFinite(timestamp) || timestamp < earliest || timestamp > nowMs) {
-          return []
-        }
+      const nearUser =
+        userPosition !== null &&
+        distanceInMetres(userPosition, report.coordinates) <= NEAR_USER_METRES
+      const nearRoute =
+        project !== null &&
+        routeInMetres !== null &&
+        measureFromLine(routeInMetres, project(report.coordinates)).distance <= NEAR_ROUTE_METRES
 
-        // check whether the report is near the user.
-        const nearUser =
-          userPosition !== null &&
-          distanceInMetres(userPosition, report.coordinates) <= NEAR_USER_METRES
-
-        // check whether it's near the chosen route.
-        const nearRoute =
-          routeLine !== null &&
-          project !== null &&
-          measureFromLine(routeLine, project(report.coordinates)).distance <= NEAR_ROUTE_METRES
-
-        // skip reports that are not nearby.
-        if (!nearUser && !nearRoute) return []
-
-        return [{ ...report, nearUser, nearRoute }]
-      })
-      // Newest first.
-      .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
-  )
+      return nearUser || nearRoute ? [{ ...report, nearUser, nearRoute }] : []
+    })
+    .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
 }

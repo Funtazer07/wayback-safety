@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePlaceReports } from '../reports/usePlaceReports.ts'
 import type { BrokenLight } from './brokenLights.ts'
 import type { LngLat } from './geometry.ts'
@@ -9,8 +9,12 @@ import { useLampReport } from './useLampReport.ts'
 const failed = 'Could not save this. Check your connection and try again.'
 
 export function useReporting(afterChange: (lights: BrokenLight[], thankYou: string) => void) {
-  const { brokenLights, add, remove } = useBrokenLights()
+  const { brokenLights, reload: reloadBrokenLights, add, remove } = useBrokenLights()
   const { placeReports, reload: reloadPlaceReports } = usePlaceReports()
+  const reloadReports = useCallback(() => {
+    reloadBrokenLights()
+    reloadPlaceReports()
+  }, [reloadBrokenLights, reloadPlaceReports])
   const report = useLampReport(brokenLights)
   const [openLightId, setOpenLightId] = useState<string | null>(null)
   const openLight = brokenLights.find((light) => light.lampId === openLightId) ?? null
@@ -41,6 +45,7 @@ export function useReporting(afterChange: (lights: BrokenLight[], thankYou: stri
     brokenLights,
     placeReports,
     reloadPlaceReports,
+    reloadReports,
     menu: report.menu,
     openLight,
     openReport,

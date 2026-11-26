@@ -4,101 +4,81 @@ import type { BrokenLight } from './brokenLights.ts'
 import type { LngLat } from './geometry.ts'
 import { getRecentReports } from './recentReports.ts'
 
-// use the same time for each test
-const NOW = new Date('2026-11-18T12:00:00Z')
+const NOW = new Date('2026-11-18T22:00:00Z')
 
-// example location in Eindhoven
-const USER: LngLat = [5.4697, 51.4416]
+// Stationsplein, Eindhoven.
+const USER: LngLat = [5.4797, 51.4433]
 
-// example route for testing
+// About 800 m east from Stationsplein.
 const ROUTE: LngLat[] = [
-  [5.4697, 51.4416],
-  [5.48, 51.4416],
+  [5.4797, 51.4433],
+  [5.4912, 51.4433],
 ]
 
-// make a report for the tests
-function makeReport(id: string, coordinates: LngLat, minutesAgo: number): PlaceReport {
-  return {
-    id,
-    category: 'dark_area',
-    coordinates,
-    reportedAt: new Date(NOW.getTime() - minutesAgo * 60_000),
-  }
+function minutesAgo(minutes: number): Date {
+  return new Date(NOW.getTime() - minutes * 60_000)
 }
 
-describe('SCRUM-141: Recent Reports', () => {
-  // a recent report should show up
-  it('T01 - shows a report from 20 minutes ago', () => {
-    const reports = [makeReport('recent', USER, 20)]
+function placeReport(id: string, coordinates: LngLat, minutes: number): PlaceReport {
+  return { id, category: 'dark_area', coordinates, reportedAt: minutesAgo(minutes) }
+}
 
-    const result = getRecentReports(reports, [], USER, null, NOW)
+describe('getRecentReports', () => {
+  it('shows a report from 20 minutes ago next to the user', () => {
+    const result = getRecentReports([placeReport('a', USER, 20)], [], USER, null, NOW)
 
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('recent')
+    expect(result).toEqual([
+      expect.objectContaining({ id: 'a', kind: 'place', nearUser: true, nearRoute: false }),
+    ])
   })
 
-  // reports older than 3 hours should not show up
-  it('T02 - hides reports older than 3 hours', () => {
-    const reports = [makeReport('old', USER, 300)]
+  it('leaves out reports older than three hours', () => {
+    const result = getRecentReports([placeReport('old', USER, 181)], [], USER, null, NOW)
 
-    const result = getRecentReports(reports, [], USER, null, NOW)
-
-    expect(result).toHaveLength(0)
+    expect(result).toEqual([])
   })
 
-  // reports close to the user should show up
-  it('T03 - finds reports near the user', () => {
-    const reports = [makeReport('near-user', USER, 30)]
+  it('leaves out reports with a time in the future or a broken date', () => {
+    const future = placeReport('future', USER, -10)
+    const broken = { ...placeReport('broken', USER, 10), reportedAt: new Date('not a date') }
 
-    const result = getRecentReports(reports, [], USER, null, NOW)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].nearUser).toBe(true)
+    expect(getRecentReports([future, broken], [], USER, null, NOW)).toEqual([])
   })
 
-  // reports too far away should not show up
-  it('T04 - ignores reports far away', () => {
-    const reports = [makeReport('far-away', [5.55, 51.5], 20)]
+  it('leaves out reports far from both the user and the route', () => {
+    const result = getRecentReports([placeReport('far', [5.55, 51.5], 20)], [], USER, ROUTE, NOW)
 
-    const result = getRecentReports(reports, [], USER, ROUTE, NOW)
-
-    expect(result).toHaveLength(0)
+    expect(result).toEqual([])
   })
 
-  // reports close to the route should show up
-  it('T05 - finds reports near the route', () => {
-    const reports = [makeReport('near-route', [5.475, 51.4416], 25)]
+  it('finds a report next to the route when the user is far away', () => {
+    const halfway: LngLat = [5.486, 51.4434]
 
-    const result = getRecentReports(reports, [], null, ROUTE, NOW)
+    const result = getRecentReports([placeReport('route', halfway, 25)], [], null, ROUTE, NOW)
 
-    expect(result).toHaveLength(1)
-    expect(result[0].nearRoute).toBe(true)
+    expect(result).toEqual([expect.objectContaining({ nearUser: false, nearRoute: true })])
   })
 
-  // include recent broken streetlights
-  it('T06 - includes recent broken lights', () => {
-    const brokenLights: BrokenLight[] = [
-      {
-        lampId: 'lamp-123',
-        coordinates: USER,
-        street: 'Test Street',
-        reportedAt: new Date(NOW.getTime() - 30 * 60_000).toISOString(),
-      },
-    ]
+  it('includes broken street lights reported recently', () => {
+    const light: BrokenLight = {
+      lampId: 'lamp-123',
+      coordinates: USER,
+      street: 'Stationsplein',
+      reportedAt: minutesAgo(30).toISOString(),
+    }
 
-    const result = getRecentReports([], brokenLights, USER, null, NOW)
+    const result = getRecentReports([], [light], USER, null, NOW)
 
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('lamp-123')
-    expect(result[0].kind).toBe('broken_light')
+    expect(result).toEqual([
+      expect.objectContaining({ id: 'lamp-123', kind: 'broken_light', category: 'broken_light' }),
+    ])
   })
 
-  // newest reports should be at the top
-  it('T07 - sorts reports from newest to oldest', () => {
+  it('puts the newest report first', () => {
     const reports = [
-      makeReport('oldest', USER, 150),
-      makeReport('newest', USER, 10),
-      makeReport('middle', USER, 60),
+      placeReport('oldest', USER, 150),
+      placeReport('newest', USER, 10),
+      placeReport('middle', USER, 60),
     ]
 
     const result = getRecentReports(reports, [], USER, null, NOW)
@@ -106,12 +86,9 @@ describe('SCRUM-141: Recent Reports', () => {
     expect(result.map((report) => report.id)).toEqual(['newest', 'middle', 'oldest'])
   })
 
-  // without a location or route, there are no nearby results
-  it('T08 - returns nothing without location or route', () => {
-    const reports = [makeReport('example', USER, 20)]
+  it('finds nothing without a location or a route', () => {
+    const result = getRecentReports([placeReport('a', USER, 20)], [], null, null, NOW)
 
-    const result = getRecentReports(reports, [], null, null, NOW)
-
-    expect(result).toHaveLength(0)
+    expect(result).toEqual([])
   })
 })
