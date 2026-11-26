@@ -24,11 +24,13 @@ import './map.css'
 
 type RoutePlannerProps = {
   sosControl?: ReactNode
+  /** Shown under the search bar while no route is planned. */
+  banner?: ReactNode
   onRouteChange: (route: PlannedRoute | null) => void
   onStartWalk?: () => void
 }
 
-function RoutePlanner({ onRouteChange, onStartWalk, sosControl }: RoutePlannerProps) {
+function RoutePlanner({ onRouteChange, onStartWalk, sosControl, banner }: RoutePlannerProps) {
   const [isReportingPlace, setIsReportingPlace] = useState(false)
   const location = useUserPosition()
   const planner = usePlanner(location.position)
@@ -40,6 +42,10 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl }: RoutePlannerPr
   const bottomRef = useRef<HTMLDivElement>(null)
   const { position } = location
   const isOutside = position !== null && !isInEindhoven(position.coordinates)
+
+  // The phone asks once; after that it remembers the answer, so the map finds the user straight away.
+  const { start: startLocating } = location
+  useEffect(() => startLocating(), [startLocating])
 
   const hasCentred = useRef(false)
   useEffect(() => {
@@ -101,13 +107,17 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl }: RoutePlannerPr
   }
 
   const hasRoutes = planner.routes.length > 0
+  // With a start on the map, a missing location only matters when the user asked for it.
+  const needsLocation = planner.start === null || isLocating
   const status =
     planner.status ||
-    locationMessage({
-      isLocating: isLocating && !position,
-      isUnavailable: location.isUnavailable,
-      isOutside,
-    })
+    (needsLocation
+      ? locationMessage({
+          isLocating: isLocating && !position,
+          isUnavailable: location.isUnavailable,
+          isOutside,
+        })
+      : '')
 
   return (
     <div className="map-area planner">
@@ -161,6 +171,16 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl }: RoutePlannerPr
           hasStart: planner.start !== null,
         })}
         status={status}
+        banner={banner}
+        onStartOver={
+          hasRoutes
+            ? () => {
+                reporting.closeAll()
+                setSearchKey((key) => key + 1)
+                planner.reset()
+              }
+            : undefined
+        }
       />
       {isReportingPlace &&
         createPortal(

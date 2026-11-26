@@ -7,13 +7,17 @@ prototype (`maplibre-prototype-v3.html`), which was tested with the client first
 
 **On Home** (`RoutePlanner.tsx`):
 
-1. Tap the map where you start, or tap **My location**.
+1. The map looks for the user's location as soon as it opens, so every search starts from there.
+   The phone asks for permission the first time only. Tap the map to start somewhere else, or tap
+   **My location** to centre the map on yourself again. The position stays on the phone.
 2. Type where you want to go in the search bar ("Where are you going?") and pick a result, or press
    Enter for the first one. Tapping the map still works too, for a spot without an address. A place
    searched before the start is known is planned as soon as there is a start. Under the search bar,
    **Home** plans the walk home in one tap. The first time it says **Set home**: the user searches
    their address once and it is saved on this phone (see Privacy). The app finds up to three
-   walking routes and counts the registered street lights along each one.
+   walking routes and counts the registered street lights along each one. Picking a result closes
+   the phone's keyboard. While routes are shown, the search bar makes room for the map: only a round
+   **×** stays at the top left, which clears the routes and brings the search bar back.
 
    The place chosen here is also the walk's destination ("Walking to …" on the walk screen and for
    the contacts): "Home", the address from the search bar, or "Your pin on the map". The "Set your

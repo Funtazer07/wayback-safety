@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, expect, test, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { LngLat } from './geometry.ts'
 import type { MeasuredRoute } from './lamps.ts'
 import RoutePlanner from './RoutePlanner.tsx'
@@ -136,7 +136,20 @@ test('a destination typed in the search bar gets its routes, like a tap on the m
     station.coordinates,
     expect.any(AbortSignal),
   )
-  expect(screen.getByRole('searchbox')).toHaveValue(station.label)
+  // The search bar makes room for the map; only the × to start over stays.
+  expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
+})
+
+test('the × shown with the routes clears them and brings the search bar back', async () => {
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+  click('Tap Stratumseind')
+  click('Tap the station')
+  expect(await screen.findByRole('region', { name: 'Choose a route' })).toBeInTheDocument()
+
+  click('Start over')
+
+  expect(screen.queryByRole('region', { name: 'Choose a route' })).not.toBeInTheDocument()
+  expect(screen.getByRole('searchbox', { name: 'Where are you going?' })).toHaveValue('')
 })
 
 test('a destination searched before the start is planned once the start is tapped', async () => {
@@ -150,6 +163,38 @@ test('a destination searched before the start is planned once the start is tappe
   click('Tap Stratumseind')
 
   expect(await screen.findByRole('region', { name: 'Choose a route' })).toBeInTheDocument()
+})
+
+test('the map finds the user on opening, so a search starts from there without a tap', async () => {
+  vi.stubGlobal('navigator', {
+    ...navigator,
+    geolocation: {
+      watchPosition: (found: PositionCallback) => {
+        found({
+          coords: { longitude: 5.4791, latitude: 51.4385, accuracy: 10 },
+        } as GeolocationPosition)
+        return 1
+      },
+      clearWatch: vi.fn(),
+    },
+  })
+  render(<RoutePlanner onRouteChange={onRouteChange} />)
+
+  typeSearch('stationsplein 17')
+  fireEvent.click(await screen.findByRole('button', { name: station.label }))
+
+  expect(await screen.findByRole('region', { name: 'Choose a route' })).toBeInTheDocument()
+  expect(services.fetchRoutes).toHaveBeenCalledWith(
+    [5.4791, 51.4385],
+    station.coordinates,
+    expect.any(AbortSignal),
+  )
+})
+
+afterEach(() => {
+  // Close the map first: it stops watching the location on the way out.
+  cleanup()
+  vi.unstubAllGlobals()
 })
 
 test('the search says so when nothing is found', async () => {
