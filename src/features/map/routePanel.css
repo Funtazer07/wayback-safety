@@ -23,6 +23,8 @@
   border: none;
   border-radius: 0;
   background: transparent;
+  /* The swipe is handled by RouteDrawer, not by the browser. */
+  touch-action: none;
 }
 
 .route-drawer-grip {
@@ -65,7 +67,9 @@
 .route-list {
   display: flex;
   flex-direction: column;
-  max-height: min(28rem, max(8rem, calc(100dvh - var(--day-tab-height) - 18rem)));
+  /* About two routes, so most of the map stays visible; the rest scrolls. */
+  max-height: min(10.5rem, 25dvh);
+  overscroll-behavior: contain;
   overflow-y: auto;
 }
 

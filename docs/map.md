@@ -7,13 +7,17 @@ prototype (`maplibre-prototype-v3.html`), which was tested with the client first
 
 **On Home** (`RoutePlanner.tsx`):
 
-1. Tap the map where you start, or tap **My location**.
+1. The map looks for the user's location as soon as it opens, so every search starts from there.
+   The phone asks for permission the first time only. Tap the map to start somewhere else, or tap
+   **My location** to centre the map on yourself again. The position stays on the phone.
 2. Type where you want to go in the search bar ("Where are you going?") and pick a result, or press
    Enter for the first one. Tapping the map still works too, for a spot without an address. A place
    searched before the start is known is planned as soon as there is a start. Under the search bar,
    **Home** plans the walk home in one tap. The first time it says **Set home**: the user searches
    their address once and it is saved on this phone (see Privacy). The app finds up to three
-   walking routes and counts the registered street lights along each one.
+   walking routes and counts the registered street lights along each one. Picking a result closes
+   the phone's keyboard. While routes are shown, the search bar makes room for the map: only a round
+   **×** stays at the top left, which clears the routes and brings the search bar back.
 
    The place chosen here is also the walk's destination ("Walking to …" on the walk screen and for
    the contacts): "Home", the address from the search bar, or "Your pin on the map". The "Set your
@@ -39,8 +43,8 @@ visible in the bottom panel. The yellow **Report** button on the map
 opens the report form for the spot where the user is (SCRUM-96, see "Place reports" below).
 
 The street lights themselves are not drawn on the map; they only count for the routes. Only lights
-someone reported as broken are drawn, with a red icon. Tapping one shows when it was reported and a
-button **It works again**.
+someone reported as broken are drawn, with a red icon. Tapping one shows the street, how long ago it
+was reported ("2 hours ago") and a button **It works again**.
 
 The map credits ("i") sit bottom left and are closed when the map opens. They cannot be removed:
 the licence of the OpenStreetMap data asks for them to be on the map.
@@ -128,7 +132,9 @@ again; `plan-route` gives each OpenRouteService request 12 seconds itself.
 Reports are saved in the `reports` table in Supabase (SCRUM-92), so every signed-in user sees the
 same broken lights. `brokenLights.ts` loads them when the map opens and saves a new report or "It
 works again" straight away. A light can be reported once; anyone can say it works again. A report
-disappears by itself after 30 days. See "Reports" in [backend.md](backend.md).
+disappears by itself after a time that depends on its category: 14 days for a broken light, 24
+hours for an unsafe situation, up to 30 days for a dark area. See "How long a report stays" in
+[backend.md](backend.md).
 
 If the reports cannot be loaded, the map and the routes still work, counting every light as
 working. If a report or "It works again" cannot be saved, the user sees "Could not save this".
@@ -145,8 +151,9 @@ signed-in user, earlier than SCRUM-8 planned (it waited for SCRUM-10).
 
 On the map each report is a round icon in the colour of its category, with its own picture, inside
 a soft circle of about 60 m. The circle is there because the spot is rounded: it shows the area,
-not where the reporter stood. Tapping the icon shows the category and when it was reported. The
-note and who reported it are never shown. A new report appears on the map as soon as it is saved.
+not where the reporter stood. Tapping the icon shows only the category and how long ago it was
+reported ("yesterday"). The note is never shown, and who reported it is not even stored (see
+"Reports" in [backend.md](backend.md)). A new report appears on the map as soon as it is saved.
 
 Only broken lights are red: a broken-light report from the form uses the same red and bulb as a
 lamp reported on the map, because it is the same problem. Unsafe situations are amber, quiet places

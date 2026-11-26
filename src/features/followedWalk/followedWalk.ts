@@ -7,6 +7,8 @@ export type FollowedWalk = {
   status: 'active' | 'safe' | 'overdue' | 'cancelled'
   deadline: Date
   overdueAt: Date | null
+  /** Set when the walker pressed SOS: the walk is overdue and the walker asked for help. */
+  sosAt: Date | null
   checkedInAt: Date | null
   cancelledAt: Date | null
   lastLocation: { coordinates: LngLat; savedAt: Date } | null
@@ -19,6 +21,7 @@ type FollowedWalkRow = {
   status: FollowedWalk['status']
   deadline: string
   overdue_at: string | null
+  sos_at: string | null
   checked_in_at: string | null
   cancelled_at: string | null
   last_lat: number | null
@@ -48,6 +51,7 @@ function toFollowedWalk(row: FollowedWalkRow): FollowedWalk {
     status: row.status,
     deadline: new Date(row.deadline),
     overdueAt: toDate(row.overdue_at),
+    sosAt: toDate(row.sos_at),
     checkedInAt: toDate(row.checked_in_at),
     cancelledAt: toDate(row.cancelled_at),
     lastLocation:
@@ -84,6 +88,7 @@ export type ContactWalk = {
   startedAt: Date
   deadline: Date
   overdueAt: Date | null
+  sosAt: Date | null
   checkedInAt: Date | null
   cancelledAt: Date | null
 }
@@ -96,6 +101,7 @@ type ContactWalkRow = {
   started_at: string
   deadline: string
   overdue_at: string | null
+  sos_at: string | null
   checked_in_at: string | null
   cancelled_at: string | null
 }
@@ -112,6 +118,7 @@ export async function fetchContactWalks(): Promise<ContactWalk[]> {
     startedAt: new Date(row.started_at),
     deadline: new Date(row.deadline),
     overdueAt: toDate(row.overdue_at),
+    sosAt: toDate(row.sos_at),
     checkedInAt: toDate(row.checked_in_at),
     cancelledAt: toDate(row.cancelled_at),
   }))

@@ -55,11 +55,16 @@ jobs:
           VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
       # GitHub Pages shows 404.html for unknown paths; serving the app there keeps deep links working.
       - run: cp dist/index.html dist/404.html
+      # Every attempt of a run keeps its upload, and deploy-pages refuses when one name is used twice.
+      # A name per attempt keeps "Re-run failed jobs" working.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+          name: github-pages-${{ github.run_attempt }}
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
 
   # Keeps the Fontys GitLab repository up to date, so teachers can follow the work there. Needs the
   # repository secret FONTYS_GITLAB_TOKEN (Settings > Secrets and variables > Actions).

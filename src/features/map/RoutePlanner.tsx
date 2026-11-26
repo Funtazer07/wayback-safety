@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
 import { withDarkStretchesAfterDusk } from './daylight.ts'
@@ -24,11 +24,14 @@ import reportIcon from '../../assets/day/report.png'
 import './map.css'
 
 type RoutePlannerProps = {
+  sosControl?: ReactNode
+  /** Shown under the search bar while no route is planned. */
+  banner?: ReactNode
   onRouteChange: (route: PlannedRoute | null) => void
   onStartWalk?: () => void
 }
 
-function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
+function RoutePlanner({ onRouteChange, onStartWalk, sosControl, banner }: RoutePlannerProps) {
   const [isReportingPlace, setIsReportingPlace] = useState(false)
   const location = useUserPosition()
   const planner = usePlanner(location.position)
@@ -40,6 +43,10 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const { position } = location
   const isOutside = position !== null && !isInEindhoven(position.coordinates)
+
+  // The phone asks once; after that it remembers the answer, so the map finds the user straight away.
+  const { start: startLocating } = location
+  useEffect(() => startLocating(), [startLocating])
 
   const hasCentred = useRef(false)
   useEffect(() => {
@@ -101,13 +108,17 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
   }
 
   const hasRoutes = planner.routes.length > 0
+  // With a start on the map, a missing location only matters when the user asked for it.
+  const needsLocation = planner.start === null || isLocating
   const status =
     planner.status ||
-    locationMessage({
-      isLocating: isLocating && !position,
-      isUnavailable: location.isUnavailable,
-      isOutside,
-    })
+    (needsLocation
+      ? locationMessage({
+          isLocating: isLocating && !position,
+          isUnavailable: location.isUnavailable,
+          isOutside,
+        })
+      : '')
 
   return (
     <div className="map-area planner">
@@ -161,29 +172,17 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
           hasStart: planner.start !== null,
         })}
         status={status}
+        banner={banner}
+        onStartOver={
+          hasRoutes
+            ? () => {
+                reporting.closeAll()
+                setSearchKey((key) => key + 1)
+                planner.reset()
+              }
+            : undefined
+        }
       />
-
-      {!reporting.isSheetOpen && !planner.destination && (
-        <div className="map-actions planner-actions">
-          <button
-            type="button"
-            className="map-locate"
-            aria-label="My location"
-            title="Get my location"
-            onClick={locate}
-          >
-            <img src={locationIcon} alt="" />
-          </button>
-          <button
-            type="button"
-            className="map-report"
-            aria-label="Report"
-            onClick={() => setIsReportingPlace(true)}
-          >
-            <img src={reportIcon} alt="" />
-          </button>
-        </div>
-      )}
       {isReportingPlace &&
         createPortal(
           <ReportPlaceSheet
@@ -195,6 +194,29 @@ function RoutePlanner({ onRouteChange, onStartWalk }: RoutePlannerProps) {
           document.body,
         )}
       <div ref={bottomRef} className="map-bottom">
+        {!reporting.isSheetOpen && (
+          <div className="map-actions planner-actions">
+            {sosControl && <div className="map-sos-control">{sosControl}</div>}
+            <button
+              type="button"
+              className="map-locate"
+              aria-label="My location"
+              title="Get my location"
+              onClick={locate}
+            >
+              <img src={locationIcon} alt="" />
+            </button>
+            <button
+              type="button"
+              className="map-report"
+              aria-label="Report"
+              onClick={() => setIsReportingPlace(true)}
+            >
+              <img src={reportIcon} alt="" />
+            </button>
+          </div>
+        )}
+
         {reporting.isSheetOpen ? (
           <ReportSheets reporting={reporting} />
         ) : hasRoutes ? (

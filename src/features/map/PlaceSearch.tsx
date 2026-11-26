@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { MIN_SEARCH_LENGTH, type Place } from './places.ts'
 import { usePlaceSearch } from './usePlaceSearch.ts'
 
@@ -12,6 +12,7 @@ type PlaceSearchProps = {
 function PlaceSearch({ onChoose, onStartOver }: PlaceSearchProps) {
   const [text, setText] = useState('')
   const [chosenLabel, setChosenLabel] = useState<string | null>(null)
+  const input = useRef<HTMLInputElement>(null)
   // After a choice the field shows the place's name; that is no new search.
   const search = usePlaceSearch(text === chosenLabel ? '' : text)
   const isOpen = text.trim().length >= MIN_SEARCH_LENGTH && text !== chosenLabel
@@ -19,6 +20,8 @@ function PlaceSearch({ onChoose, onStartOver }: PlaceSearchProps) {
   function choose(place: Place) {
     setText(place.label)
     setChosenLabel(place.label)
+    // Closes the phone's keyboard, which had pushed the whole screen up.
+    input.current?.blur()
     onChoose(place)
   }
 
@@ -36,6 +39,7 @@ function PlaceSearch({ onChoose, onStartOver }: PlaceSearchProps) {
         </svg>
         <span className="place-search-label">Where are you going?</span>
         <input
+          ref={input}
           type="search"
           value={text}
           placeholder="Where are you going?"

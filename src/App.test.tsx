@@ -289,6 +289,25 @@ test('a user checks in with "I’m home" and is back on Home after the "You’re
   expect(screen.queryByRole('timer')).not.toBeInTheDocument()
 })
 
+test('after a walk started from Home, "Back to Home" opens the map, not the check-in screen', async () => {
+  profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
+  const walk = walkEndingIn(20)
+  walks.startWalk.mockResolvedValue(walk)
+  walks.checkInWalk.mockResolvedValue({ ...walk, status: 'safe' })
+  renderApp(loggedIn)
+  await screen.findByRole('button', { name: 'Home' })
+
+  click('Start walk')
+  click('Start walk')
+  await screen.findByRole('timer')
+  click('I’m home')
+  await screen.findByRole('heading', { name: 'You’re home.' })
+  click('Back to Home')
+
+  expect(await screen.findByRole('button', { name: 'Home' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Set your check-in' })).not.toBeInTheDocument()
+})
+
 test('the route chosen on Home is on the walk map after the walk starts', async () => {
   profile.fetchProfile.mockResolvedValue({ displayName: 'Sam' })
   walks.startWalk.mockResolvedValue(walkEndingIn(20))

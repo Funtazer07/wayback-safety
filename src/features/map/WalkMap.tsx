@@ -1,5 +1,4 @@
-
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import ReportPlaceSheet from '../reports/ReportPlaceSheet.tsx'
 import { isInEindhoven, type LngLat } from './geometry.ts'
@@ -15,11 +14,12 @@ import { getRecentReports, type RecentReport } from './recentReports.ts'
 import './map.css'
 
 type WalkMapProps = {
+  sosControl?: ReactNode
   route: LngLat[] | null
   arrivalLabel?: string
 }
 
-function WalkMap({ route, arrivalLabel }: WalkMapProps) {
+function WalkMap({ route, arrivalLabel, sosControl }: WalkMapProps) {
   const { position, isUnavailable, start } = useUserPosition()
   const [thankYou, setThankYou] = useState('')
   const [now, setNow] = useState(() => new Date())
@@ -100,6 +100,7 @@ function WalkMap({ route, arrivalLabel }: WalkMapProps) {
       {arrivalLabel && !reporting.isSheetOpen && <p className="map-arrival">{arrivalLabel}</p>}
       {!reporting.isSheetOpen && (
         <div className="map-actions">
+          {sosControl && <div className="map-sos-control">{sosControl}</div>}
           {position && (
             <button
               type="button"
