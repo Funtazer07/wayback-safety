@@ -480,10 +480,9 @@
 .walk-live .walk-panel {
   position: relative;
   z-index: 3;
-  /* Compact, so the map keeps most of the screen while walking. */
-  gap: 0.625rem;
+  gap: 1rem;
   margin-top: -1.5rem;
-  padding: 1rem 1.25rem max(1rem, env(safe-area-inset-bottom));
+  padding: 1.5rem 1.75rem max(1.75rem, env(safe-area-inset-bottom));
   border-radius: 2.1875rem 2.1875rem 0 0;
   box-shadow: none;
 }
@@ -492,32 +491,12 @@
   justify-content: space-between;
 }
 
-/* "Walking to Stationsplein, Eindhoven" on one line under the timer. */
 .walk-panel .walk-destination {
-  font-size: 1rem;
-  line-height: 1.35;
-}
-
-.walk-panel .walk-panel-text {
-  font-size: 0.9375rem;
-}
-
-.walk-panel .walk-panel-heading .check-in-actions {
-  align-self: center;
-  max-width: none;
-}
-
-.walk-panel-heading .check-in-button {
-  white-space: nowrap;
-}
-
-.walk-panel-text span.walk-small {
-  display: inline;
-  margin: 0;
+  font-size: 1.875rem;
 }
 
 .walk-panel .walk-small {
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 .walk-panel .check-in-actions {
@@ -527,10 +506,10 @@
 }
 
 .walk-panel .check-in-button {
-  min-height: 2.75rem;
-  padding: 0.5rem 1rem;
+  min-height: 3rem;
+  padding: 0.625rem 1.125rem;
   border-radius: 1rem;
-  font-size: 1rem;
+  font-size: 1.125rem;
 }
 
 .walk-panel .walk-timer-ring {
@@ -562,11 +541,11 @@
 }
 
 .walk-panel .walk-timer-count {
-  font-size: 1.75rem;
+  font-size: 2rem;
 }
 
 .walk-panel .walk-timer-label {
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
@@ -583,21 +562,20 @@
 }
 
 .walk-panel .walk-extend {
-  min-height: 2.75rem;
+  min-height: 3rem;
   border-radius: 1.125rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 700;
   background: var(--day-selected);
 }
 
-/* A text button: red stays for SOS, and a thumb resting low does not land on a big red bar. */
 .walk-panel > .button-danger {
+  margin-top: 0.5rem;
   min-height: 2.75rem;
   border: none;
   border-radius: 2rem;
-  font-weight: 600;
-  color: var(--danger);
-  background: transparent;
+  color: white;
+  background: var(--danger);
 }
 
 .walk-live .map-actions {
@@ -693,7 +671,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 0.75rem;
-  padding-bottom: 1rem;
+  padding-bottom: 1.25rem;
 }
 
 .walk-panel-heading .walk-timer-ring {
@@ -709,7 +687,8 @@
   flex-wrap: wrap;
 }
 
-.walk-panel .walk-watchers.is-compact {
+.walk-panel-heading .walk-watchers.is-compact {
+  max-width: 9rem;
   margin-top: 0.25rem;
   padding: 0;
   gap: 0.375rem;

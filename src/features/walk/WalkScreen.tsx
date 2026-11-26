@@ -112,22 +112,22 @@ function WalkScreen({
         <div className="walk-panel-handle" aria-hidden="true" />
         <div className="walk-panel-heading">
           <WalkTimer startedAt={walk.startedAt} deadline={walk.deadline} now={now} />
-          <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
-        </div>
-        <div className="walk-panel-text">
-          <p>
-            <span className="walk-small">Walking to</span>{' '}
-            <span className="walk-destination">{walk.destinationLabel}</span>
-          </p>
-          <p>
-            Check in by <strong>{formatClock(walk.deadline)}</strong>
-          </p>
           <WatchersLine names={watchers} compact />
-          {isLocationOff && (
-            <p className="walk-small">
-              Location is off, so the app cannot save where you last were.
+        </div>
+        <div className="walk-panel-top">
+          <div className="walk-panel-text">
+            <p className="walk-small">Walking to</p>
+            <p className="walk-destination">{walk.destinationLabel}</p>
+            <p>
+              Check in by <strong>{formatClock(walk.deadline)}</strong>
             </p>
-          )}
+            {isLocationOff && (
+              <p className="walk-small">
+                Location is off, so the app cannot save where you last were.
+              </p>
+            )}
+          </div>
+          <CheckInButton onCheckIn={handleCheckIn} disabled={isBusy} />
         </div>
         {isAlmostUp && !isReminderDue(walk.deadline, now) && (
           <p className="walk-almost" role="status">

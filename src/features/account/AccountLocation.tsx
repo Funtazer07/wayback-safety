@@ -1,38 +1,6 @@
-import { useEffect, useState } from 'react'
-
-type Access = PermissionState | 'unknown'
-
-/** The phone's answer for location, kept up to date. 'unknown' where the browser cannot tell. */
-function useLocationAccess() {
-  const [access, setAccess] = useState<Access>('unknown')
-
-  useEffect(() => {
-    let status: PermissionStatus | null = null
-    let isCurrent = true
-    const update = () => {
-      if (status) setAccess(status.state)
-    }
-    navigator.permissions
-      ?.query({ name: 'geolocation' })
-      .then((answer) => {
-        if (!isCurrent) return
-        status = answer
-        update()
-        answer.addEventListener('change', update)
-      })
-      // Older browsers: the button below still works.
-      .catch(() => {})
-    return () => {
-      isCurrent = false
-      status?.removeEventListener('change', update)
-    }
-  }, [])
-
-  return [access, setAccess] as const
-}
+import { useState } from 'react'
 
 function AccountLocation() {
-  const [access, setAccess] = useLocationAccess()
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -49,8 +17,7 @@ function AccountLocation() {
     navigator.geolocation.getCurrentPosition(
       () => {
         setIsLoading(false)
-        setAccess('granted')
-        setMessage('')
+        setMessage('Location access is available. Use My location on the map.')
       },
       (error) => {
         setIsLoading(false)
@@ -67,21 +34,14 @@ function AccountLocation() {
   return (
     <section className="card account-location" aria-labelledby="account-location-title">
       <h2 id="account-location-title">Location</h2>
-      {access === 'granted' ? (
-        <p role="status">Location is on for WayBack.</p>
-      ) : (
-        <button type="button" onClick={allowLocation} disabled={isLoading}>
-          {isLoading ? 'Finding your location…' : 'Allow my location'}
-        </button>
-      )}
-      {access === 'denied' && !message && (
-        <p>Location is blocked. Allow it in your phone’s settings for this website or app.</p>
-      )}
+      <button type="button" onClick={allowLocation} disabled={isLoading}>
+        {isLoading ? 'Finding your location…' : 'Allow my location'}
+      </button>
       {message && <p role="status">{message}</p>}
       <details>
         <summary>How location is used</summary>
         <p>
-          The map uses it to show where you are, without saving it. During a walk, WayBack can share
+          This button checks access without saving your location. During a walk, WayBack can share
           your last location with your chosen trusted contacts.
         </p>
       </details>

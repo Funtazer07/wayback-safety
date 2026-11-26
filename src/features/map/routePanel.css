@@ -48,27 +48,8 @@
   content: none;
   display: none;
 }
-/* Open and close slide: the row grows from 0 to the content's height. */
-.route-drawer {
-  transition: transform 0.2s ease-out;
-}
-.route-drawer-body {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 0.25s ease-out;
-}
-.route-drawer.is-collapsed .route-drawer-body {
-  grid-template-rows: 0fr;
-}
-.route-drawer-inner {
-  min-height: 0;
-  overflow: hidden;
-}
-@media (prefers-reduced-motion: reduce) {
-  .route-drawer,
-  .route-drawer-body {
-    transition: none;
-  }
+.route-drawer > div[hidden] {
+  display: none;
 }
 
 .route-sheet h2,
