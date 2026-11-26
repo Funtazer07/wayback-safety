@@ -63,6 +63,15 @@ Import the file, or build the path with `import.meta.env.BASE_URL`.
 
 If the GitHub repository is renamed, the URL changes and installed copies of the app stop working.
 
+## Installing the app
+
+Until the app is installed, Home shows a banner under the search bar: "Add WayBack to your home
+screen". On Android, Chrome offers its own install prompt (the `beforeinstallprompt` event);
+`src/lib/install.ts` keeps it, and the banner's **Install** button opens it. Chrome only offers it
+on the live site (HTTPS, with the manifest and service worker), not on `npm run dev`. On iPhone, and
+whenever Chrome has not offered it, the button says **Show me how** and lists the steps instead.
+**×** hides the banner on that phone for good.
+
 ## The service worker
 
 vite-plugin-pwa writes the service worker (`sw.js`) during the build. It keeps the app's files
@@ -75,10 +84,11 @@ Without it the site works, but cannot turn on notifications. See docs/backend.md
 
 ## If something fails
 
-| Problem                               | Likely cause                                                                       |
-| ------------------------------------- | ---------------------------------------------------------------------------------- |
-| Checks are red                        | Click **Details** next to the red check and read the failing step                  |
-| Deploy job fails at "configure-pages" | Pages is not turned on, or its source is not "GitHub Actions" (step 1)             |
-| Copy job fails with "Access denied"   | `FONTYS_GITLAB_TOKEN` is missing, expired, or lacks the Maintainer role (step 3)   |
-| Copy job fails with "rejected"        | Someone changed the Fontys GitLab repository directly; it no longer matches GitHub |
-| Site loads but is blank               | A hand-written path starting with `/`; see "The subfolder path"                    |
+| Problem                               | Likely cause                                                                        |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| Checks are red                        | Click **Details** next to the red check and read the failing step                   |
+| Deploy job fails at "configure-pages" | Pages is not turned on, or its source is not "GitHub Actions" (step 1)              |
+| Copy job fails with "Access denied"   | `FONTYS_GITLAB_TOKEN` is missing, expired, or lacks the Maintainer role (step 3)    |
+| Copy job fails with "rejected"        | Someone changed the Fontys GitLab repository directly; it no longer matches GitHub  |
+| Site loads but is blank               | A hand-written path starting with `/`; see "The subfolder path"                     |
+| Deploy job fails at "deploy-pages"    | Usually a GitHub hiccup; **Re-run failed jobs** (each attempt uploads its own copy) |

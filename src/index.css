@@ -48,6 +48,9 @@
 body {
   margin: 0;
   background: var(--page);
+  /* Android Chrome reloads the page when you pull down at the top, which also catches swipes on
+     the route panel and would lose the planned route. */
+  overscroll-behavior-y: none;
 }
 
 h1 {

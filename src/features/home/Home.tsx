@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react'
 import type { PlannedRoute } from '../map/walkRoute.ts'
 import RoutePlanner from '../map/RoutePlanner.tsx'
+import InstallBanner from './InstallBanner.tsx'
 import './home.css'
 
 type HomeProps = {
+  sosControl?: ReactNode
   userId: string
   displayName: string
   onStartWalk: () => void
@@ -10,10 +13,15 @@ type HomeProps = {
   onOpenContacts: () => void
 }
 
-function Home({ onStartWalk, onRouteChange }: HomeProps) {
+function Home({ onStartWalk, onRouteChange, sosControl }: HomeProps) {
   return (
     <main className="screen home-screen">
-      <RoutePlanner onRouteChange={onRouteChange} onStartWalk={onStartWalk} />
+      <RoutePlanner
+        sosControl={sosControl}
+        banner={<InstallBanner />}
+        onRouteChange={onRouteChange}
+        onStartWalk={onStartWalk}
+      />
     </main>
   )
 }

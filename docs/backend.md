@@ -39,15 +39,17 @@ database looks like.
 | -------------------- | ------------------------------------------------------------------------------------- |
 | `profiles`           | One row per user: `id`, `created_at`, `age_confirmed_at`, `display_name`              |
 | `walks`              | One row per walk home: destination, start time, deadline, status, last known location |
-|                      | and, once the user is home, the time of the check-in                                  |
+|                      | and, once the user is home, the time of the check-in; after an SOS, its time          |
 | `contacts`           | One row per trusted contact or open invite: who invited, who accepted, the name the   |
 |                      | user gave them, status, and while open, a fingerprint of the invite link              |
 | `walk_contacts`      | Which contacts follow which walk, and when one tapped "I'm watching" (SCRUM-114)      |
-| `reports`            | Place reports and broken street lights: category, a rounded spot or the lamp, time    |
+| `reports`            | Place reports and broken street lights: category, a rounded spot or the lamp, time.   |
+|                      | Not who made it                                                                       |
+| `report_counts`      | How many reports a user made today, for the daily limit. Not which reports            |
 | `push_subscriptions` | One row per phone that allowed notifications: the push address and its keys           |
 
-Supabase keeps the login details in its own `auth.users` table. New tables (contacts, reports)
-reference `profiles.id`.
+Supabase keeps the login details in its own `auth.users` table. New tables (contacts,
+report_counts) reference `profiles.id`.
 
 ### Walks and the timer
 
@@ -344,9 +346,13 @@ SCRUM-10: every signed-in user can see reports, so the map can show them. Since 
 place reports too, with their category and time (see "Place reports" in [map.md](map.md)). Hidden
 from other users:
 
-- **who** reported it. The table keeps `user_id` only to delete a user's reports with their
-  account and to limit how many reports one person makes. Column rights stop the app from reading
-  it.
+- **who** reported it. Since `0028_anonymous_reports.sql` this is not stored at all, so not even
+  the team can trace a report to its reporter. Before, the table kept a hidden `user_id`. The daily
+  limit is now counted in `report_counts`: per user and day only the number of reports, not which
+  ones. The app cannot read it, and yesterday's counts are deleted. Because a report has no owner
+  any more, it is not deleted with the account; it expires by itself (at most 30 days). Tested by
+  `supabase/tests/report_privacy_test.sql`. To set it up: run `0028_anonymous_reports.sql` after
+  `0027_report_lifetimes.sql`.
 - **where the reporter was.** A place report is rounded to 3 decimals before it leaves the phone,
   and the server rounds it again. A broken-light report uses the lamp's spot, which is public data.
 - **the note**, until reports can be flagged (SCRUM-32). A note could name or describe someone. The
@@ -366,8 +372,27 @@ Code: `src/features/reports/reports.ts` (place reports) and `src/features/map/br
 Assumptions until SCRUM-90 (research) decides, all in `0008_reports.sql`:
 
 - The spot is rounded to 3 decimals: about 110 m north–south and 70 m east–west in Eindhoven.
-- A report is kept 30 days. Expired reports are not shown, and the next new report deletes them.
 - One person can make at most 20 reports a day.
+
+#### How long a report stays
+
+Each category stays as long as the problem usually lasts (SCRUM-142, `0027_report_lifetimes.sql`).
+Before that, every report stayed 30 days, so a situation that was over the same night still warned
+people for a month. A short lifetime is also better for privacy: nothing is kept longer than it
+helps.
+
+| Category       | Stays    | Why                                                                                                                     |
+| -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `broken_light` | 14 days  | _Assumption:_ the BuitenBeter open data shows reported lamps fixed within one to two weeks. "It works again" is earlier |
+| `dark_area`    | 30 days  | A dark street does not get lighter by itself. 30 days is the longest any report is kept                                 |
+| `unsafe`       | 24 hours | _Assumption:_ a situation with people is usually over the same night. A day warns the people walking home after         |
+| `quiet`        | 7 days   | _Assumption:_ how busy a street is changes with the week; a week covers the same night once                             |
+| `other`        | 7 days   | _Assumption:_ an obstacle or blocked path is usually gone within a week                                                 |
+
+The server sets the expiry (`report_lifetime`), never the app. After it, the report is not shown
+any more (the read policy), and the next new report deletes it. Reports made before the migration
+got the new lifetime too, counted from when they were made. Tested by
+`supabase/tests/report_lifetimes_test.sql`. To set it up: run `0027_report_lifetimes.sql`.
 
 ### Notifications
 
@@ -389,10 +414,12 @@ What this means for people:
 
 How a phone is signed up (SCRUM-68):
 
-1. The user taps "Allow notifications" on a card. It is on the start-walk screen, on the
-   screen where a contact has just accepted an invite and on the Contacts tab (SCRUM-60), and on
-   the Account tab (SCRUM-105). iPhones only ask after a
-   tap, which is why there is a button.
+1. The phone asks for permission after a tap. Tapping **Start walk** asks when notifications are
+   still off; the walk starts without waiting for the answer. There is also an "Allow
+   notifications" card on the screen where a contact has just accepted an invite, on the Contacts
+   tab (SCRUM-60) and on the Account tab (SCRUM-105). Phones only show the question right after a
+   tap, which is why it is never asked when the app opens. On the start-walk screen the card only
+   appears to explain blocked notifications, or that an iPhone needs the app installed first.
 2. The browser asks the push service for an address for this phone, and the app saves it with
    `save_push_subscription` in the `push_subscriptions` table: one row per phone.
 3. Each time the app opens with notifications on, it saves the row again, so a phone always
@@ -423,8 +450,8 @@ Code: `src/features/notifications/`.
 
 ### Sending push
 
-When a walk starts, gets more time, is checked in, is cancelled or becomes overdue, its contacts
-get a push notification (SCRUM-69, SCRUM-74, SCRUM-107). No location is ever in these messages, only the time it was
+When a walk starts, gets more time, is checked in, is cancelled, becomes overdue or the user
+presses SOS, its contacts get a push notification (SCRUM-69, SCRUM-74, SCRUM-107, SCRUM-78). No location is ever in these messages, only the time it was
 saved:
 
 | When                          | Title                         | Text                                                                                                                                                                                       |
@@ -435,6 +462,8 @@ saved:
 | The user cancels the walk     | Anna stopped the walk         | Cancelled at 22:20. No check-in will follow.                                                                                                                                               |
 | The walk becomes overdue      | Anna hasn't checked in yet    | Anna was expected home at 22:36 but hasn't confirmed arriving safely. This does not necessarily mean something is wrong. Last known location from 22:31, not live. Open WayBack to see it. |
 | The user checks in after that | Anna is safe                  | Anna checked in at 22:44, after the missed check-in alert. No need to look any further.                                                                                                    |
+| The user presses SOS          | Anna asked for help           | Anna pressed SOS at 22:20 during the walk home. Last known location from 22:20, not live. Open WayBack to see it.                                                                          |
+| The user checks in after SOS  | Anna is safe                  | Anna checked in at 22:30, after asking for help. No need to look any further.                                                                                                              |
 
 Without a saved location the alert says "No location was shared during this walk." Tapping the
 alert opens the app with `?walk=<id>` on the contact's view of that walk (see "The contact's view").
@@ -604,6 +633,42 @@ For the alert (SCRUM-74): deploy `send-walk-push` again (it now knows `overdue`)
 For the 3-minute grace period: run `0017_three_minute_grace.sql` and deploy `send-walk-push` again,
 so "Are you OK?" says 3 minutes too. Tested by `supabase/tests/late_walks_test.sql`.
 
+### SOS
+
+The walker can ask for help at any moment of a walk, without waiting for the timer (SCRUM-78,
+`0027_sos.sql`). The app calls `sendSos(walkId, position)` from `src/features/walk/walk.ts`, which
+calls the database function `send_sos`. The button and its screens are SCRUM-131; the hold and the
+cancel window before it is sent are SCRUM-132.
+
+An SOS is not a new status. To the contacts it means "come and find me here, now", which is what
+an overdue walk already means. So `send_sos`:
+
+1. makes the walk `overdue` straight away and saves the moment in both `overdue_at` and the new
+   column `sos_at`;
+2. saves the position the phone sends with it as the last known location. Without a position, the
+   last saved location stays;
+3. sets `warned_at` when the walk was never warned, because an overdue walk always has a warning
+   before it (`0011_late_walks.sql`).
+
+Because the walk is overdue, everything from "Late walks" and "The contact's view" applies: the
+contacts may see the last known location, the route is erased, the location is erased after 24
+hours, and the walker can still check in, which tells the contacts "Anna is safe". `sos_at` only
+changes the words: the push says "Anna asked for help" (see "Sending push"), and `followed_walk`
+and `followed_walk_statuses` return `sos_at`, so the contacts' screens can say so too.
+
+Rules:
+
+- Only the walker's own walk, and only while it is `active`. This includes the 3 minutes after
+  "Are you OK?", when the walk is still active. Once a walk is overdue the contacts have already
+  been alerted, so a second SOS is refused.
+- One SOS sends one alert. The status changes once, so the contacts never get both "asked for help"
+  and "hasn't checked in".
+- There is no call 112 button: the team decided to leave it out.
+
+To set it up: deploy `send-walk-push` again first (it now knows `sos` and reads `sos_at`), then run
+`0027_sos.sql`. In the other order the first SOS alerts are lost. Tested by
+`supabase/tests/sos_test.sql`.
+
 ### The contact's view
 
 Tapping the alert opens screen 10 of the SCRUM-72 prototype for the contact (SCRUM-102,
@@ -709,16 +774,21 @@ Written down here because the app handles location and personal data.
   walk refuses new locations afterwards. A walk that became overdue keeps it for 24 hours, so the
   contacts know where to look, and then it is erased too (assumption until SCRUM-71 and SCRUM-30
   decide). The alert itself never carries the location, only the time it was saved.
+- **SOS:** pressing SOS saves the phone's position at that moment as the last known location,
+  instead of waiting for the next update, and stores the time of the SOS. Nothing else is stored.
+  The walk then follows the overdue rules above: the contacts see the location, and it is erased
+  after 24 hours. The SOS message, like the alert, carries the time but never the location.
 - **Route planning:** to compare routes on the map, the start (often the user's position) and the
   destination are sent to our `plan-route` Edge Function, which passes them on to OpenRouteService
   (HeiGIT, Germany). OpenRouteService sees our server, not the user's phone, and gets no name or
   account. The function stores and logs nothing about the trip. The privacy statement must mention
   OpenRouteService. See "Planning a route" and [map.md](map.md).
-- **Reports:** every signed-in user sees the category, the spot and the time, never who reported
-  it. A place report is stored rounded (about 100 m), never at the GPS position; a broken light at
-  the lamp's own spot. Notes are hidden from other users until flagging exists (SCRUM-32). No
-  photos and no link to a walk or route. Reports are deleted after 30 days, and with the account.
-  See Reports above.
+- **Reports:** every signed-in user sees the category, the spot and how old it is. Who reported it
+  is not stored at all, so it cannot be shown or leaked. A place report is stored rounded (about
+  100 m), never at the GPS position; a broken light at the lamp's own spot. Notes are hidden from
+  other users until flagging exists (SCRUM-32). No photos and no link to a walk, a route or an
+  account. Reports expire by themselves, after at most 30 days. Like all our data, they are kept in
+  our Supabase project in an EU region. See Reports above.
 - **Not decided yet:** how long a finished walk is kept. Nothing deletes walks yet, so the
   destination, the start time and the check-in time stay until the account is deleted, and so
   does the last location of a walk without a check-in. Decide this before real users sign up.
@@ -892,6 +962,7 @@ CHECKS PASSED"; a failing check stops with a message starting with "FAIL:".
 | `overdue_followed_walks_test.sql`         | Which overdue walks show on the Contacts tab (SCRUM-104)                    |
 | `contact_alerts_and_walk_status_test.sql` | Alert yes or no, and the walk status per contact (SCRUM-103, SCRUM-115)     |
 | `im_watching_test.sql`                    | Who may tap "I'm watching", and when (SCRUM-114)                            |
+| `sos_test.sql`                            | SOS: who may send it, one alert, the location, "is safe" after (SCRUM-78)   |
 
 ### This is real personal data
 
@@ -940,3 +1011,21 @@ Redeploy `send-walk-push` with the `reminder` event before running 0020, and the
 version before 0021. Both migrations are already run on the shared project. It uses the existing
 Vault and VAPID secrets; no new provider or credential is required. Setup, timing reasoning,
 queue failure behaviour and phone-test steps are in [timer-reminder.md](timer-reminder.md).
+
+### SOS on the two map screens
+
+The SOS control appears on Home and the walk timer map, opposite Report in the same control row.
+Other screens are unchanged. Press SOS, then hold the confirmation control for 3 continuous seconds.
+Releasing early resets progress. Cancel closes the panel without sending.
+Confirmation appears only after the server accepts the alert.
+
+The prepared `0029_sos_from_any_screen.sql` migration provides `send_emergency_sos`.
+An SOS reaches every accepted contact: during a walk the contacts chosen for it stay on it and the
+other accepted contacts are added, so a walk without contacts can still send SOS. Pending
+invitations are excluded. When nobody has accepted, the app says so instead of asking to retry.
+The request ID prevents duplicate alerts after a retry.
+On a walk that is already overdue, `sos_at` and `overdue_at` both move to the moment SOS was
+pressed, so the contacts see the right time. Only the latest available location is kept, and it
+is erased 24 hours after that moment, under the overdue retention rule.
+`0029` is not run on the shared project yet; run it after this change is merged.
+Push sound depends on the recipient's notification permissions and device settings.

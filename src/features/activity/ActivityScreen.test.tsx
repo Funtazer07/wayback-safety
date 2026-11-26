@@ -16,6 +16,7 @@ const mumsWalk: ContactWalk = {
   startedAt: new Date('2026-10-26T22:06:00'),
   deadline: new Date('2026-10-26T22:26:00'),
   overdueAt: null,
+  sosAt: null,
   checkedInAt: null,
   cancelledAt: null,
 }

@@ -31,6 +31,7 @@ const overdue: FollowedWalk = {
   status: 'overdue',
   deadline: new Date('2026-10-15T22:36:00'),
   overdueAt: new Date('2026-10-15T22:42:00'),
+  sosAt: null,
   checkedInAt: null,
   cancelledAt: null,
   lastLocation: { coordinates: [5.4791, 51.4385], savedAt: new Date('2026-10-15T22:31:00') },

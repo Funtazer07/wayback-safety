@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { LngLat } from '../map/geometry.ts'
 import WalkMap from '../map/WalkMap.tsx'
 import AreYouOkScreen from './AreYouOkScreen.tsx'
@@ -22,6 +22,7 @@ import WalkReminder from './WalkReminder.tsx'
 import './walk.css'
 
 type WalkScreenProps = {
+  sosControl?: ReactNode
   walk: Walk
   route?: LngLat[] | null
   routeSeconds?: number | null
@@ -36,6 +37,7 @@ const doNothing = async () => {}
 
 function WalkScreen({
   walk,
+  sosControl,
   route = null,
   routeSeconds = null,
   onCheckIn,
@@ -97,6 +99,7 @@ function WalkScreen({
   return (
     <main className="walk-live">
       <WalkMap
+        sosControl={sosControl}
         route={route}
         arrivalLabel={
           routeSeconds

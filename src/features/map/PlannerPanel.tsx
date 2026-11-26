@@ -6,9 +6,30 @@ type PlannerPanelProps = {
   search: ReactNode
   hint: string
   status: string
+  banner?: ReactNode
+  /** Set while routes are shown: the panel shrinks to a × so the map stays free. */
+  onStartOver?: () => void
 }
 
-function PlannerPanel({ panelRef, search, hint, status }: PlannerPanelProps) {
+function PlannerPanel({ panelRef, search, hint, status, banner, onStartOver }: PlannerPanelProps) {
+  if (onStartOver) {
+    return (
+      <div ref={panelRef} className="planner-panel is-compact">
+        <button
+          type="button"
+          className="planner-close"
+          aria-label="Start over"
+          onClick={onStartOver}
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+        <p className="planner-status" role="status">
+          {status}
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div ref={panelRef} className="planner-panel">
       {search}
@@ -16,6 +37,7 @@ function PlannerPanel({ panelRef, search, hint, status }: PlannerPanelProps) {
       <p className="planner-status" role="status">
         {status}
       </p>
+      {banner}
     </div>
   )
 }
