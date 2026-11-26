@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { reportCategories } from '../reports/reportCategories.ts'
 import type { RecentReport } from './recentReports.ts'
@@ -10,10 +9,7 @@ type Props = {
 }
 
 function timeAgo(date: Date, now: Date): string {
-  const minutes = Math.max(
-    0,
-    Math.floor((now.getTime() - date.getTime()) / 60000),
-  )
+  const minutes = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 60000))
 
   if (minutes < 1) return 'Just now'
   if (minutes < 60) return `${minutes} min ago`
@@ -22,11 +18,7 @@ function timeAgo(date: Date, now: Date): string {
   return `${hours} hr ago`
 }
 
-export default function RecentReportsList({
-  reports,
-  now,
-  onSelect,
-}: Props) {
+export default function RecentReportsList({ reports, now, onSelect }: Props) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -42,9 +34,7 @@ export default function RecentReportsList({
           Recent reports
           {reports.length > 0 ? ` (${reports.length})` : ''}
         </span>
-        <span aria-hidden="true">
-          {isOpen ? '▲' : '▼'}
-        </span>
+        <span aria-hidden="true">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {isOpen && (
@@ -56,14 +46,11 @@ export default function RecentReportsList({
           <h2>Last 3 hours</h2>
 
           {reports.length === 0 ? (
-            <p className="recent-reports-empty">
-              No recent reports nearby.
-            </p>
+            <p className="recent-reports-empty">No recent reports nearby.</p>
           ) : (
             <ul className="recent-reports-list">
               {reports.map((report) => {
-                const category =
-                  reportCategories[report.category]
+                const category = reportCategories[report.category]
 
                 return (
                   <li key={`${report.kind}-${report.id}`}>
@@ -85,9 +72,7 @@ export default function RecentReportsList({
                         <small>
                           {timeAgo(report.reportedAt, now)}
                           {' · '}
-                          {report.nearRoute
-                            ? 'Near your route'
-                            : 'Near you'}
+                          {report.nearRoute ? 'Near your route' : 'Near you'}
                         </small>
                       </span>
                     </button>

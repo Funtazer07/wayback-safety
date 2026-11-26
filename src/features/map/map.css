@@ -562,7 +562,6 @@
   text-align: left;
 }
 
-
 /* recent reports */
 
 /* container for recent reports */
@@ -663,8 +662,8 @@
 .recent-report-dot {
   flex-shrink: 0;
 
-  width: 0.500rem;
-  height: 0.500rem;
+  width: 0.5rem;
+  height: 0.5rem;
   margin-top: 0.25rem;
 
   border-radius: 50%;
@@ -725,4 +724,3 @@
     font-size: 0.8125rem;
   }
 }
-

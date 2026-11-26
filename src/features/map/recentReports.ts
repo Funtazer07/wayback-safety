@@ -1,12 +1,6 @@
-
 import type { PlaceReport } from '../reports/reports.ts'
 import type { BrokenLight } from './brokenLights.ts'
-import {
-  distanceInMetres,
-  measureFromLine,
-  metresFrom,
-  type LngLat,
-} from './geometry.ts'
+import { distanceInMetres, measureFromLine, metresFrom, type LngLat } from './geometry.ts'
 
 // our starting settings
 export const RECENT_HOURS = 3
@@ -57,48 +51,35 @@ export function getRecentReports(
   const routeOrigin = selectedRoute?.[0]
   const project = routeOrigin ? metresFrom(routeOrigin) : null
   const routeLine =
-    project && selectedRoute && selectedRoute.length >= 2
-      ? selectedRoute.map(project)
-      : null
+    project && selectedRoute && selectedRoute.length >= 2 ? selectedRoute.map(project) : null
 
-  return allReports
-    .flatMap((report): RecentReport[] => {
-      const timestamp = report.reportedAt.getTime()
+  return (
+    allReports
+      .flatMap((report): RecentReport[] => {
+        const timestamp = report.reportedAt.getTime()
 
-      // ignore old, future, or invalid dates.
-      if (
-        !Number.isFinite(timestamp) ||
-        timestamp < earliest ||
-        timestamp > nowMs
-      ) {
-        return []
-      }
+        // ignore old, future, or invalid dates.
+        if (!Number.isFinite(timestamp) || timestamp < earliest || timestamp > nowMs) {
+          return []
+        }
 
-      // check whether the report is near the user.
-      const nearUser =
-        userPosition !== null &&
-        distanceInMetres(
-          userPosition,
-          report.coordinates,
-        ) <= NEAR_USER_METRES
+        // check whether the report is near the user.
+        const nearUser =
+          userPosition !== null &&
+          distanceInMetres(userPosition, report.coordinates) <= NEAR_USER_METRES
 
-      // check whether it's near the chosen route.
-      const nearRoute =
-        routeLine !== null &&
-        project !== null &&
-        measureFromLine(
-          routeLine,
-          project(report.coordinates),
-        ).distance <= NEAR_ROUTE_METRES
+        // check whether it's near the chosen route.
+        const nearRoute =
+          routeLine !== null &&
+          project !== null &&
+          measureFromLine(routeLine, project(report.coordinates)).distance <= NEAR_ROUTE_METRES
 
-      // skip reports that are not nearby.
-      if (!nearUser && !nearRoute) return []
+        // skip reports that are not nearby.
+        if (!nearUser && !nearRoute) return []
 
-      return [{ ...report, nearUser, nearRoute }]
-    })
-    // Newest first.
-    .sort(
-      (a, b) =>
-        b.reportedAt.getTime() - a.reportedAt.getTime(),
-    )
+        return [{ ...report, nearUser, nearRoute }]
+      })
+      // Newest first.
+      .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
+  )
 }

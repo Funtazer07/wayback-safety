@@ -1,4 +1,3 @@
-
 import { formatDistance, formatMinutes } from './formatRoute.ts'
 import type { MeasuredRoute } from './lamps.ts'
 import RouteBadges from './RouteBadges.tsx'
@@ -19,12 +18,7 @@ function brokenText(count: number): string {
     : `${count} lights on this route are reported broken`
 }
 
-function RouteList({
-  routes,
-  selectedIndex,
-  onSelect,
-  reports = [],
-}: RouteListProps) {
+function RouteList({ routes, selectedIndex, onSelect, reports = [] }: RouteListProps) {
   // no routes? Show nothing.
   if (routes.length === 0) return null
 
@@ -53,19 +47,12 @@ function RouteList({
               {/* existing walking time and distance */}
               <span className="route-line">
                 <span className="route-top">
-                  <span className="route-time">
-                    {formatMinutes(route.duration)}
-                  </span>
+                  <span className="route-time">{formatMinutes(route.duration)}</span>
 
-                  <span className="route-muted">
-                    {formatDistance(route.length)}
-                  </span>
+                  <span className="route-muted">{formatDistance(route.length)}</span>
                 </span>
 
-                <RouteBadges
-                  isMostLights={index === mostLights}
-                  isFastest={index === fastest}
-                />
+                <RouteBadges isMostLights={index === mostLights} isFastest={index === fastest} />
               </span>
               {/* existing route description and reports */}
               <RouteDescription
@@ -79,37 +66,26 @@ function RouteList({
               {/* existing streetlight measurements */}
               <span className="route-line route-measurements">
                 <span className="route-lights">
-                  {route.lampCount} lights,{' '}
-                  {Math.round(route.lampsPerKm)} per km
+                  {route.lampCount} lights, {Math.round(route.lampsPerKm)} per km
                 </span>
 
-                {index === selectedIndex && (
-                  <span className="route-shown">
-                    On the map
-                  </span>
-                )}
+                {index === selectedIndex && <span className="route-shown">On the map</span>}
               </span>
 
               {/* existing longest gap information */}
               <span className="route-muted route-gap">
-                Longest gap between lights:{' '}
-                {formatDistance(route.longestDark)}
+                Longest gap between lights: {formatDistance(route.longestDark)}
               </span>
 
               {/* existing broken-light information */}
               {route.brokenCount > 0 && (
-                <span className="route-broken">
-                  {brokenText(route.brokenCount)}
-                </span>
+                <span className="route-broken">{brokenText(route.brokenCount)}</span>
               )}
             </button>
           )
         })}
       </div>
-      <p
-        className="route-register-note"
-        id="route-register-note"
-      >
+      <p className="route-register-note" id="route-register-note">
         Counted from the municipality's register of street lights: where lamps stand, not whether
         they are on. Lights reported as broken, and lights the municipality switches off at night,
         do not count. After dusk, dark stretches of the chosen route are marked with a moon on the
