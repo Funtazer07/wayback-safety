@@ -48,6 +48,7 @@
 .planner-panel {
   position: relative;
   grid-row: 1;
+  grid-column: 1;
   margin: 0.5rem 0.5rem 0;
   display: flex;
   flex-direction: column;
@@ -236,6 +237,7 @@
 .map-bottom {
   position: relative;
   grid-row: 3;
+  grid-column: 1;
   z-index: 2;
 }
 
@@ -562,32 +564,43 @@
   text-align: left;
 }
 
-/* Over the walk map: the thank-you message and Recent reports share the top row, so they stack
-   instead of covering each other. */
+/* The thank-you message over the walk map takes the top row, above Recent reports. */
 .map-top {
   position: relative;
   z-index: 3;
   grid-row: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  grid-column: 1;
   margin: 0.5rem 0.5rem 0;
 }
 
 .map-top .map-toast {
   position: static;
-  align-self: stretch;
 }
 
-.recent-reports {
-  max-width: 100%;
+/* Recent reports: a small button at the top right of the open map, under the top panel. Only the
+   button takes room; the list opens over the map, so the panels around it never move. */
+.map-recent-reports {
+  position: relative;
+  z-index: 3;
+  grid-row: 2;
+  /* Every panel names its column: two items in one cell would otherwise get a second column. */
+  grid-column: 1;
+  align-self: start;
+  justify-self: end;
+  margin: 0.5rem 0.75rem 0 0;
+}
+
+/* With routes planned the top row holds only the × on the left, so the button goes on its right,
+   level with the ×. */
+.planner .map-recent-reports {
+  grid-row: 1;
+  margin: 1.125rem 1rem 0 0;
 }
 
 .recent-reports-toggle {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.5rem 1rem;
   border: 1px solid var(--border);
@@ -602,26 +615,17 @@
 }
 
 .recent-reports-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
   width: min(18rem, calc(100vw - 2rem));
   max-height: min(18rem, 40vh);
   overflow-y: auto;
-  margin-top: 0.5rem;
   padding: 0.75rem;
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 18%);
-}
-
-.route-recent-reports {
-  margin-top: 0.75rem;
-}
-
-/* In the route drawer the list has the drawer's width and no shadow of its own. */
-.route-recent-reports .recent-reports-panel {
-  width: auto;
-  box-shadow: none;
-  border: 1px solid var(--border);
 }
 
 .recent-reports-panel h2 {

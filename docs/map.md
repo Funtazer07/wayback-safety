@@ -167,9 +167,9 @@ the cause: "there is a lamp, but it is broken" against "no lamp is broken, there
 ## Recent reports
 
 A **Recent reports** button lists the reports of the last 3 hours (place reports and broken lights)
-that are within 300 m of the user or 100 m of the route, newest first. During a walk the button
-sits at the top of the map, under the thank-you message when there is one. In the planner it is in
-the route drawer, under the routes, and uses the route that is shown on the map. Each item says the
+that are within 300 m of the user or 100 m of the route, newest first. It is shown only while routes
+are planned and during a walk, as a small button at the top right of the map; the list opens below
+it, over the map. In the planner it uses the route that is shown on the map. Each item says the
 category, how long ago it was reported and whether it is near the user or the route; tapping it
 moves the map there and opens the same info sheet as tapping the icon on the map. The filter is in
 `recentReports.ts`; the hours and distances are assumptions and are marked as such there.
