@@ -414,10 +414,12 @@ What this means for people:
 
 How a phone is signed up (SCRUM-68):
 
-1. The user taps "Allow notifications" on a card. It is on the start-walk screen, on the
-   screen where a contact has just accepted an invite and on the Contacts tab (SCRUM-60), and on
-   the Account tab (SCRUM-105). iPhones only ask after a
-   tap, which is why there is a button.
+1. The phone asks for permission after a tap. Tapping **Start walk** asks when notifications are
+   still off; the walk starts without waiting for the answer. There is also an "Allow
+   notifications" card on the screen where a contact has just accepted an invite, on the Contacts
+   tab (SCRUM-60) and on the Account tab (SCRUM-105). Phones only show the question right after a
+   tap, which is why it is never asked when the app opens. On the start-walk screen the card only
+   appears to explain blocked notifications, or that an iPhone needs the app installed first.
 2. The browser asks the push service for an address for this phone, and the app saves it with
    `save_push_subscription` in the `push_subscriptions` table: one row per phone.
 3. Each time the app opens with notifications on, it saves the row again, so a phone always

@@ -156,6 +156,8 @@ function App() {
         plannedRoute={plannedRoute}
         onStart={async (newWalk) => {
           const startedWalk = await startWalk(newWalk)
+          // Otherwise "Back to Home" after the walk would open this screen again.
+          setIsStartingWalk(false)
           if (plannedRoute) {
             saveWalkRoute(startedWalk.id, plannedRoute.coordinates, plannedRoute.seconds)
             // On failure the contacts just see no map.

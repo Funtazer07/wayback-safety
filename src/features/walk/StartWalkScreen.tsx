@@ -4,7 +4,8 @@ import ContactToggles from '../contacts/ContactToggles.tsx'
 import { useContacts } from '../contacts/useContacts.ts'
 import { formatDistance, formatMinutes } from '../map/formatRoute.ts'
 import type { PlannedRoute } from '../map/walkRoute.ts'
-import NotificationCard from '../notifications/NotificationCard.tsx'
+import { NotificationCardView } from '../notifications/NotificationCard.tsx'
+import { useNotifications } from '../notifications/useNotifications.ts'
 import { HOME } from './destination.ts'
 import { addMinutes, formatClock } from './time.ts'
 import TimerPicker from './TimerPicker.tsx'
@@ -30,6 +31,7 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
   const [isBusy, setIsBusy] = useState(false)
   const now = useNow()
   const contacts = useContacts(userId)
+  const notifications = useNotifications()
   const [switchedOffIds, setSwitchedOffIds] = useState<string[]>([])
   const acceptedIds = contacts.contacts
     .filter((contact) => contact.status === 'accepted')
@@ -37,6 +39,9 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
   const contactIds = acceptedIds.filter((id) => !switchedOffIds.includes(id))
 
   async function handleStart() {
+    // Asked here because the phone only shows the question right after a tap. The walk does not
+    // wait for the answer.
+    if (notifications.notificationState === 'off') void notifications.enable()
     setError(null)
     setIsBusy(true)
     try {
@@ -89,11 +94,14 @@ function StartWalkScreen({ userId, plannedRoute = null, onStart, onBack }: Start
         }
       />
 
-      {/* Not in the design: "Are you OK?" is a push, and iPhones only ask after a tap. */}
-      <NotificationCard
-        compact
-        reason="WayBack can then warn you if your timer runs out, also when your phone is locked."
-      />
+      {/* Only when Start walk cannot ask: blocked, or an iPhone without the app installed. */}
+      {notifications.notificationState !== 'off' && (
+        <NotificationCardView
+          compact
+          reason="WayBack can then warn you if your timer runs out, also when your phone is locked."
+          {...notifications}
+        />
+      )}
 
       <div className="screen-actions">
         {error && <p role="alert">{error}</p>}

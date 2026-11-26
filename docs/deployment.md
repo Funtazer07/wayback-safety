@@ -63,6 +63,15 @@ Import the file, or build the path with `import.meta.env.BASE_URL`.
 
 If the GitHub repository is renamed, the URL changes and installed copies of the app stop working.
 
+## Installing the app
+
+Until the app is installed, Home shows a banner under the search bar: "Add WayBack to your home
+screen". On Android, Chrome offers its own install prompt (the `beforeinstallprompt` event);
+`src/lib/install.ts` keeps it, and the banner's **Install** button opens it. Chrome only offers it
+on the live site (HTTPS, with the manifest and service worker), not on `npm run dev`. On iPhone, and
+whenever Chrome has not offered it, the button says **Show me how** and lists the steps instead.
+**×** hides the banner on that phone for good.
+
 ## The service worker
 
 vite-plugin-pwa writes the service worker (`sw.js`) during the build. It keeps the app's files

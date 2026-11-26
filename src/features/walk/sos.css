@@ -1,20 +1,25 @@
+/* Small, so it does not invite a curious tap; still the 44 px minimum to hit in a hurry. A bit
+   larger during a walk, when it is most likely to be needed. */
 .walk-global-sos.is-during-walk {
-  --sos-size: 4rem;
+  --sos-size: 3.25rem;
 }
 
 .walk-global-sos button.walk-sos-button {
   display: grid;
   place-items: center;
-  width: var(--sos-size, 3.75rem);
-  height: var(--sos-size, 3.75rem);
-  min-height: var(--sos-size, 3.75rem);
+  width: var(--sos-size, 2.75rem);
+  min-width: var(--sos-size, 2.75rem);
+  height: var(--sos-size, 2.75rem);
+  min-height: var(--sos-size, 2.75rem);
   padding: 0;
   border: 0;
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   background: #e95052;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.8125rem;
   font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
 }
 
 .walk-sos-countdown {
