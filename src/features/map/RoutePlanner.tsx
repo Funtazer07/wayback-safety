@@ -198,6 +198,16 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl, banner }: RouteP
             : undefined
         }
       />
+      {hasRoutes && !reporting.isSheetOpen && !isReportingPlace && (
+        <div className="map-recent-reports">
+          <RecentReportsList
+            reports={recent.reports}
+            canSearch={recent.canSearch}
+            now={recent.now}
+            onSelect={showRecentReport}
+          />
+        </div>
+      )}
       {isReportingPlace &&
         createPortal(
           <ReportPlaceSheet
@@ -260,14 +270,6 @@ function RoutePlanner({ onRouteChange, onStartWalk, sosControl, banner }: RouteP
                   report.brokenCount >
                 0,
             ) && <p className="route-source-note">Based on nearby user reports.</p>}
-            <div className="route-recent-reports">
-              <RecentReportsList
-                reports={recent.reports}
-                canSearch={recent.canSearch}
-                now={recent.now}
-                onSelect={showRecentReport}
-              />
-            </div>
             {onStartWalk && (
               <div className="map-route-actions">
                 <button

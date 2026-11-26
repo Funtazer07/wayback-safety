@@ -79,21 +79,23 @@ function WalkMap({ route, arrivalLabel, sosControl }: WalkMapProps) {
         onBrokenLightTap={reporting.showLight}
         onPlaceReportTap={reporting.showPlaceReport}
       />
-      <div className="map-top">
-        {thankYou && (
+      {thankYou && (
+        <div className="map-top">
           <p className="map-toast" role="status">
             {thankYou}
           </p>
-        )}
-        {!reporting.isSheetOpen && !isReportingPlace && (
+        </div>
+      )}
+      {!reporting.isSheetOpen && !isReportingPlace && (
+        <div className="map-recent-reports">
           <RecentReportsList
             reports={recent.reports}
             canSearch={recent.canSearch}
             now={recent.now}
             onSelect={showRecentReport}
           />
-        )}
-      </div>
+        </div>
+      )}
       {arrivalLabel && !reporting.isSheetOpen && <p className="map-arrival">{arrivalLabel}</p>}
       {!reporting.isSheetOpen && (
         <div className="map-actions">
